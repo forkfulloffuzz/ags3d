@@ -13,7 +13,7 @@ You are a specialist in code generation and the AGS-spirit → GDScript transpil
 tools/ag/internal/emitter/   # T13-T17: GDScript emitter, await transform, source map writer
 ```
 
-Use `go test ./internal/emitter/...` for unit tests. Expected GDScript output lives in `internal/emitter/testdata/`.
+Use `.dev/test-ag.sh` or `go test ./internal/emitter/...` for unit tests. Expected GDScript output lives in `internal/emitter/testdata/` as golden files (one `.gd` per fixture `.agscript`). Update goldens intentionally with `go test -update` (add an `-update` flag to the test when implementing).
 
 ## Your Domain
 

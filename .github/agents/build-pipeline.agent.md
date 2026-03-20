@@ -92,6 +92,34 @@ Always reference AGS-spirit source locations — never GDScript paths.
 - `ag run` launches the Godot binary; never hard-code the binary path (read from config or PATH)
 - Errors must be actionable from the output alone — file, line, column, what went wrong
 
+## Dev Scripts
+
+```sh
+.dev/build-ag.sh          # build ag + agls binaries → bin/
+.dev/build-ag.sh ag       # build ag only
+.dev/build-ag.sh agls     # build agls only
+.dev/build-ag.sh clean    # remove compiled binaries
+.dev/test-ag.sh           # go test ./...
+.dev/test-ag.sh --verbose # go test -v ./...
+.dev/test-ag.sh --filter scanner  # go test -run scanner ./...
+.dev/test-ag.sh --cover   # generate coverage report
+.dev/ag.sh build          # auto-rebuild ag if stale, then run ag build
+.dev/ag.sh run            # auto-rebuild ag if stale, then run ag run
+.dev/ag.sh new mygame     # scaffold a new project
+```
+
+## Testing
+
+Each `internal/` package has a `_test.go` file alongside it. Run with `.dev/test-ag.sh` or `cd tools/ag && go test ./...`.
+
+| Package             | Test file               | Key coverage                                      | Task  |
+| ------------------- | ----------------------- | ------------------------------------------------- | ----- |
+| `internal/project`  | `project_test.go`       | Find, Load, Scan, Scaffold, BuildManifest         | T04   |
+| `internal/scanner`  | `scanner_test.go`       | All token types, line/col tracking, comments      | T07   |
+| `internal/parser`   | `parser_test.go`        | AST structure, symbol resolution, blocking annot. | T09   |
+| `internal/emitter`  | `emitter_test.go`       | GDScript output (golden files in `testdata/`)     | T13   |
+| `internal/analysis` | `analysis_test.go`      | Diagnostics, broken references                    | T12   |
+
 ## Approach
 
 1. Check `tools/ag/` for existing files before creating new ones

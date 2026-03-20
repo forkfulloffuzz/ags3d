@@ -71,9 +71,18 @@ ag validate  # static analysis: broken references, unreachable options, unset fl
 ag new my_game  # scaffold a new project from template
 ```
 
-Build the ag binary: `cd tools/ag && go build ./cmd/ag`
-Build the language server: `cd tools/ag && go build ./cmd/agls`
-Run Go tests: `cd tools/ag && go test ./...`
+```sh
+.dev/build-ag.sh          # build ag + agls → bin/
+.dev/build-ag.sh ag       # build ag only
+.dev/build-ag.sh clean    # remove binaries
+.dev/ag.sh build          # auto-rebuild ag if stale, then run ag build
+.dev/ag.sh run            # auto-rebuild ag if stale, then run ag run
+.dev/ag.sh new <name>     # scaffold new project
+.dev/test-ag.sh           # go test ./... (transpiler unit tests)
+.dev/test-ag.sh --verbose # show individual test names
+.dev/test-ag.sh --filter scanner  # run tests matching pattern
+.dev/test-ag.sh --cover   # generate coverage report → bin/ag-cover.out
+```
 
 ## Prototype Success Criterion
 

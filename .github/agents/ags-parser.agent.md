@@ -14,7 +14,7 @@ tools/ag/internal/scanner/   # T07: lexer — Token types, Scanner struct, line/
 tools/ag/internal/parser/    # T08-T11: AST node types, Parser struct, symbol table
 ```
 
-Use `go test ./internal/scanner/...` and `go test ./internal/parser/...` for unit tests. Tests live alongside the packages (e.g., `scanner_test.go`, `parser_test.go`).
+Use `.dev/test-ag.sh` or `go test ./internal/scanner/...` and `go test ./internal/parser/...` for unit tests. Tests live alongside the packages (`scanner_test.go`, `parser_test.go`). Use fixture `.agscript` files in `internal/parser/testdata/` for parser input.
 
 ## Your Domain
 
