@@ -1,0 +1,8 @@
+[project]
+name = "AGS3D Prototype"
+start_room = "rooms/start/start.agroom"
+start_character = "characters/player.agchar"
+
+[settings]
+rendering_mode = "full_3d"
+autosave = true

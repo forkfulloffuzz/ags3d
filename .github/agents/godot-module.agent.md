@@ -1,5 +1,5 @@
 ---
-description: "Use when working on Godot C++ module code in modules/agvm/: node types (AGSRoom, AGSCharacter, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint), ClassDB registration, SCsub build files, AGSRuntime singleton, NavigationAgent3D integration, or any Godot engine fork modification. Also use for Milestone M1 tasks (T01–T05) and M4–M5 node implementation tasks (T19–T29)."
+description: "Use when working on Godot C++ module code in modules/agvm/: node types (AGSRoom, AGSCharacter, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint), ClassDB registration, SCsub build files, AGSRuntime singleton, NavigationAgent3D integration, or any Godot engine fork modification. Also use for Milestone M1 tasks (T01–T03) and M4–M5 node implementation tasks (T19–T29). NOTE: T04–T05 (ag CLI, project scanner) are Go, not C++ — use the build-pipeline agent for those."
 tools: [read, edit, search, execute]
 ---
 

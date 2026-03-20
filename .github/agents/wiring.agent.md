@@ -7,7 +7,7 @@ You are a specialist in wiring the AGS-spirit scripting layer to the live Godot 
 
 ## Your Domain
 
-- `AGSScriptLanguage` (M1/T03): `load()` triggers parse + emit for the `.agscript` file, returns a Script resource backed by the generated GDScript — Godot attaches it to nodes normally (T30)
+- `AGSScriptLanguage` (M1/T03): `load()` invokes the `ag` Go binary (or calls into it via subprocess) to parse + emit for the `.agscript` file, returns a Script resource backed by the generated GDScript — Godot attaches it to nodes normally (T30)
 - `AGSRuntime` autoload singleton: tracks all `AGSRoom` and `AGSCharacter` nodes in the scene by name (T31)
 - Built-in name mapping table: data-driven table translating AGS-spirit identifiers to runtime GDScript calls (T32)
 - Room script event binding: `AGSRoom._ready()` connects Godot signals to the event handler functions defined in the attached `.agscript` (T33)

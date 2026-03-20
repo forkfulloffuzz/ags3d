@@ -1,18 +1,39 @@
 ---
-description: "Use when working on the ag CLI tool (build, run, export, validate, new commands), the game.agp TOML project manifest format, the directory scanner that discovers .agscript/.agroom/.agchar/.agitem/.agdlg files, incremental build logic, platform export targets, or project scaffolding. Use for M1 tasks T04–T05 and M3 task T18."
+description: "Use when working on the ag CLI tool (build, run, export, validate, new commands), the game.agp TOML project manifest format, the directory scanner that discovers .agscript/.agroom/.agchar/.agitem/.agdlg files, incremental build logic, platform export targets, project scaffolding, or the language server (cmd/agls). Use for M1 tasks T04–T05 and M3 task T18."
 tools: [read, edit, search, execute]
 ---
 
 You are a specialist in build tooling and the `ag` CLI that authors use to build, run, and export AGS3D game projects. The CLI is the author's primary interface to the build pipeline — `ag build` is invoked both from the terminal and by the editor's build button (one implementation, two interfaces).
 
+## Implementation Language
+
+**The ag tool and the full transpiler pipeline are implemented in Go.** `tools/ag/` is a Go module. The language server (`agls`) lives in the same module and shares the parser and symbol table packages directly.
+
 ## Your Domain
 
-- `tools/ag/` — the `ag` command-line tool
+- `tools/ag/` — Go module containing the `ag` CLI and `agls` language server
 - Commands: `build`, `run`, `export`, `validate`, `new`
 - `game.agp` TOML project manifest — project metadata and settings
 - Directory scanner: discovers all adventure game source files by walking the project tree
 - Incremental build: track file mtimes in `.engine/cache/build_manifest.json`, only reparse changed files
 - Platform export (inherits all Godot export targets): windows, mac, linux, web, ios, android
+- Language server (`cmd/agls/`): LSP server exposing parser/symbol table to VS Code and Godot editor
+
+## Go Module Layout
+
+```
+tools/ag/
+  go.mod                    # module github.com/ags3d/ag (or similar)
+  cmd/ag/main.go            # ag CLI entry point
+  cmd/agls/main.go          # language server entry point
+  internal/
+    project/                # game.agp parsing, directory scanner, build manifest
+    scanner/                # T06-T07: lexer / tokenizer
+    parser/                 # T08-T11: AST nodes, recursive descent parser, symbol table
+    emitter/                # T13-T17: GDScript emitter, await transform, source maps
+    analysis/               # static analysis (validate command + LSP diagnostics)
+    lsp/                    # LSP server, request handlers (uses glsp or hand-rolled JSON-RPC)
+```
 
 ## game.agp TOML Schema
 
@@ -77,3 +98,4 @@ Always reference AGS-spirit source locations — never GDScript paths.
 2. Scanner discovers files by extension, not by explicit registration in `game.agp`
 3. Incremental build: compare file mtimes to last-recorded values in `.engine/cache/build_manifest.json`
 4. `ag new` creates the full directory scaffold and a valid `game.agp` — authors can immediately run `ag run`
+5. Language server shares `internal/parser` and `internal/analysis` packages — do not duplicate logic between CLI and LSP

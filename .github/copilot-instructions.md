@@ -8,7 +8,15 @@ AGS3D is a purpose-built 3D adventure game engine — a Godot fork that encodes 
 
 ```
 modules/agvm/          # AGS3D C++ module — all AGS-specific engine code lives here
-tools/ag/              # ag CLI tool (build, run, export, validate)
+tools/ag/              # Go module: ag CLI + transpiler pipeline + agls language server
+  cmd/ag/              # ag CLI entry point
+  cmd/agls/            # language server entry point
+  internal/project/    # game.agp parsing, directory scanner, build manifest
+  internal/scanner/    # lexer / tokenizer (T07)
+  internal/parser/     # AST, recursive descent parser, symbol table (T08-T11)
+  internal/emitter/    # GDScript emitter, await transform, source maps (T13-T17)
+  internal/analysis/   # static analysis shared by validate + LSP
+  internal/lsp/        # LSP server and request handlers
 game_prototype/        # Minimal test project used for end-to-end validation
   game.agp             # TOML project manifest
   characters/          # .agchar files
@@ -24,7 +32,7 @@ game_prototype/        # Minimal test project used for end-to-end validation
 - **Module**: `modules/agvm/` — all AGS3D code, registered via SCsub
 - **Scripting input**: AGS-spirit (`.agscript`) — AGS-compatible syntax, new semantics
 - **Scripting output**: GDScript (`.gd`) — generated build artifact, never hand-edited
-- **CLI tool**: `ag` — invokes parser + emitter pipeline
+- **CLI tool + transpiler + LSP**: Go — `tools/ag/` is a single Go module containing `ag` CLI, the full parser/emitter pipeline, and the `agls` language server
 - **Build artifact dir**: `.engine/generated/` — deleted and regenerated on each build
 
 ## Key Architecture Rules
@@ -54,7 +62,7 @@ When implementing a task that needs a helper script (one-off migration, code gen
 
 Other scripts in `.dev/` are task-specific — read the file header for usage. When adding a new script, make it executable (`chmod +x`) and add a usage comment at the top.
 
-## Build & Run (ag CLI — coming in T04/T05)
+## Build & Run (ag CLI)
 
 ```sh
 ag build     # parse all changed .agscript files, emit GDScript to .engine/generated/
@@ -62,6 +70,10 @@ ag run       # build + launch Godot editor with the project
 ag validate  # static analysis: broken references, unreachable options, unset flags
 ag new my_game  # scaffold a new project from template
 ```
+
+Build the ag binary: `cd tools/ag && go build ./cmd/ag`
+Build the language server: `cd tools/ag && go build ./cmd/agls`
+Run Go tests: `cd tools/ag && go test ./...`
 
 ## Prototype Success Criterion
 
@@ -84,10 +96,11 @@ T09 (parser), T16 (await emission), T27 (blocking WalkTo), T30 (script language 
 
 ## Testing
 
-AGS3D maintains two parallel test layers:
+AGS3D maintains three parallel test layers:
 
 - **Godot C++ tests** in `tests/` — engine internals, do not touch
-- **AGS3D GDScript tests** in `agstests/` — run headlessly, one suite per milestone
+- **AGS3D GDScript tests** in `agstests/` — run headlessly, one suite per milestone (M1 module/script-language, M4 room nodes, M5 character nodes, M6 integration)
+- **Go tests** in `tools/ag/` — `go test ./...` covers the transpiler (lexer, parser, emitter, source maps) and CLI logic (M2–M3 tasks T07–T17)
 
 Test tasks are tracked as `TEST-INFRA-xx` and `TEST-Mx-xx` GitHub issues (separate from T01–T36). Every implementation task that completes a milestone should be followed by implementing its corresponding test suite. Use the `unit-testing` skill for all test work.
 
