@@ -5,10 +5,16 @@
 class_name TestBase
 extends RefCounted
 
+const C_GREEN  := "\u001b[32m"
+const C_RED    := "\u001b[31m"
+const C_DIM    := "\u001b[2m"
+const C_RESET  := "\u001b[0m"
+
 var _pass_count: int = 0
 var _fail_count: int = 0
 var _failures: Array[String] = []
 var _current_test: String = ""
+var _current_test_failures: Array[String] = []
 
 ## Override to return a human-readable name for this suite.
 func suite_name() -> String:
@@ -77,9 +83,9 @@ func _pass() -> void:
 
 func _fail(msg: String) -> void:
 	_fail_count += 1
-	var entry := "  FAIL [%s::%s] %s" % [suite_name(), _current_test, msg]
+	var entry := "  %sFAIL%s [%s::%s] %s" % [C_RED, C_RESET, suite_name(), _current_test, msg]
 	_failures.append(entry)
-	print(entry)
+	_current_test_failures.append(msg)
 
 ## Run all test_* methods. Called by run_tests.gd.
 func run_suite() -> Dictionary:
@@ -93,9 +99,18 @@ func run_suite() -> Dictionary:
 
 	for method in methods:
 		_current_test = method
+		_current_test_failures = []
+		var fail_before := _fail_count
 		setUp()
 		call(method)
 		tearDown()
+
+		if _fail_count == fail_before:
+			print("  %s✓%s %s" % [C_GREEN, C_RESET, method])
+		else:
+			print("  %s✗%s %s" % [C_RED, C_RESET, method])
+			for msg in _current_test_failures:
+				print("    %s%s%s" % [C_DIM, msg, C_RESET])
 
 	tearDownSuite()
 

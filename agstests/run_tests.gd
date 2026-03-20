@@ -10,6 +10,10 @@ extends SceneTree
 
 const Reporter = preload("res://utils/reporter.gd")
 
+const C_RED   := "\u001b[31m"
+const C_BOLD  := "\u001b[1m"
+const C_RESET := "\u001b[0m"
+
 ## Register test suites here as they're implemented.
 const SUITES: Array[String] = [
 	"m1_module/test_script_language.gd",
@@ -19,13 +23,13 @@ func _init() -> void:
 	var reporter := Reporter.new()
 
 	print("")
-	print("AGS3D Test Suite")
+	print("%sAGS3D Test Suite%s" % [C_BOLD, C_RESET])
 	print("-".repeat(50))
 
 	for suite_path in SUITES:
 		var script := load("res://" + suite_path) as GDScript
 		if script == null:
-			print("[ERROR] Could not load suite: %s" % suite_path)
+			print("%s[ERROR]%s Could not load suite: %s" % [C_RED, C_RESET, suite_path])
 			reporter.record({
 				"suite": suite_path,
 				"pass": 0,
@@ -36,7 +40,7 @@ func _init() -> void:
 
 		var suite: Object = script.new()
 		if not suite.has_method("run_suite"):
-			print("[ERROR] %s does not extend TestBase" % suite_path)
+			print("%s[ERROR]%s %s does not extend TestBase" % [C_RED, C_RESET, suite_path])
 			continue
 
 		var result: Dictionary = suite.run_suite()

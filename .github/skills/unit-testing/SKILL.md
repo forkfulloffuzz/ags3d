@@ -10,10 +10,10 @@ argument-hint: "Test task ID or description, e.g. 'TEST-M1-01' or 'write lexer t
 
 AGS3D has two separate test layers:
 
-| Layer | Location | Runner | Purpose |
-|-------|----------|--------|---------|
-| Godot C++ tests | `tests/` | `scons tests=yes` | Godot engine internals (do not touch) |
-| AGS3D GDScript tests | `agstests/` | `--headless --script agstests/run_tests.gd` | AGS3D feature tests |
+| Layer                | Location    | Runner                                      | Purpose                               |
+| -------------------- | ----------- | ------------------------------------------- | ------------------------------------- |
+| Godot C++ tests      | `tests/`    | `scons tests=yes`                           | Godot engine internals (do not touch) |
+| AGS3D GDScript tests | `agstests/` | `--headless --script agstests/run_tests.gd` | AGS3D feature tests                   |
 
 **AGS3D tests are GDScript files run headlessly by the built Godot binary. They are NOT compiled into the engine.**
 
@@ -110,6 +110,7 @@ func test_extension_recognised() -> void:
 ```
 
 **Naming rules:**
+
 - File: `test_<topic>.gd`
 - Every method starting with `test_` is auto-discovered and run
 - `setUp()` / `tearDown()` run before/after each test (optional)
@@ -136,6 +137,7 @@ func test_if_stmt_emit() -> void:
 ```
 
 Golden files live next to their `.agscript` fixtures. To regenerate all goldens:
+
 ```sh
 ./bin/godot.linuxbsd.editor.x86_64 --headless --path agstests --script utils/update_goldens.gd
 ```
@@ -176,16 +178,16 @@ func test_character_moves() -> void:
 
 ## Test → Issue Mapping
 
-| Test task       | Issue # |
-|----------------|---------|
+| Test task      | Issue #                                                 |
+| -------------- | ------------------------------------------------------- |
 | TEST-INFRA-01  | varies — check `gh issue list --search "TEST-INFRA-01"` |
-| TEST-INFRA-02  | varies |
-| TEST-M1-01     | check with gh |
-| TEST-M2-01..04 | check with gh |
-| TEST-M3-01..02 | check with gh |
-| TEST-M4-01..02 | check with gh |
-| TEST-M5-01..02 | check with gh |
-| TEST-M6-01..03 | check with gh |
+| TEST-INFRA-02  | varies                                                  |
+| TEST-M1-01     | check with gh                                           |
+| TEST-M2-01..04 | check with gh                                           |
+| TEST-M3-01..02 | check with gh                                           |
+| TEST-M4-01..02 | check with gh                                           |
+| TEST-M5-01..02 | check with gh                                           |
+| TEST-M6-01..03 | check with gh                                           |
 
 Use: `gh issue list --search "TEST-M1-01" --state all` to find the number.
 
@@ -196,9 +198,9 @@ Use: `gh issue list --search "TEST-M1-01" --state all` to find the number.
 3. Create the test file(s) in `agstests/`
 4. Register new suites in `agstests/run_tests.gd`
 5. Run the tests and confirm they pass:
-   ```sh
-   ./bin/godot.linuxbsd.editor.x86_64 --headless --path agstests --script run_tests.gd
-   ```
+    ```sh
+    ./bin/godot.linuxbsd.editor.x86_64 --headless --path agstests --script run_tests.gd
+    ```
 6. Commit: `git add agstests/ && git commit -m "TEST-Mx-xx: <description> — closes #<N>"`
 7. Close the issue with a summary
 

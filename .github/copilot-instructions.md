@@ -67,6 +67,7 @@ T09 (parser), T16 (await emission), T27 (blocking WalkTo), T30 (script language 
 ## Testing
 
 AGS3D maintains two parallel test layers:
+
 - **Godot C++ tests** in `tests/` — engine internals, do not touch
 - **AGS3D GDScript tests** in `agstests/` — run headlessly, one suite per milestone
 
