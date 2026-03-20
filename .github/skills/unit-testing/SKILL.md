@@ -63,11 +63,15 @@ agstests/
 ## Running Tests
 
 ```sh
-# Run full suite
-./bin/godot.linuxbsd.editor.x86_64 --headless --path agstests --script run_tests.gd
+# Run full suite (preferred)
+.dev/test.sh
 
-# Run a single suite (pass suite filename as arg)
-./bin/godot.linuxbsd.editor.x86_64 --headless --path agstests --script run_tests.gd m1_module/test_script_language.gd
+# With options
+.dev/test.sh --verbose           # show raw Godot output
+.dev/test.sh --filter M1         # only show lines matching a pattern
+
+# Raw command (useful in CI or when .dev/ is unavailable)
+./bin/godot.linuxbsd.editor.x86_64 --headless --path agstests --script run_tests.gd
 ```
 
 **Exit code 0 = all tests passed. Exit code 1 = at least one failure.**

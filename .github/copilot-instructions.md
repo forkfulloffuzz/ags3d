@@ -36,7 +36,25 @@ game_prototype/        # Minimal test project used for end-to-end validation
 - Blocking calls in AGS-spirit (`WalkTo`, `PlayAnimation`, `Wait`) must emit `await` in GDScript. The parser annotates blocking call sites; the emitter acts on those annotations.
 - `.engine/` is gitignored. Never commit generated GDScript.
 
-## Build & Run
+## Dev Scripts
+
+All developer workflow scripts live in `.dev/` (hidden, version-controlled).
+When implementing a task that needs a helper script (one-off migration, code generator, data validator, etc.), write it here.
+
+```sh
+.dev/build.sh              # standard editor build (wraps scons)
+.dev/build.sh debug        # debug build with extra assertions
+.dev/build.sh release      # release template
+.dev/build.sh clean        # wipe compiled objects
+.dev/build.sh -- EXTRA=1   # passthrough arbitrary scons args
+.dev/test.sh               # run all GDScript test suites headlessly
+.dev/test.sh --verbose     # show raw Godot output
+.dev/test.sh --filter M1   # filter output by pattern
+```
+
+Other scripts in `.dev/` are task-specific — read the file header for usage. When adding a new script, make it executable (`chmod +x`) and add a usage comment at the top.
+
+## Build & Run (ag CLI — coming in T04/T05)
 
 ```sh
 ag build     # parse all changed .agscript files, emit GDScript to .engine/generated/
