@@ -64,6 +64,14 @@ One `.agscript` file transpiles to GDScript, a room with basic logic geometry lo
 
 T09 (parser), T16 (await emission), T27 (blocking WalkTo), T30 (script language wiring), T32 (built-in name mapping), T36 (end-to-end). Address these first within each milestone.
 
+## Testing
+
+AGS3D maintains two parallel test layers:
+- **Godot C++ tests** in `tests/` — engine internals, do not touch
+- **AGS3D GDScript tests** in `agstests/` — run headlessly, one suite per milestone
+
+Test tasks are tracked as `TEST-INFRA-xx` and `TEST-Mx-xx` GitHub issues (separate from T01–T36). Every implementation task that completes a milestone should be followed by implementing its corresponding test suite. Use the `unit-testing` skill for all test work.
+
 ## See Also
 
 - [AGS3D Design Document](docs/AGS3D_Design_Document.docx)

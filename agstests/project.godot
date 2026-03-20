@@ -1,0 +1,10 @@
+[application]
+
+config/name="AGS3D Tests"
+config/features=PackedStringArray("4.x")
+config/icon="res://icon.svg"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
