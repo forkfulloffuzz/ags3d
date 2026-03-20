@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "github": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.vscode/github-mcp-server",
+      "args": ["stdio"],
+      "env": {
+        "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
+      }
+    }
+  }
+}

@@ -213,7 +213,8 @@ cscope.po.out
 *.swp
 
 # Visual Studio Code
-.vscode/
+# Use .vscode/* (not .vscode/) so shared configs can be un-ignored below
+.vscode/*
 *.code-workspace
 .history/
 
@@ -419,3 +420,14 @@ tools/ag/ag.egg-info/
 tools/ag/dist/
 tools/ag/build/
 ag.spec
+
+# GitHub MCP server binary (downloaded, not committed)
+.vscode/github-mcp-server
+.vscode/*.tar.gz
+# Un-ignore shared VS Code configs that should be version-controlled
+# NOTE: requires .vscode/* (not .vscode/) above to work
+!.vscode/mcp.json
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
