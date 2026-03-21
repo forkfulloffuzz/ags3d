@@ -176,7 +176,7 @@ func cmdRun(_ []string) error {
 	if err := os.MkdirAll(engineDir, 0755); err != nil {
 		return err
 	}
-	projectFile := filepath.Join(engineDir, "godot_project.godot")
+	projectFile := filepath.Join(engineDir, "project.godot")
 	if _, err := os.Stat(projectFile); errors.Is(err, os.ErrNotExist) {
 		stub := "; Engine configuration file.\n[application]\nconfig/name=\"AGS3D Game\"\n"
 		if err := os.WriteFile(projectFile, []byte(stub), 0644); err != nil {
