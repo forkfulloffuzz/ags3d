@@ -7,10 +7,11 @@
 //
 // Stages and the tasks that implement them:
 //
-//	Tokens   — ag viz tokens <file>   — VIZ-01 (T07)
-//	AST      — ag viz ast    <file>   — VIZ-02 (T09)
-//	Blocking — ag viz blocking <file> — VIZ-03 (T11)
-//	Emit     — ag viz emit   <file>   — VIZ-04 (T17)
+//	Tokens   — ag viz tokens   <file>  — VIZ-01 (T07)
+//	AST      — ag viz ast      <file>  — VIZ-02 (T09)
+//	Symbols  — ag viz symbols  <file>  — VIZ-T10 (T10)
+//	Blocking — ag viz blocking <file>  — VIZ-03 (T11)
+//	Emit     — ag viz emit     <file>  — VIZ-04 (T17)
 package viz
 
 import (
@@ -409,6 +410,280 @@ func (d *dotGen) emitExpr(expr parser.Expr) int {
 
 	default:
 		return d.node(fmt.Sprintf("%T", expr), exprColor)
+	}
+}
+
+// --------------------------------------------------------------------
+// VIZ-T10 — Symbol table (text)
+// --------------------------------------------------------------------
+
+// Symbols parses src, builds the symbol table, and writes a formatted
+// table of all collected symbols to w.
+//
+// Example output:
+//
+//	Symbols — rooms/market/market.agscript
+//	Globals (3 symbols)
+//	  function  room_Load          → void          [1:1]
+//	  var       score              : int           [3:1]
+//	  enum      Direction                          [5:1]
+//	    member  North              : Direction
+//	    member  South              : Direction
+//	Namespace MathUtils (2 members)
+//	  function  square(int x)      → int  [export] [10:5]
+//	  function  clamp(int v, …)    → int  [export] [15:5]
+//	2 diagnostic(s): 0 error(s), 2 warning(s)
+func Symbols(w io.Writer, file, src string) {
+	s := scanner.New(file, src)
+	p := parser.New(s)
+	f, parseErrs := p.Parse(file)
+
+	fmt.Fprintf(w, "Symbols — %s\n", file)
+
+	if len(parseErrs) > 0 {
+		for _, e := range parseErrs {
+			fmt.Fprintf(w, "  parse error: %v\n", e)
+		}
+		return
+	}
+
+	st, diags := parser.BuildSymbolTable(f)
+
+	// ---- Globals ----
+	globals := symbolsSorted(st.Globals)
+	fmt.Fprintf(w, "\nGlobals (%d symbol(s))\n", len(globals))
+	for _, sym := range globals {
+		if sym.Kind == parser.KindNamespace {
+			continue // printed in the Namespaces section
+		}
+		printSymbolLine(w, "  ", sym)
+		// Inline enum members indented under the enum.
+		if sym.Kind == parser.KindEnum {
+			for _, msym := range symbolsSorted(st.Globals) {
+				if msym.Kind == parser.KindEnumMember && msym.Type == sym.Name {
+					fmt.Fprintf(w, "      member  %-20s : %s\n", msym.Name, msym.Type)
+				}
+			}
+		}
+	}
+
+	// ---- Namespaces ----
+	for _, nsName := range sortedKeys(st.Namespaces) {
+		members := st.Namespaces[nsName]
+		fmt.Fprintf(w, "\nNamespace %s (%d member(s))\n", nsName, len(members))
+		for _, sym := range symbolsSorted(members) {
+			printSymbolLine(w, "  ", sym)
+		}
+	}
+
+	// ---- Diagnostics summary ----
+	errCount, warnCount := 0, 0
+	for _, d := range diags {
+		if d.Severity == "error" {
+			errCount++
+		} else {
+			warnCount++
+		}
+	}
+	fmt.Fprintf(w, "\n%d diagnostic(s): %d error(s), %d warning(s)\n",
+		len(diags), errCount, warnCount)
+	for _, d := range diags {
+		if d.Severity == "error" {
+			fmt.Fprintf(w, "  error:   %s\n", d.Message)
+		}
+	}
+}
+
+// printSymbolLine writes one formatted symbol row.
+func printSymbolLine(w io.Writer, indent string, sym *parser.Symbol) {
+	flags := ""
+	if sym.IsExport {
+		flags += " [export]"
+	}
+	if sym.IsBlocking {
+		flags += " [blocking]"
+	}
+
+	switch sym.Kind {
+	case parser.KindFunction:
+		params := formatParams(sym.Params)
+		ret := sym.Type
+		if ret == "" {
+			ret = "void"
+		}
+		fmt.Fprintf(w, "%s%-10s %-22s → %-10s%s [%d:%d]\n",
+			indent, "function", sym.Name+"("+params+")", ret, flags,
+			sym.Decl.Line, sym.Decl.Column)
+	case parser.KindVar:
+		fmt.Fprintf(w, "%s%-10s %-22s : %-10s%s [%d:%d]\n",
+			indent, "var", sym.Name, sym.Type, flags,
+			sym.Decl.Line, sym.Decl.Column)
+	case parser.KindEnum:
+		fmt.Fprintf(w, "%s%-10s %-22s%s [%d:%d]\n",
+			indent, "enum", sym.Name, flags,
+			sym.Decl.Line, sym.Decl.Column)
+	case parser.KindEnumMember:
+		// printed inline under the owning enum; skip here
+	case parser.KindNamespace:
+		// printed as its own section; skip here
+	default:
+		fmt.Fprintf(w, "%s%-10s %s\n", indent, sym.Kind.String(), sym.Name)
+	}
+}
+
+func formatParams(params []parser.Param) string {
+	if len(params) == 0 {
+		return ""
+	}
+	s := ""
+	for i, p := range params {
+		if i > 0 {
+			s += ", "
+		}
+		s += p.Type + " " + p.Name
+	}
+	return s
+}
+
+// --------------------------------------------------------------------
+// VIZ-T10b — Symbol table (Graphviz DOT)
+// --------------------------------------------------------------------
+
+// SymbolsDot parses src, builds the symbol table, and writes a Graphviz
+// DOT graph to w. Namespaces are rendered as clusters; enum members are
+// nested inside their enum node.
+// Render with: ag viz symbols-dot file.agscript | dot -Tsvg -o symbols.svg
+func SymbolsDot(w io.Writer, file, src string) {
+	s := scanner.New(file, src)
+	p := parser.New(s)
+	f, parseErrs := p.Parse(file)
+
+	if len(parseErrs) > 0 {
+		fmt.Fprintf(w, "// parse errors in %s:\n", file)
+		for _, e := range parseErrs {
+			fmt.Fprintf(w, "//   %v\n", e)
+		}
+		return
+	}
+
+	st, _ := parser.BuildSymbolTable(f)
+
+	fmt.Fprintf(w, "digraph Symbols {\n")
+	fmt.Fprintf(w, "  graph [fontname=\"Helvetica\" rankdir=\"LR\" label=%q fontsize=13 compound=true]\n",
+		"Symbols — "+file)
+	fmt.Fprintf(w, "  node  [fontname=\"Helvetica\" shape=\"box\" style=\"rounded,filled\" fontsize=11]\n")
+	fmt.Fprintf(w, "  edge  [fontname=\"Helvetica\" fontsize=9 style=\"dashed\" color=\"#888888\"]\n\n")
+
+	id := 1
+	nextID := func() int { i := id; id++; return i }
+
+	// File-scope globals cluster.
+	fmt.Fprintf(w, "  subgraph cluster_globals {\n")
+	fmt.Fprintf(w, "    label=\"File scope\" style=\"filled\" fillcolor=\"#EBF5FB\" fontsize=12\n")
+
+	globalAnchor := nextID()
+	fmt.Fprintf(w, "    n%d [label=\"\" shape=point width=0]\n", globalAnchor)
+
+	for _, sym := range symbolsSorted(st.Globals) {
+		if sym.Kind == parser.KindNamespace {
+			continue
+		}
+		nid := nextID()
+		label, color := symDotLabel(sym)
+		fmt.Fprintf(w, "    n%d [label=%q fillcolor=%q]\n", nid, label, color)
+
+		// Enum members as child nodes inside their own mini-cluster.
+		if sym.Kind == parser.KindEnum {
+			fmt.Fprintf(w, "    subgraph cluster_enum_%d {\n", nid)
+			fmt.Fprintf(w, "      label=%q style=\"filled\" fillcolor=\"#F9F3FF\" fontsize=10\n", sym.Name+" members")
+			for _, msym := range symbolsSorted(st.Globals) {
+				if msym.Kind == parser.KindEnumMember && msym.Type == sym.Name {
+					mid := nextID()
+					fmt.Fprintf(w, "      n%d [label=%q fillcolor=\"#E8DAEF\"]\n", mid, msym.Name)
+				}
+			}
+			fmt.Fprintf(w, "    }\n")
+		}
+	}
+	fmt.Fprintf(w, "  }\n\n")
+
+	// One cluster per namespace.
+	for _, nsName := range sortedKeys(st.Namespaces) {
+		members := st.Namespaces[nsName]
+		fmt.Fprintf(w, "  subgraph cluster_ns_%s {\n", nsName)
+		fmt.Fprintf(w, "    label=%q style=\"filled\" fillcolor=\"#EAFAF1\" fontsize=12\n",
+			"namespace "+nsName)
+		for _, sym := range symbolsSorted(members) {
+			nid := nextID()
+			label, color := symDotLabel(sym)
+			fmt.Fprintf(w, "    n%d [label=%q fillcolor=%q]\n", nid, label, color)
+		}
+		fmt.Fprintf(w, "  }\n\n")
+	}
+
+	fmt.Fprintf(w, "}\n")
+}
+
+// symDotLabel returns a DOT label and fill colour for a symbol.
+func symDotLabel(sym *parser.Symbol) (label, color string) {
+	flags := ""
+	if sym.IsExport {
+		flags = " ●export"
+	}
+	switch sym.Kind {
+	case parser.KindFunction:
+		ret := sym.Type
+		if ret == "" {
+			ret = "void"
+		}
+		params := formatParams(sym.Params)
+		return fmt.Sprintf("fn %s(%s)\n→ %s%s", sym.Name, params, ret, flags), "#A9DFBF"
+	case parser.KindVar:
+		return fmt.Sprintf("var %s\n: %s", sym.Name, sym.Type), "#AED6F1"
+	case parser.KindEnum:
+		return fmt.Sprintf("enum %s%s", sym.Name, flags), "#D7BDE2"
+	case parser.KindEnumMember:
+		return sym.Name, "#E8DAEF"
+	}
+	return sym.Name, "#F0F0F0"
+}
+
+// -------------------------------------------------------------------
+// Sorting helpers
+// -------------------------------------------------------------------
+
+func symbolsSorted(m map[string]*parser.Symbol) []*parser.Symbol {
+	keys := sortedKeys2(m)
+	out := make([]*parser.Symbol, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, m[k])
+	}
+	return out
+}
+
+func sortedKeys(m map[string]map[string]*parser.Symbol) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sortStrings(keys)
+	return keys
+}
+
+func sortedKeys2(m map[string]*parser.Symbol) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sortStrings(keys)
+	return keys
+}
+
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
 	}
 }
 

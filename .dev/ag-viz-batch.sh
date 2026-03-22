@@ -6,12 +6,17 @@
 #   .dev/ag-viz-batch.sh STAGE GLOB [options]
 #
 # Stages and output formats:
-#   tokens    each file → .output/<path>.tokens.txt
-#   ast       each file → .output/<path>.ast.txt
-#   ast-dot   each file → .output/<path>.dot
-#   ast-svg   each file → .output/<path>.svg   (requires graphviz)
-#   ast-png   each file → .output/<path>.png   (requires graphviz)
-#   ast-pdf   each file → .output/<path>.pdf   (requires graphviz)
+#   tokens       each file → .output/<path>.tokens.txt
+#   ast          each file → .output/<path>.ast.txt
+#   ast-dot      each file → .output/<path>.dot
+#   ast-svg      each file → .output/<path>.svg        (requires graphviz)
+#   ast-png      each file → .output/<path>.png        (requires graphviz)
+#   ast-pdf      each file → .output/<path>.pdf        (requires graphviz)
+#   symbols      each file → .output/<path>.symbols.txt
+#   symbols-dot  each file → .output/<path>.sym.dot
+#   symbols-svg  each file → .output/<path>.sym.svg    (requires graphviz)
+#   symbols-png  each file → .output/<path>.sym.png    (requires graphviz)
+#   symbols-pdf  each file → .output/<path>.sym.pdf    (requires graphviz)
 #
 # Options:
 #   --outdir DIR   write output under DIR instead of .output  (default: .output)
@@ -67,15 +72,21 @@ OUT_EXT=""
 NEEDS_DOT=0
 
 case "$STAGE" in
-  tokens)  AG_STAGE="tokens";  OUT_EXT="tokens.txt"; NEEDS_DOT=0 ;;
-  ast)     AG_STAGE="ast";     OUT_EXT="ast.txt";    NEEDS_DOT=0 ;;
-  ast-dot) AG_STAGE="ast-dot"; OUT_EXT="dot";        NEEDS_DOT=0 ;;
-  ast-svg) AG_STAGE="ast-dot"; OUT_EXT="svg";        NEEDS_DOT=1 ;;
-  ast-png) AG_STAGE="ast-dot"; OUT_EXT="png";        NEEDS_DOT=1 ;;
-  ast-pdf) AG_STAGE="ast-dot"; OUT_EXT="pdf";        NEEDS_DOT=1 ;;
+  tokens)      AG_STAGE="tokens";      OUT_EXT="tokens.txt"; NEEDS_DOT=0 ;;
+  ast)         AG_STAGE="ast";         OUT_EXT="ast.txt";    NEEDS_DOT=0 ;;
+  ast-dot)     AG_STAGE="ast-dot";     OUT_EXT="dot";        NEEDS_DOT=0 ;;
+  ast-svg)     AG_STAGE="ast-dot";     OUT_EXT="svg";        NEEDS_DOT=1 ;;
+  ast-png)     AG_STAGE="ast-dot";     OUT_EXT="png";        NEEDS_DOT=1 ;;
+  ast-pdf)     AG_STAGE="ast-dot";     OUT_EXT="pdf";        NEEDS_DOT=1 ;;
+  symbols)     AG_STAGE="symbols";     OUT_EXT="symbols.txt";NEEDS_DOT=0 ;;
+  symbols-dot) AG_STAGE="symbols-dot"; OUT_EXT="sym.dot";    NEEDS_DOT=0 ;;
+  symbols-svg) AG_STAGE="symbols-dot"; OUT_EXT="sym.svg";    NEEDS_DOT=1 ;;
+  symbols-png) AG_STAGE="symbols-dot"; OUT_EXT="sym.png";    NEEDS_DOT=1 ;;
+  symbols-pdf) AG_STAGE="symbols-dot"; OUT_EXT="sym.pdf";    NEEDS_DOT=1 ;;
   *)
     echo "Unknown stage: $STAGE" >&2
     echo "Valid stages: tokens | ast | ast-dot | ast-svg | ast-png | ast-pdf" >&2
+    echo "              symbols | symbols-dot | symbols-svg | symbols-png | symbols-pdf" >&2
     exit 1
     ;;
 esac

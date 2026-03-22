@@ -16,10 +16,13 @@
 #   .dev/ag.sh viz         <file>       # run all viz stages
 #
 # Graphic visualisation shortcuts (require graphviz):
-#   .dev/ag.sh viz-svg FILE [out.svg]   # render AST as SVG  (default: <file>.svg)
-#   .dev/ag.sh viz-png FILE [out.png]   # render AST as PNG  (default: <file>.png)
-#   .dev/ag.sh viz-pdf FILE [out.pdf]   # render AST as PDF  (default: <file>.pdf)
-#   .dev/ag.sh viz-open FILE            # render AST as SVG and open in browser/viewer
+#   .dev/ag.sh viz-svg     FILE [out]   # render AST as SVG       (default: <file>.svg)
+#   .dev/ag.sh viz-png     FILE [out]   # render AST as PNG
+#   .dev/ag.sh viz-pdf     FILE [out]   # render AST as PDF
+#   .dev/ag.sh viz-open    FILE         # render AST as SVG and open in browser/viewer
+#   .dev/ag.sh viz-sym-svg FILE [out]   # render symbol table as SVG
+#   .dev/ag.sh viz-sym-png FILE [out]   # render symbol table as PNG
+#   .dev/ag.sh viz-sym-pdf FILE [out]   # render symbol table as PDF
 
 set -euo pipefail
 
@@ -138,6 +141,36 @@ case "${1}" in
     else
       echo "→ $tmp  (no viewer found — open manually)" >&2
     fi
+    exit 0
+    ;;
+
+  viz-sym-svg)
+    require_dot
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-sym-svg FILE [out.svg]" >&2; exit 1; }
+    out="${VIZ_OUT:-$(default_out "$VIZ_FILE" sym.svg)}"
+    "$AG_BIN" viz symbols-dot "$VIZ_FILE" | dot -Tsvg -o "$out"
+    echo "→ $out"
+    exit 0
+    ;;
+
+  viz-sym-png)
+    require_dot
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-sym-png FILE [out.png]" >&2; exit 1; }
+    out="${VIZ_OUT:-$(default_out "$VIZ_FILE" sym.png)}"
+    "$AG_BIN" viz symbols-dot "$VIZ_FILE" | dot -Tpng -o "$out"
+    echo "→ $out"
+    exit 0
+    ;;
+
+  viz-sym-pdf)
+    require_dot
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-sym-pdf FILE [out.pdf]" >&2; exit 1; }
+    out="${VIZ_OUT:-$(default_out "$VIZ_FILE" sym.pdf)}"
+    "$AG_BIN" viz symbols-dot "$VIZ_FILE" | dot -Tpdf -o "$out"
+    echo "→ $out"
     exit 0
     ;;
 
