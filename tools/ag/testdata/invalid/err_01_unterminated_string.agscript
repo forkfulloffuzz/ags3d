@@ -1,0 +1,9 @@
+// err_01_unterminated_string.agscript
+// EXPECT_ERROR: unterminated string
+// The scanner must produce TokenInvalid when a string literal is not closed
+// before end-of-line. The parser must surface this as a parse error.
+
+function room_Load() {
+    string s = "this string never ends
+    int x = 1;
+}

@@ -1,0 +1,7 @@
+// err_02_unclosed_brace.agscript
+// EXPECT_ERROR: unexpected EOF, expected }
+// A function body opened with { but never closed.
+
+function room_Load() {
+    int x = 1;
+    // missing closing brace

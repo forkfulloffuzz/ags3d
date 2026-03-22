@@ -1,0 +1,67 @@
+// 07_if_else.agscript
+// if / else / else-if chains at every nesting depth.
+// Parser must represent else-if as IfStmt.Else = *IfStmt (not a flat list).
+
+function testSimpleIf() {
+    int x = 1;
+    if (x > 0) {
+        x = 0;
+    }
+}
+
+function testIfElse() {
+    int x = 1;
+    if (x > 0) {
+        x = 1;
+    } else {
+        x = -1;
+    }
+}
+
+function testElseIf() {
+    int score = 75;
+    if (score >= 90) {
+        // A
+    } else if (score >= 80) {
+        // B
+    } else if (score >= 70) {
+        // C
+    } else if (score >= 60) {
+        // D
+    } else {
+        // F
+    }
+}
+
+function testNestedIf() {
+    int x = 1;
+    int y = 2;
+    if (x > 0) {
+        if (y > 0) {
+            // both positive
+        } else {
+            // x positive, y non-positive
+        }
+    } else {
+        if (y > 0) {
+            // x non-positive, y positive
+        }
+        // no else — valid
+    }
+}
+
+function testIfWithComplexCondition() {
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    if (a > 0 && (b < 10 || c == 3) && !(a == b)) {
+        // complex boolean condition
+    }
+}
+
+// Edge: single-statement body (still requires braces in AGS-spirit)
+function testIfBraces() {
+    if (true) {
+        int x = 1;
+    }
+}

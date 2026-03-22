@@ -1,0 +1,75 @@
+// 15_blocking_calls.agscript
+// Every documented blocking call — syntactically identical to ordinary
+// function calls. The symbol table (T11) annotates them IsBlocking=true;
+// the emitter (T16) prepends `await` to each.
+
+function testCharacterBlocking() {
+    // WalkTo — walk to a named point
+    global.player.WalkTo(point.door_left);
+
+    // WalkStraight — walk in a straight line (may leave walkable area)
+    global.player.WalkStraight(point.window);
+
+    // Say — speech bubble, always blocking
+    global.player.Say("Hello, world.");
+
+    // Think — thought bubble, always blocking
+    global.player.Think("I wonder what that is.");
+
+    // PlayAnimation — wait until clip finishes
+    global.player.PlayAnimation("wave");
+
+    // FaceDirection — rotate; blocking until facing
+    global.player.FaceDirection(eNorth);
+
+    // FaceCharacter — rotate to face another character
+    global.player.FaceCharacter(character.guard);
+
+    // FacePoint — rotate to face a named point
+    global.player.FacePoint(point.npc_guard);
+
+    // RunInteraction
+    global.player.RunInteraction(1);
+}
+
+function testGlobalBlocking() {
+    // Wait — pause N game loops
+    Wait(60);
+
+    // WaitKey — block until keypress
+    WaitKey(300);
+
+    // WaitMouse — block until mouse click
+    WaitMouse(300);
+
+    // WaitInput — block until any input
+    WaitInput(300);
+
+    // Screen fades
+    FadeOut(30);
+    FadeIn(30);
+
+    // Modal message
+    DisplayMessage("Chapter 1: The Beginning");
+}
+
+function testBlockingChain() {
+    // A realistic sequence: walk, face, speak, fade
+    global.player.WalkTo(point.stage_centre);
+    global.player.FacePoint(point.audience);
+    FadeOut(15);
+    global.player.Say("And so it ends.");
+    FadeIn(15);
+}
+
+// A function whose body contains a blocking call is itself blocking (T11).
+// The parser just records the body; T11 propagates IsBlocking upward.
+function walkAndGreet() {
+    global.player.WalkTo(point.npc_guard);
+    global.player.Say("Good day!");
+}
+
+function room_AfterFadeIn() {
+    // Calls a user-defined blocking function — also marked blocking at T11
+    walkAndGreet();
+}

@@ -1,0 +1,6 @@
+// 01_minimal.agscript
+// The simplest valid AGS-spirit file: a single empty function.
+// Parser must produce a File with one FunctionDecl, zero params, empty body.
+
+function room_Load() {
+}

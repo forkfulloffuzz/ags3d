@@ -1,0 +1,45 @@
+// 03_all_types.agscript
+// Every type keyword as variable declaration types and parameter types.
+// int/short/char all map to int semantically (T10), but the parser must
+// accept all of them as valid Type tokens.
+
+int   globalInt   = 1;
+float globalFloat = 1.0;
+bool  globalBool  = true;
+string globalStr  = "hello";
+String globalStr2 = "also valid"; // capital-S AGS alias
+
+function voidReturn() {
+}
+
+function intReturn() int {
+    return 99;
+}
+
+function floatReturn() float {
+    return 1.5;
+}
+
+function boolReturn() bool {
+    return false;
+}
+
+function stringReturn() string {
+    return "result";
+}
+
+// AGS compatibility types — map to int semantically
+function agsCompatTypes() {
+    char  c = 65;
+    short s = 1000;
+    int   i = 99999;
+}
+
+// Engine / user-defined type names (Ident type)
+function engineTypes(Character player, Room room, Point dest) {
+    player.WalkTo(dest);
+}
+
+// Void parameter list — both notations must be accepted
+function noParams() {
+}

@@ -1,0 +1,8 @@
+// err_11_enum_missing_brace.agscript
+// EXPECT_ERROR: unexpected token, expected {
+// An enum declaration with no opening brace.
+
+enum Direction
+    eNorth,
+    eSouth
+}

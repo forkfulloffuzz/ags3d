@@ -1,0 +1,122 @@
+// 22_edge_cases.agscript
+// Grammar edge cases that are syntactically valid but potentially tricky
+// for a recursive descent parser to handle correctly.
+
+// Empty body at every nesting level
+function emptyFunction() {}
+
+function emptyIf() {
+    if (true) {}
+}
+
+function emptyElse() {
+    if (false) {
+        int x = 1;
+    } else {}
+}
+
+function emptyLoop() {
+    while (false) {}
+    for (;;) { break; }   // infinite loop, immediately broken
+    do {} while (false);
+}
+
+function emptySwitch() {
+    switch (0) {}
+}
+
+// Deeply nested expressions
+function deeplyNested() {
+    int x = ((((((1 + 2))))));
+    bool b = (((true && false) || true) && !false);
+}
+
+// Assignment as expression (right side of another assignment)
+function assignmentExpression() {
+    int a = 0;
+    int b = 0;
+    int c = 0;
+    a = b = c = 42;   // right-associative
+}
+
+// Postfix on complex primary
+function postfixOnGrouped() {
+    int arr = items[0]++;    // postfix on index expression
+}
+
+// Call result immediately member-accessed
+function callThenMember() {
+    string s = getRoom().getName();
+    int n = getList().length;
+}
+
+// Unary on postfix
+function unaryOnPostfix() {
+    int x = 5;
+    int a = -x++;     // -(x++) per grammar
+    int b = !getFlag();
+    int c = ~getBits();
+}
+
+// switch with only a default
+function defaultOnly() {
+    switch (getState()) {
+        default:
+            Wait(1);
+            break;
+    }
+}
+
+// Nested switch
+function nestedSwitch() {
+    int a = 1;
+    int b = 2;
+    switch (a) {
+        case 1:
+            switch (b) {
+                case 2:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+// do..while with break (break exits do, not while)
+function doWhileBreak() {
+    int i = 0;
+    do {
+        if (i == 3) break;
+        i++;
+    } while (i < 10);
+}
+
+// for loop with no body (empty block)
+function forEmptyBody() {
+    for (int i = 0; i < 0; i++) {}
+}
+
+// Multiple var declarations on same line — NOT valid (each needs its own statement)
+// This correctly requires separate lines:
+function multiVarDecl() {
+    int x = 1;
+    int y = 2;
+    int z = 3;
+}
+
+// String concatenation via + operator
+function stringConcat() {
+    string first = "Hello";
+    string second = " world";
+    string both = first + second + "!";
+}
+
+// Chained comparisons are NOT valid per grammar (no chained relational)
+// a < b < c must be written as (a < b) && (b < c)
+function noChainedComparisons() {
+    int a = 1; int b = 2; int c = 3;
+    bool valid = (a < b) && (b < c);
+}

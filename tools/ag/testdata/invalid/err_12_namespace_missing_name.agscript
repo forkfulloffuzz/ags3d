@@ -1,0 +1,8 @@
+// err_12_namespace_missing_name.agscript
+// EXPECT_ERROR: unexpected token, expected identifier after 'namespace'
+// A namespace block with no name.
+
+namespace {
+    export function foo() {
+    }
+}

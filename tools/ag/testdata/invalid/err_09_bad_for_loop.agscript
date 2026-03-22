@@ -1,0 +1,9 @@
+// err_09_bad_for_loop.agscript
+// EXPECT_ERROR: unexpected token in for header
+// The for loop header is missing its first semicolon.
+
+function room_Load() {
+    // Missing first semicolon — 'i < 3' is parsed as init, then '; i++' is wrong
+    for (int i = 0 i < 3; i++) {
+    }
+}

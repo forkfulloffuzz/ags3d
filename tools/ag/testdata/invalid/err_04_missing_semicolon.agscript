@@ -1,0 +1,9 @@
+// err_04_missing_semicolon.agscript
+// EXPECT_ERROR: unexpected token, expected ;
+// A variable declaration statement is missing its terminating semicolon.
+// The next token (int) is not valid as a continuation of the statement.
+
+function room_Load() {
+    int x = 1
+    int y = 2;
+}

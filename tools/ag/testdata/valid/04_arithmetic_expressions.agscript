@@ -1,0 +1,40 @@
+// 04_arithmetic_expressions.agscript
+// All arithmetic operators: + - * / % with unary - and prefix/postfix ++ --
+// Also exercises the MulExpr > AddExpr precedence level.
+
+function testArithmetic() {
+    int a = 10 + 3;
+    int b = 10 - 3;
+    int c = 10 * 3;
+    int d = 10 / 3;
+    int e = 10 % 3;
+
+    // Unary minus
+    int neg = -42;
+    int negExpr = -(a + b);
+
+    // Precedence: * binds tighter than +
+    int prec = 2 + 3 * 4;       // should be 2 + (3*4) = 14
+    int prec2 = (2 + 3) * 4;    // explicit grouping = 20
+
+    // Compound assignment
+    int x = 0;
+    x += 5;
+    x -= 2;
+    x *= 3;
+    x /= 2;
+    x %= 3;
+
+    // Prefix increment / decrement
+    int pre = 0;
+    ++pre;
+    --pre;
+
+    // Postfix increment / decrement
+    int post = 0;
+    post++;
+    post--;
+
+    // Mixed in expression
+    int mixed = a * b + c / d - e % 2;
+}

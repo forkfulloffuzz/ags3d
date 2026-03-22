@@ -1,0 +1,11 @@
+// err_18_case_outside_switch.agscript
+// EXPECT_ERROR: 'case' outside of switch
+// A case label used outside a switch body.
+// This is a parser-level error — case is only valid inside a SwitchStmt.
+
+function room_Load() {
+    int x = 1;
+    case 1:       // invalid — not inside a switch
+        x = 10;
+        break;
+}

@@ -1,0 +1,49 @@
+// 13_global_namespace.agscript
+// global.* namespace accesses — the engine-owned game state.
+// Parser must produce GlobalExpr nodes for global.NAME.
+// The emitter maps these to AGSRuntime properties (T32).
+
+function room_Load() {
+    // Read global.player
+    Character p = global.player;
+
+    // Chain: access property of global.player
+    global.player.Say("Hello from the room.");
+
+    // global.player in a call argument
+    WalkCharacterTo(global.player, point.start);
+
+    // global.room
+    Room r = global.room;
+
+    // global.score — read and write
+    int s = global.score;
+    global.score = s + 10;
+}
+
+function hotspot_chest_Interact() {
+    global.player.WalkTo(point.chest_front);
+    global.player.FacePoint(point.chest_face);
+    global.score += 50;
+    global.player.Say("I found the treasure!");
+}
+
+// global.player passed as a Character argument
+function speakTo(Character target, string msg) {
+    target.Say(msg);
+}
+
+function game_start() {
+    speakTo(global.player, "Adventure begins!");
+}
+
+// global used inside a namespace export
+namespace ScoreUtils {
+    export function addBonus(int amount) {
+        global.score += amount;
+    }
+
+    export int function getScore() {
+        return global.score;
+    }
+}

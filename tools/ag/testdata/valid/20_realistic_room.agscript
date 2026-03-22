@@ -1,0 +1,145 @@
+// 20_realistic_room.agscript
+// A realistic room script combining everything: enums, namespaces,
+// event handlers, blocking calls, global.*, if/else, loops, switch.
+
+enum RoomState {
+    eStateUnvisited = 0,
+    eStateVisited,
+    eStateSolved
+}
+
+RoomState puzzleState = eStateUnvisited;
+int visitCount = 0;
+bool leverPulled = false;
+bool gemPlaced = false;
+
+namespace PuzzleLogic {
+
+    bool function isSolved() {
+        return leverPulled && gemPlaced;
+    }
+
+    export function checkAndReward() {
+        if (isSolved() && puzzleState != eStateSolved) {
+            puzzleState = eStateSolved;
+            global.score += 100;
+            DisplayMessage("Puzzle solved! +100 points");
+        }
+    }
+
+    export function resetPuzzle() {
+        leverPulled = false;
+        gemPlaced = false;
+        puzzleState = eStateUnvisited;
+    }
+}
+
+// ---------------------------------------------------------------
+// Room events
+// ---------------------------------------------------------------
+
+function room_Load() {
+    visitCount++;
+
+    switch (puzzleState) {
+        case eStateUnvisited:
+            // First visit setup
+            break;
+        case eStateVisited:
+            global.player.Say("I've been here before.");
+            break;
+        case eStateSolved:
+            global.player.Say("The puzzle is already solved.");
+            break;
+    }
+}
+
+function room_FirstLoad() {
+    global.player.WalkTo(point.entrance);
+    global.player.FacePoint(point.room_centre);
+    FadeIn(20);
+    global.player.Say("What a strange chamber.");
+    puzzleState = eStateVisited;
+}
+
+function room_AfterFadeIn() {
+    if (visitCount == 1 && puzzleState == eStateUnvisited) {
+        Wait(30);
+        global.player.Think("There's a lever and a pedestal here.");
+    }
+}
+
+function room_Leave() {
+    if (!PuzzleLogic.isSolved()) {
+        // Note: can't stop leaving in current design — just react
+    }
+}
+
+function room_RepExec() {
+    // Proximity check — if near lever, show prompt
+    // (actual proximity checking is engine-side at T30+)
+}
+
+// ---------------------------------------------------------------
+// Hotspot events
+// ---------------------------------------------------------------
+
+function hotspot_lever_Look() {
+    if (leverPulled) {
+        global.player.Say("The lever is already pulled down.");
+    } else {
+        global.player.Say("A heavy iron lever set into the wall.");
+    }
+}
+
+function hotspot_lever_Interact() {
+    if (leverPulled) {
+        global.player.Say("It's already been pulled.");
+        return;
+    }
+
+    global.player.WalkTo(point.lever_front);
+    global.player.FacePoint(point.lever_face);
+    global.player.PlayAnimation("pull_lever");
+    leverPulled = true;
+    global.player.Say("The lever clicks into place.");
+
+    PuzzleLogic.checkAndReward();
+}
+
+function hotspot_pedestal_Look() {
+    global.player.Say("A stone pedestal with a gem-shaped recess.");
+}
+
+function hotspot_pedestal_Interact() {
+    if (gemPlaced) {
+        global.player.Say("The gem is already in place.");
+        return;
+    }
+
+    // Check inventory — semantic check at T32, parser just sees the call
+    if (!hasInventoryItem("gem")) {
+        global.player.Say("I don't have anything to place here.");
+        return;
+    }
+
+    global.player.WalkTo(point.pedestal_front);
+    global.player.FacePoint(point.pedestal_face);
+    global.player.PlayAnimation("place_gem");
+    gemPlaced = true;
+    global.player.Say("The gem fits perfectly.");
+
+    PuzzleLogic.checkAndReward();
+}
+
+// ---------------------------------------------------------------
+// Inventory events
+// ---------------------------------------------------------------
+
+function item_gem_Look() {
+    global.player.Say("A glowing blue gem.");
+}
+
+function item_gem_Use() {
+    global.player.Say("I should place this somewhere specific.");
+}

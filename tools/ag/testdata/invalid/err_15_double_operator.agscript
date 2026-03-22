@@ -1,0 +1,8 @@
+// err_15_double_operator.agscript
+// EXPECT_ERROR: unexpected token, expected expression
+// Two binary operators in a row with no operand between them.
+
+function room_Load() {
+    int x = 1 + * 2;    // + then * — missing operand between
+    int y = 3 == == 3;  // == twice — missing operand
+}

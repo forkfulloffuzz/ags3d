@@ -1,0 +1,11 @@
+// err_14_break_outside_loop.agscript
+// EXPECT_ERROR: 'break' outside of loop or switch
+// break is only valid inside a loop or switch body.
+// This is a semantic error (T10), not a syntax error — the parser
+// accepts it structurally but the symbol table must reject it.
+
+function room_Load() {
+    int x = 1;
+    break;    // invalid: not inside any loop or switch
+    x = 2;
+}

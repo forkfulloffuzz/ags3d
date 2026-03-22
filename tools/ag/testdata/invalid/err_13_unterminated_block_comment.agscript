@@ -1,0 +1,10 @@
+// err_13_unterminated_block_comment.agscript
+// EXPECT_ERROR: unexpected EOF (unterminated block comment)
+// A block comment opened but never closed.
+// The scanner silently consumes to EOF; the parser sees EOF where
+// it expects a declaration — it must report an appropriate error.
+
+function room_Load() {
+    int x = 1;
+    /* this comment never ends
+}

@@ -1,0 +1,10 @@
+// err_10_switch_no_brace.agscript
+// EXPECT_ERROR: unexpected token, expected {
+// A switch statement with no opening brace.
+
+function room_Load() {
+    int x = 1;
+    switch (x)
+        case 1:
+            break;
+}

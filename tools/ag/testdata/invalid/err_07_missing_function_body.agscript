@@ -1,0 +1,11 @@
+// err_07_missing_function_body.agscript
+// EXPECT_ERROR: unexpected token, expected {
+// A function declaration with no body at all — not even empty braces.
+
+function noBody()
+
+function alsoNoBody(int x)
+
+function room_Load() {
+    // This function is fine — parser should recover to here
+}

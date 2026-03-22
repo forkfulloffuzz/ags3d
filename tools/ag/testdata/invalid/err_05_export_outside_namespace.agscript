@@ -1,0 +1,8 @@
+// err_05_export_outside_namespace.agscript
+// EXPECT_ERROR: 'export' is only valid inside a namespace block
+// export at the top level (outside any namespace) is a semantic error.
+// The parser may accept it structurally; the symbol table (T10) must reject it.
+
+export function badExport() {
+    int x = 1;
+}

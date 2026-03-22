@@ -1,0 +1,71 @@
+// 16_member_access_and_calls.agscript
+// PostfixExpr chains: member access (.), function calls (()), and
+// combinations thereof. Exercises the postfix suffix loop in the parser.
+
+function testMemberAccess() {
+    // Single member access
+    int x = point.door_left.x;
+
+    // Chained member access (deeply nested)
+    // Parser must left-associate: ((a.b).c).d
+    int deep = global.player.position.x;
+}
+
+function testMethodCall() {
+    // Simple call
+    Wait(10);
+
+    // Method call via member access
+    global.player.Say("hi");
+
+    // Chained: result of member access is immediately called
+    global.player.WalkTo(point.door_left);
+}
+
+function testCallChain() {
+    // result of call is member-accessed, then called again
+    // e.g. getCharacter().Say("hello")
+    getCharacter().Say("hello");
+    getRoom().getName();
+}
+
+function testIndexAccess() {
+    // Index operator on an identifier
+    int items = inventory[0];
+    int nested = grid[2][3];
+
+    // Index followed by member access
+    string name = items_array[0].name;
+}
+
+function testMixedChain() {
+    // Walk to point taken from an array
+    global.player.WalkTo(waypoints[currentIndex]);
+
+    // Call with chained argument
+    global.player.Say(dialogue_lines[lineIndex]);
+}
+
+function testCallAsStatement() {
+    // Calls with no return value used — ExprStmt
+    Wait(1);
+    global.player.Say("ok");
+    FadeOut(10);
+}
+
+function testCallArguments() {
+    // Various argument combinations
+    singleArg(42);
+    twoArgs(1, 2);
+    threeArgs(true, "name", 3.14);
+    noArgs();
+
+    // Expression arguments
+    complexArg(1 + 2 * 3, a > b && c == d);
+
+    // Nested call as argument
+    outerFn(innerFn(x));
+
+    // Method call as argument
+    speakLine(global.player.getName());
+}

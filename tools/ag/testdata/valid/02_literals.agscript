@@ -1,0 +1,23 @@
+// 02_literals.agscript
+// Every literal kind: int, float, string, bool, null.
+// Parser must produce Literal nodes with the correct Kind and Value fields.
+
+function testLiterals() {
+    int a = 0;
+    int b = 42;
+    int c = 1000000;
+
+    float d = 0.0;
+    float e = 3.14;
+    float f = 100.5;
+
+    string g = "";
+    string h = "hello world";
+    string i = "escape sequences: \n \t \r \" \\";
+
+    bool j = true;
+    bool k = false;
+
+    // null assigned to a typed variable (semantic validation is T10, not parser)
+    int ptr = null;
+}

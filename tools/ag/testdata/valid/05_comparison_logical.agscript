@@ -1,0 +1,48 @@
+// 05_comparison_logical.agscript
+// Comparison operators: == != < <= > >=
+// Logical operators: && || !
+// Exercises the precedence ladder: || < && < equality < relational
+
+function testComparison() {
+    bool eq  = 1 == 1;
+    bool neq = 1 != 2;
+    bool lt  = 1 < 2;
+    bool lte = 1 <= 1;
+    bool gt  = 2 > 1;
+    bool gte = 2 >= 2;
+}
+
+function testLogical() {
+    bool a = true && false;
+    bool b = true || false;
+    bool c = !true;
+    bool d = !false;
+    bool e = !!true;   // double negation
+}
+
+function testPrecedence() {
+    // || has lower precedence than &&
+    bool p1 = true || false && false;   // true || (false && false) = true
+    bool p2 = (true || false) && false; // false
+
+    // && has lower precedence than ==
+    bool p3 = 1 == 1 && 2 == 2;   // (1==1) && (2==2)
+
+    // == has lower precedence than <
+    bool p4 = 1 < 2 == true;      // (1<2) == true
+
+    // ! applies to the tightest unit
+    bool p5 = !1 == 0;            // (!1) == 0
+    bool p6 = !(1 == 0);          // !(1==0)
+}
+
+function testCompoundCondition() {
+    int x = 5;
+    int y = 10;
+    if (x > 0 && y > 0 && x < y) {
+        // both positive, x smaller
+    }
+    if (x < 0 || y < 0 || x == y) {
+        // at least one negative, or equal
+    }
+}

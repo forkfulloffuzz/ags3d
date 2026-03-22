@@ -1,0 +1,40 @@
+// 18_comments.agscript
+// Comments in every position: before/after/between tokens, inside
+// expressions, between function declarations, at end of file.
+
+/* block comment at top of file */
+
+// Between top-level declarations
+int /* inline block */ globalVar = /* also here */ 1;
+
+function /* comment in function header */ commentInHeader() /* and here */ {
+    // Comment at start of body
+    int x = 1; // end-of-line comment
+    /* block comment
+       spanning
+       multiple lines */
+    int y = /* between tokens */ 2 /* and here */ + /* and here */ x;
+    // Comment before closing brace
+}
+
+// Comment between functions
+
+function /* another */ commentBetween() {
+    // Block comment inside expression
+    int z = 1 + /* ignored */ 2 * /* also ignored */ 3;
+
+    // Comment inside if condition
+    if (/* condition */ z > /* threshold */ 0) {
+        // comment in then branch
+    } /* comment after brace */ else /* comment before brace */ {
+        // comment in else branch
+    }
+
+    // Comment inside for header
+    for (/* init */ int i = 0; /* cond */ i < 3; /* post */ i++) {
+        // comment in loop body
+    }
+}
+
+/* closing block comment */
+// closing line comment

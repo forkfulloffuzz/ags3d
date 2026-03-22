@@ -1,0 +1,78 @@
+// 10_functions.agscript
+// Function declarations: return types, parameters, return statements,
+// recursive calls, multiple functions calling each other.
+
+// No return type (implies void)
+function noReturnType() {
+}
+
+// Explicit void
+void function explicitVoid() {
+}
+
+// Typed return values
+int function add(int a, int b) {
+    return a + b;
+}
+
+float function lerp(float a, float b, float t) {
+    return a + (b - a) * t;
+}
+
+bool function isPositive(int x) {
+    return x > 0;
+}
+
+string function greet(string name) {
+    return "Hello, " + name;
+}
+
+// Early return
+int function abs(int x) {
+    if (x < 0) {
+        return -x;
+    }
+    return x;
+}
+
+// Multiple parameters of mixed types
+int function clamp(int value, int minVal, int maxVal) {
+    if (value < minVal) return minVal;
+    if (value > maxVal) return maxVal;
+    return value;
+}
+
+// Bare return (no value) in void function
+function earlyExit(int x) {
+    if (x < 0) {
+        return;
+    }
+    // only runs for x >= 0
+}
+
+// Mutual recursion (parser just needs to see the call — T10 resolves)
+int function isEven(int n) {
+    if (n == 0) return true;
+    return isOdd(n - 1);
+}
+
+int function isOdd(int n) {
+    if (n == 0) return false;
+    return isEven(n - 1);
+}
+
+// Recursive function
+int function factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+// Function with many parameters
+int function manyParams(int a, int b, int c, int d, int e, int f) {
+    return a + b + c + d + e + f;
+}
+
+// Single param, single return
+int function identity(int x) {
+    return x;
+}

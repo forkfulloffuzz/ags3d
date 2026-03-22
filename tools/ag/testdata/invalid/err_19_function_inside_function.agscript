@@ -1,0 +1,14 @@
+// err_19_function_inside_function.agscript
+// EXPECT_ERROR: function declaration not allowed inside a function body
+// AGS-spirit does not support nested function declarations.
+// The parser must reject the inner 'function' keyword as a statement.
+
+function outer() {
+    int x = 1;
+
+    function inner() {   // illegal: nested function
+        int y = 2;
+    }
+
+    x = 2;
+}

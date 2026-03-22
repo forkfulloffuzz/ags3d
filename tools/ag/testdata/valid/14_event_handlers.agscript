@@ -1,0 +1,118 @@
+// 14_event_handlers.agscript
+// All documented event handler names — these are ordinary function
+// declarations that the engine calls by name. Parser treats them
+// identically to user functions; the symbol table (T10) marks them
+// as implicitly accessible to the engine.
+
+// ---------------------------------------------------------------
+// Room events
+// ---------------------------------------------------------------
+
+function room_Load() {
+    // Every visit to this room
+}
+
+function room_FirstLoad() {
+    // First time only
+}
+
+function room_AfterFadeIn() {
+    // After the fade-in animation completes
+}
+
+function room_Leave() {
+    // Player is about to exit the room
+}
+
+function room_RepExec() {
+    // Called every game loop tick while in this room
+}
+
+// ---------------------------------------------------------------
+// Hotspot events (NAME = "door" as example)
+// ---------------------------------------------------------------
+
+function hotspot_door_Look() {
+    global.player.Say("It's a sturdy oak door.");
+}
+
+function hotspot_door_Interact() {
+    global.player.WalkTo(point.door_front);
+    global.player.FacePoint(point.door_face);
+    global.player.Say("It's locked.");
+}
+
+function hotspot_door_WalkOn() {
+}
+
+function hotspot_door_WalkOff() {
+}
+
+function hotspot_door_AnyClick() {
+}
+
+function hotspot_door_MouseOver() {
+}
+
+// ---------------------------------------------------------------
+// Character events (NAME = "guard")
+// ---------------------------------------------------------------
+
+function character_guard_Talk() {
+}
+
+function character_guard_Idle() {
+}
+
+// ---------------------------------------------------------------
+// Inventory item events (NAME = "key")
+// ---------------------------------------------------------------
+
+function item_key_Look() {
+    global.player.Say("A small brass key.");
+}
+
+function item_key_Use() {
+    global.player.Say("I should use this on something.");
+}
+
+function item_key_UsedWith() {
+    // Second item passed by engine at runtime
+}
+
+// ---------------------------------------------------------------
+// Global script events
+// ---------------------------------------------------------------
+
+function game_start() {
+    global.score = 0;
+}
+
+function repeatedly_execute() {
+    // Blockable game loop
+}
+
+function repeatedly_execute_always() {
+    // Never blocked — runs even during blocking calls
+}
+
+function on_event(int event, int data) {
+    switch (event) {
+        case 1:
+            break;
+        default:
+            break;
+    }
+}
+
+function on_key_press(int key, int mod) {
+    if (key == 27) { // ESC
+        // open menu
+    }
+}
+
+function on_mouse_click(int button) {
+    if (button == 1) {
+        // left click
+    }
+}

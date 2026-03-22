@@ -1,0 +1,109 @@
+// 09_switch.agscript
+// switch/case/default — the primary AGS state machine construct.
+// Each case clause may have zero or more statements.
+// Parser must allow fall-through (no implicit break between cases).
+
+function testSwitchBasic() {
+    int x = 2;
+    switch (x) {
+        case 1:
+            x = 10;
+            break;
+        case 2:
+            x = 20;
+            break;
+        case 3:
+            x = 30;
+            break;
+        default:
+            x = 0;
+            break;
+    }
+}
+
+function testSwitchDefaultOnly() {
+    int x = 99;
+    switch (x) {
+        default:
+            x = 0;
+    }
+}
+
+function testSwitchFallThrough() {
+    // No break between cases — fall-through is valid syntax
+    int x = 1;
+    switch (x) {
+        case 1:
+        case 2:
+        case 3:
+            x = 100; // reached for x == 1, 2, or 3
+            break;
+        default:
+            x = 0;
+    }
+}
+
+function testSwitchEmptyCase() {
+    int x = 1;
+    switch (x) {
+        case 1:
+            break;
+        case 2:
+            break;
+    }
+}
+
+function testSwitchString() {
+    // switch on string (semantic validity checked at T10, not parser)
+    string state = "idle";
+    switch (state) {
+        case "idle":
+            break;
+        case "walking":
+            break;
+        case "talking":
+            break;
+        default:
+            break;
+    }
+}
+
+function testSwitchWithComplexStatements() {
+    int mode = 1;
+    switch (mode) {
+        case 1:
+            int temp = 0;
+            for (int i = 0; i < 5; i++) {
+                temp += i;
+            }
+            break;
+        case 2:
+            if (mode > 0) {
+                mode = 0;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+enum GameState {
+    eStateMenu = 0,
+    eStatePlay,
+    eStatePause,
+    eStateOver
+}
+
+function testSwitchOnEnum() {
+    GameState state = eStatePlay;
+    switch (state) {
+        case eStateMenu:
+            break;
+        case eStatePlay:
+            break;
+        case eStatePause:
+            break;
+        case eStateOver:
+            break;
+    }
+}

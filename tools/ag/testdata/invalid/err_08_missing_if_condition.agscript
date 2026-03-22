@@ -1,0 +1,9 @@
+// err_08_missing_if_condition.agscript
+// EXPECT_ERROR: unexpected token, expected (
+// An if statement with no condition at all.
+
+function room_Load() {
+    if {
+        int x = 1;
+    }
+}

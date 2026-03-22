@@ -1,0 +1,9 @@
+// err_03_unclosed_paren.agscript
+// EXPECT_ERROR: unexpected token, expected )
+// An if condition opened with ( but never closed.
+
+function room_Load() {
+    if (true {
+        int x = 1;
+    }
+}

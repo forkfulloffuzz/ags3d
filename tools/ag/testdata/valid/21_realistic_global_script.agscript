@@ -1,0 +1,96 @@
+// 21_realistic_global_script.agscript
+// Global script: game_start, repeatedly_execute, on_key_press,
+// on_event, score tracking, a utility namespace used game-wide.
+
+namespace GameUtils {
+
+    // Private helper
+    bool function isValidScore(int s) {
+        return s >= 0 && s <= 99999;
+    }
+
+    export function addScore(int amount) {
+        int newScore = global.score + amount;
+        if (isValidScore(newScore)) {
+            global.score = newScore;
+        }
+    }
+
+    export function resetGame() {
+        global.score = 0;
+    }
+}
+
+namespace DialogueUtils {
+
+    export function showSpeech(Character speaker, string line) {
+        speaker.Say(line);
+    }
+
+    export function showThought(Character thinker, string line) {
+        thinker.Think(line);
+    }
+
+    export function narratorSay(string line) {
+        DisplayMessage(line);
+    }
+}
+
+// ---------------------------------------------------------------
+// Global events
+// ---------------------------------------------------------------
+
+function game_start() {
+    global.score = 0;
+    DialogueUtils.narratorSay("Welcome to the adventure.");
+}
+
+function repeatedly_execute() {
+    // Runs every game loop, but can be blocked by blocking calls
+    // Keep this lightweight
+}
+
+function repeatedly_execute_always() {
+    // Never blocked — good for UI updates, timers
+    // In practice: update HUD score display (engine-side at T31+)
+}
+
+function on_event(int event, int data) {
+    // Known event constants — real values resolved at T32
+    switch (event) {
+        case 1: // eEventEnterRoomBeforeFadein
+            break;
+        case 2: // eEventLeaveRoom
+            break;
+        case 3: // eEventGotScore
+            break;
+        default:
+            break;
+    }
+}
+
+function on_key_press(int key, int mod) {
+    switch (key) {
+        case 27:  // ESC
+            // Open pause menu — runtime call at T32
+            break;
+        case 9:   // TAB
+            // Toggle inventory
+            break;
+        case 32:  // SPACE
+            // Skip dialogue
+            break;
+        default:
+            break;
+    }
+}
+
+function on_mouse_click(int button) {
+    if (button == 1) {
+        // Left click — main interaction, handled by engine hotspot system
+    }
+    if (button == 2) {
+        // Right click — examine
+        global.player.Think("Let me look at that more carefully.");
+    }
+}

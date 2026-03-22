@@ -1,0 +1,9 @@
+// err_20_global_assigned.agscript
+// EXPECT_ERROR: 'global' is a read-only namespace, cannot be assigned (T10)
+// The global keyword is a reserved namespace — assigning to it is illegal.
+// The parser sees it as an expression statement; T10 must detect the misuse.
+
+function room_Load() {
+    global = null;         // can't assign to the namespace itself
+    global.player = null;  // can't reassign global.player (read-only, T10)
+}

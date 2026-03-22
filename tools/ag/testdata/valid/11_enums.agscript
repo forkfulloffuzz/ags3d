@@ -1,0 +1,61 @@
+// 11_enums.agscript
+// Enum declarations: with and without explicit values, trailing comma,
+// expression initialisers, use in variable declarations and switch.
+
+// Minimal enum
+enum Empty {
+}
+
+// All values implicit (start at 0, auto-increment — semantic rule, T10)
+enum Direction {
+    eNorth,
+    eSouth,
+    eEast,
+    eWest
+}
+
+// All values explicit
+enum HttpStatus {
+    eOK      = 200,
+    eCreated = 201,
+    eBadReq  = 400,
+    eNotFound = 404,
+    eServerErr = 500
+}
+
+// Mixed: some explicit, some implicit
+enum Priority {
+    eLow  = 1,
+    eMed,        // implicitly 2
+    eHigh = 10,
+    eCritical    // implicitly 11
+}
+
+// Trailing comma (valid)
+enum TrailingComma {
+    eA,
+    eB,
+    eC,
+}
+
+// Enum values used in expressions
+int function enumExpressions() {
+    Direction dir = eNorth;
+    if (dir == eSouth) {
+        return 1;
+    }
+    return 0;
+}
+
+// Enum used as switch discriminant
+function directionSwitch(Direction d) {
+    switch (d) {
+        case eNorth: break;
+        case eSouth: break;
+        case eEast:  break;
+        case eWest:  break;
+    }
+}
+
+// Top-level var of enum type
+Direction currentDir = eNorth;

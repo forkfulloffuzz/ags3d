@@ -1,0 +1,68 @@
+// 19_var_declarations.agscript
+// Variable declarations: top-level, inside blocks, with and without
+// initialisers, shadowing, declaration before use inside nested scopes.
+
+// Top-level variable declarations (TopVarDecl)
+int topInt;
+float topFloat = 3.14;
+bool topBool = true;
+string topString = "global";
+
+function testLocalVars() {
+    // Declaration without initialiser
+    int uninit;
+
+    // Declaration with literal initialiser
+    int withLit = 42;
+    float withFloat = 1.5;
+    bool withBool = false;
+    string withStr = "hello";
+
+    // Declaration with expression initialiser
+    int withExpr = 2 + 3 * 4;
+    bool withCond = withExpr > 10 && withBool == false;
+
+    // Declaration using a previous local
+    int doubled = withLit * 2;
+}
+
+function testVarInBlocks() {
+    int outer = 1;
+
+    if (outer > 0) {
+        int inner = 2;  // scoped to this block
+        outer = inner;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        int loopVar = i * 2;  // new loopVar each iteration semantically
+    }
+
+    while (outer > 0) {
+        int whileVar = outer;
+        outer--;
+    }
+
+    {
+        // Bare block — syntactically valid, new scope
+        int blockVar = 99;
+    }
+}
+
+function testVarWithCallInit() {
+    // Initialiser is a function call
+    int result = computeValue();
+    string name = getPlayerName();
+    bool flag = checkCondition(result);
+}
+
+// Top-level vars used across functions
+int sharedCounter = 0;
+
+function incrementCounter() {
+    sharedCounter++;
+}
+
+function getCounter() int {
+    return sharedCounter;
+}

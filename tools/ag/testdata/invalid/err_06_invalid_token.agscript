@@ -1,0 +1,12 @@
+// err_06_invalid_token.agscript
+// EXPECT_ERROR: unexpected character '@'
+// The @ character is not part of the AGS-spirit token set.
+// The scanner produces TokenInvalid; the parser must report an error
+// and attempt to recover to continue parsing.
+
+function room_Load() {
+    int x = @;     // @ is not a valid token
+    int y = 2;     // parser should recover and parse this
+}
+
+@ // also invalid at top level

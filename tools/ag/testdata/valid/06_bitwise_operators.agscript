@@ -1,0 +1,49 @@
+// 06_bitwise_operators.agscript
+// Bitwise operators: & | ^ ~ << >>
+// Compound bitwise assignment: &= |= ^= <<= >>=
+// Exercises: BitAndExpr > BitXorExpr > BitOrExpr precedence levels,
+// and that these sit below EqualExpr but above LogicAndExpr.
+
+function testBitwise() {
+    int a = 0xFF & 0x0F;   // AND  = 0x0F
+    int b = 0xF0 | 0x0F;   // OR   = 0xFF
+    int c = 0xFF ^ 0x0F;   // XOR  = 0xF0
+    int d = ~0;             // NOT  = all ones
+    int e = 1 << 4;         // left shift  = 16
+    int f = 256 >> 4;       // right shift = 16
+}
+
+function testBitwisePrecedence() {
+    // & binds tighter than |
+    int p1 = 1 | 2 & 3;    // 1 | (2 & 3)
+
+    // ^ between & and |
+    int p2 = 1 | 2 ^ 3 & 4; // 1 | (2 ^ (3 & 4))
+
+    // shift binds tighter than &
+    int p3 = 1 & 2 << 3;    // 1 & (2<<3)
+}
+
+function testBitwiseAssignment() {
+    int flags = 0;
+    flags |= 1;    // set bit 0
+    flags |= 4;    // set bit 2
+    flags &= ~1;   // clear bit 0
+    flags ^= 4;    // toggle bit 2
+    flags <<= 1;
+    flags >>= 1;
+}
+
+function testBitwiseFlags() {
+    // Typical AGS flag pattern
+    int VISITED  = 1;
+    int UNLOCKED = 2;
+    int SEEN_CUT = 4;
+
+    int roomState = 0;
+    roomState |= VISITED;
+    if (roomState & VISITED) {
+        roomState |= UNLOCKED;
+    }
+    bool hasSeen = (roomState & SEEN_CUT) != 0;
+}

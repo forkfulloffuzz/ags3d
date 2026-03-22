@@ -1,0 +1,57 @@
+// 12_namespaces.agscript
+// namespace blocks: private members, export function, calling exported
+// members from outside, namespaces containing enums and vars.
+
+namespace MathUtils {
+
+    // Private helper — not callable as MathUtils.square() from outside
+    int function square(int x) {
+        return x * x;
+    }
+
+    // Exported — callable as MathUtils.distance(a, b) from any file
+    export float function distance(int x1, int y1, int x2, int y2) {
+        int dx = x2 - x1;
+        int dy = y2 - y1;
+        return dx * dx + dy * dy; // squared distance — sqrt requires T32 mapping
+    }
+
+    export int function clamp(int v, int lo, int hi) {
+        if (v < lo) return lo;
+        if (v > hi) return hi;
+        return v;
+    }
+
+    export bool function inRange(int v, int lo, int hi) {
+        return v >= lo && v <= hi;
+    }
+}
+
+namespace InventoryUtils {
+
+    // Enum inside a namespace
+    enum PickupResult {
+        ePickedUp = 0,
+        eAlreadyHad,
+        eInventoryFull
+    }
+
+    // Private
+    bool function isInventoryFull() {
+        return false; // stub
+    }
+
+    export PickupResult function tryPickup(string itemName) {
+        if (isInventoryFull()) {
+            return eInventoryFull;
+        }
+        return ePickedUp;
+    }
+}
+
+// Calling exported namespace members from file level
+function room_Load() {
+    int d = MathUtils.clamp(15, 0, 10);
+    bool ok = MathUtils.inRange(5, 1, 10);
+    InventoryUtils.PickupResult result = InventoryUtils.tryPickup("key");
+}

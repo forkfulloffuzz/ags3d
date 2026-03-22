@@ -1,0 +1,74 @@
+// 17_operator_precedence.agscript
+// Exercises the full expression precedence ladder from the grammar.
+// Each case is commented with the expected parse tree grouping.
+// These are the cases most likely to expose associativity or precedence bugs.
+
+function testPrecedenceLadder() {
+    // Assignment is right-associative
+    int a = 0;
+    int b = 0;
+    int c = 0;
+    a = b = c = 5;   // a = (b = (c = 5))
+
+    // || lower than &&
+    bool p1 = true || false && false;    // true || (false && false)
+    bool p2 = false && true || true;     // (false && true) || true
+
+    // && lower than bitwise |
+    bool p3 = 1 | 2 && 3 | 4;           // (1|2) && (3|4)
+
+    // | lower than ^
+    int p4 = 1 | 2 ^ 3;                 // 1 | (2^3)
+
+    // ^ lower than &
+    int p5 = 1 ^ 2 & 3;                 // 1 ^ (2&3)
+
+    // & lower than ==
+    int p6 = 1 & 2 == 0;                // 1 & (2==0)
+
+    // == lower than <
+    bool p7 = 1 < 2 == true;            // (1<2) == true
+
+    // < lower than shift
+    bool p8 = 1 << 2 < 10;             // (1<<2) < 10
+
+    // shift lower than +
+    int p9 = 1 + 2 << 1;               // (1+2) << 1
+
+    // + lower than *
+    int p10 = 2 + 3 * 4;               // 2 + (3*4) = 14
+
+    // Unary minus applied before *
+    int p11 = -2 * 3;                  // (-2) * 3 = -6
+
+    // ! applied before ==
+    bool p12 = !true == false;         // (!true) == false
+
+    // Postfix ++ before unary (postfix binds tightest)
+    int x = 5;
+    int p13 = -x++;     // -(x++) — postfix first, then unary minus
+
+    // Grouping overrides all
+    int p14 = (2 + 3) * (4 - 1);      // 5 * 3 = 15
+
+    // Right-associativity of assignment operators
+    int d = 0;
+    d += 1;
+    d -= 1;
+    d *= 2;
+}
+
+function testAssociativity() {
+    // Binary ops at same precedence level are left-associative
+    int la1 = 10 - 3 - 2;    // (10-3)-2 = 5, not 10-(3-2) = 9
+    int la2 = 8 / 2 / 2;     // (8/2)/2  = 2, not 8/(2/2)  = 8
+    int la3 = 1 << 1 << 1;   // (1<<1)<<1 = 4
+}
+
+function testUnaryChain() {
+    // Multiple unary operators, right-associative
+    int u1 = !!true;          // !(!true) = true
+    int u2 = --x;             // prefix -- then value
+    int u3 = -(-5);           // double negate = 5
+    int u4 = ~(~0);           // double bitwise NOT = 0
+}
