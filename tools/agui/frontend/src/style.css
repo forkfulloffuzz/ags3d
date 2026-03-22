@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #app { height: 100%; margin: 0; overflow: hidden; }
+  body {
+    @apply bg-gray-950 text-gray-100 text-sm antialiased select-none;
+    font-family: Inter, system-ui, sans-serif;
+  }
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { @apply bg-gray-900; }
+  ::-webkit-scrollbar-thumb  { @apply bg-gray-600 rounded; }
+  pre, code, .mono           { font-family: "JetBrains Mono", "Fira Code", monospace; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+           transition-colors cursor-pointer select-none;
+  }
+  .btn-primary  { @apply btn bg-violet-600 hover:bg-violet-700 text-white; }
+  .btn-ghost    { @apply btn text-gray-300 hover:bg-gray-700 hover:text-white; }
+  .btn-danger   { @apply btn bg-red-700 hover:bg-red-600 text-white; }
+
+  .tab-btn {
+    @apply px-3 py-1.5 text-xs font-medium border-b-2 border-transparent
+           text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap;
+  }
+  .tab-btn-active { @apply tab-btn text-violet-400 border-violet-400 bg-gray-800; }
+
+  .sidebar-item {
+    @apply flex items-center gap-2 px-3 py-2 text-xs text-gray-400
+           hover:bg-gray-800 hover:text-gray-200 rounded cursor-pointer transition-colors;
+  }
+  .sidebar-item-active { @apply sidebar-item bg-gray-800 text-violet-400; }
+
+  .log-info  { @apply text-gray-300; }
+  .log-error { @apply text-red-400 font-medium; }
+  .log-warn  { @apply text-yellow-400; }
+  .log-ok    { @apply text-green-400; }
+}
