@@ -17,6 +17,7 @@
 #   symbols-svg  each file → .output/<path>.sym.svg    (requires graphviz)
 #   symbols-png  each file → .output/<path>.sym.png    (requires graphviz)
 #   symbols-pdf  each file → .output/<path>.sym.pdf    (requires graphviz)
+#   blocking     each file → .output/<path>.blocking.txt
 #
 # Options:
 #   --outdir DIR   write output under DIR instead of .output  (default: .output)
@@ -83,10 +84,12 @@ case "$STAGE" in
   symbols-svg) AG_STAGE="symbols-dot"; OUT_EXT="sym.svg";    NEEDS_DOT=1 ;;
   symbols-png) AG_STAGE="symbols-dot"; OUT_EXT="sym.png";    NEEDS_DOT=1 ;;
   symbols-pdf) AG_STAGE="symbols-dot"; OUT_EXT="sym.pdf";    NEEDS_DOT=1 ;;
+  blocking)    AG_STAGE="blocking";   OUT_EXT="blocking.txt";NEEDS_DOT=0 ;;
   *)
     echo "Unknown stage: $STAGE" >&2
     echo "Valid stages: tokens | ast | ast-dot | ast-svg | ast-png | ast-pdf" >&2
     echo "              symbols | symbols-dot | symbols-svg | symbols-png | symbols-pdf" >&2
+    echo "              blocking" >&2
     exit 1
     ;;
 esac

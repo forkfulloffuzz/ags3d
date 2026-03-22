@@ -692,12 +692,178 @@ func sortStrings(s []string) {
 // --------------------------------------------------------------------
 
 // Blocking parses src, runs symbol resolution (T10) and blocking annotation
-// (T11), then writes a table of all call sites and their blocking status.
+// (T11), then writes a table of:
+//   - each function and whether it is blocking
+//   - each blocking call site within blocking functions (line, callee)
 //
-// TODO(VIZ-03/T11): implement once symbol table and blocking annotation exist.
+// Example output:
+//
+//	Blocking — rooms/market/market.agscript
+//	Functions (4)
+//	  [blocking] walkAndGreet         — 2 blocking call(s)
+//	      L8   global.player.WalkTo(…)
+//	      L9   global.player.Say(…)
+//	  [blocking] room_AfterFadeIn     — 1 blocking call(s)
+//	      L13  walkAndGreet(…)
+//	  [-]        room_Load            — 0 blocking call(s)
 func Blocking(w io.Writer, file, src string) {
-	fmt.Fprintf(w, "Blocking calls — %s\n", file)
-	fmt.Fprintf(w, "  (not yet implemented — available after T11)\n")
+	s := scanner.New(file, src)
+	p := parser.New(s)
+	f, parseErrs := p.Parse(file)
+
+	fmt.Fprintf(w, "Blocking — %s\n", file)
+
+	if len(parseErrs) > 0 {
+		for _, e := range parseErrs {
+			fmt.Fprintf(w, "  parse error: %v\n", e)
+		}
+		return
+	}
+
+	st, _ := parser.BuildSymbolTable(f)
+	parser.AnnotateBlocking(f, st)
+
+	// Collect top-level and namespace function decls.
+	var funcs []*parser.FunctionDecl
+	for _, d := range f.Decls {
+		switch v := d.(type) {
+		case *parser.FunctionDecl:
+			funcs = append(funcs, v)
+		case *parser.NamespaceDecl:
+			for _, m := range v.Members {
+				if fd, ok := m.(*parser.FunctionDecl); ok {
+					funcs = append(funcs, fd)
+				}
+			}
+		}
+	}
+
+	fmt.Fprintf(w, "Functions (%d)\n", len(funcs))
+	for _, fd := range funcs {
+		sites := collectBlockingCalls(fd)
+		flag := "[-]       "
+		if fd.IsBlocking {
+			flag = "[blocking]"
+		}
+		fmt.Fprintf(w, "  %s %-24s — %d blocking call(s)\n", flag, fd.Name, len(sites))
+		for _, site := range sites {
+			fmt.Fprintf(w, "      L%-4d %s\n", site.line, site.callee)
+		}
+	}
+}
+
+// blockingCallSite records a single blocking call expression for display.
+type blockingCallSite struct {
+	line   int
+	callee string
+}
+
+// collectBlockingCalls walks fd.Body and returns all CallExprs with IsBlocking=true.
+func collectBlockingCalls(fd *parser.FunctionDecl) []blockingCallSite {
+	if fd.Body == nil {
+		return nil
+	}
+	var out []blockingCallSite
+	collectBlockingInBlock(fd.Body, &out)
+	return out
+}
+
+func collectBlockingInBlock(b *parser.Block, out *[]blockingCallSite) {
+	if b == nil {
+		return
+	}
+	for _, s := range b.Stmts {
+		collectBlockingInStmt(s, out)
+	}
+}
+
+func collectBlockingInStmt(s parser.Stmt, out *[]blockingCallSite) {
+	if s == nil {
+		return
+	}
+	switch v := s.(type) {
+	case *parser.Block:
+		collectBlockingInBlock(v, out)
+	case *parser.VarDecl:
+		collectBlockingInExpr(v.Init, out)
+	case *parser.ExprStmt:
+		collectBlockingInExpr(v.X, out)
+	case *parser.ReturnStmt:
+		collectBlockingInExpr(v.Value, out)
+	case *parser.IfStmt:
+		collectBlockingInExpr(v.Cond, out)
+		collectBlockingInBlock(v.Then, out)
+		collectBlockingInStmt(v.Else, out)
+	case *parser.WhileStmt:
+		collectBlockingInExpr(v.Cond, out)
+		collectBlockingInBlock(v.Body, out)
+	case *parser.DoWhileStmt:
+		collectBlockingInBlock(v.Body, out)
+		collectBlockingInExpr(v.Cond, out)
+	case *parser.ForStmt:
+		collectBlockingInStmt(v.Init, out)
+		collectBlockingInExpr(v.Cond, out)
+		collectBlockingInExpr(v.Post, out)
+		collectBlockingInBlock(v.Body, out)
+	case *parser.SwitchStmt:
+		collectBlockingInExpr(v.Tag, out)
+		for _, cl := range v.Cases {
+			collectBlockingInExpr(cl.Value, out)
+			for _, cs := range cl.Body {
+				collectBlockingInStmt(cs, out)
+			}
+		}
+	}
+}
+
+func collectBlockingInExpr(e parser.Expr, out *[]blockingCallSite) {
+	if e == nil {
+		return
+	}
+	switch v := e.(type) {
+	case *parser.CallExpr:
+		if v.IsBlocking {
+			*out = append(*out, blockingCallSite{
+				line:   v.Pos.Line,
+				callee: calleeString(v.Callee) + "(…)",
+			})
+		}
+		collectBlockingInExpr(v.Callee, out)
+		for _, arg := range v.Args {
+			collectBlockingInExpr(arg, out)
+		}
+	case *parser.AssignExpr:
+		collectBlockingInExpr(v.Target, out)
+		collectBlockingInExpr(v.Value, out)
+	case *parser.BinaryExpr:
+		collectBlockingInExpr(v.Left, out)
+		collectBlockingInExpr(v.Right, out)
+	case *parser.UnaryExpr:
+		collectBlockingInExpr(v.X, out)
+	case *parser.PostfixExpr:
+		collectBlockingInExpr(v.X, out)
+	case *parser.MemberExpr:
+		collectBlockingInExpr(v.Object, out)
+	case *parser.IndexExpr:
+		collectBlockingInExpr(v.Object, out)
+		collectBlockingInExpr(v.Index, out)
+	}
+}
+
+// calleeString returns a short human-readable string for a callee expression.
+func calleeString(e parser.Expr) string {
+	if e == nil {
+		return "?"
+	}
+	switch v := e.(type) {
+	case *parser.Identifier:
+		return v.Name
+	case *parser.MemberExpr:
+		return calleeString(v.Object) + "." + v.Field
+	case *parser.GlobalExpr:
+		return "global." + v.Property
+	}
+	return "?"
 }
 
 // --------------------------------------------------------------------
