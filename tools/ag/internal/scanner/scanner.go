@@ -62,6 +62,7 @@ const (
 	TokenRBracket  // ]
 	TokenSemicolon // ;
 	TokenComma     // ,
+	TokenColon     // :
 	TokenDot       // .
 
 	// Assignment operators
@@ -289,6 +290,18 @@ func (s *Scanner) scanIdent(line, col int) Token {
 
 func (s *Scanner) scanNumber(line, col int) Token {
 	start := s.pos
+
+	// Hex literal: 0x… or 0X…
+	if s.src[s.pos] == '0' && s.pos+1 < len(s.src) &&
+		(s.src[s.pos+1] == 'x' || s.src[s.pos+1] == 'X') {
+		s.advance() // 0
+		s.advance() // x / X
+		for s.pos < len(s.src) && isHexDigit(s.src[s.pos]) {
+			s.advance()
+		}
+		return Token{Kind: TokenIntLit, Lexeme: string(s.src[start:s.pos]), File: s.file, Line: line, Column: col}
+	}
+
 	for s.pos < len(s.src) && isDigit(s.src[s.pos]) {
 		s.advance()
 	}
@@ -359,6 +372,8 @@ func (s *Scanner) scanSymbol(line, col int) Token {
 		return s.makeTok(TokenSemicolon, ";", line, col)
 	case ',':
 		return s.makeTok(TokenComma, ",", line, col)
+	case ':':
+		return s.makeTok(TokenColon, ":", line, col)
 	case '.':
 		return s.makeTok(TokenDot, ".", line, col)
 	case '~':
@@ -527,4 +542,8 @@ func isDigit(ch rune) bool {
 
 func isLetterOrDigit(ch rune) bool {
 	return isLetter(ch) || isDigit(ch)
+}
+
+func isHexDigit(ch rune) bool {
+	return isDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')
 }

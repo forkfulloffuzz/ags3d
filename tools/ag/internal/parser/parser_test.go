@@ -1,9 +1,12 @@
 // Tests for the AGS-spirit parser and AST.
 // T08: AST node construction and interface satisfaction.
-// T09+: fixture-driven parsing tests added after the parser is implemented.
+// T09: recursive descent parser — fixture-driven and unit tests.
 package parser_test
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ags3d/ag/internal/parser"
@@ -761,5 +764,417 @@ func TestExprPos_DelegatesCorrectly(t *testing.T) {
 		if e.ExprPos() != pos {
 			t.Errorf("%T.ExprPos() wrong", e)
 		}
+	}
+}
+
+// -------------------------------------------------------------------
+// T09 — Fixture-driven tests (valid .agscript files)
+// -------------------------------------------------------------------
+
+const testdataDir = "../../testdata"
+
+// TestParser_ValidFixtures parses every file in testdata/valid/ and asserts
+// zero parse errors. This is the primary regression suite for the parser.
+func TestParser_ValidFixtures(t *testing.T) {
+	files, err := filepath.Glob(filepath.Join(testdataDir, "valid", "*.agscript"))
+	if err != nil {
+		t.Fatalf("glob failed: %v", err)
+	}
+	if len(files) == 0 {
+		t.Fatal("no valid fixture files found — check testdata/valid/")
+	}
+	for _, path := range files {
+		path := path
+		name := filepath.Base(path)
+		t.Run(name, func(t *testing.T) {
+			src, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read file: %v", err)
+			}
+			s := scanner.New(name, string(src))
+			p := parser.New(s)
+			_, errs := p.Parse(name)
+			if len(errs) != 0 {
+				for _, e := range errs {
+					t.Errorf("  %v", e)
+				}
+				t.Fatalf("got %d parse error(s), want 0", len(errs))
+			}
+		})
+	}
+}
+
+// TestParser_InvalidFixtures_ParserErrors parses files in testdata/invalid/
+// that are expected to produce parser errors and asserts at least one error.
+// Files marked "(T10)" or "(semantic)" are skipped — those require the symbol
+// table phase which is not part of T09.
+func TestParser_InvalidFixtures_ParserErrors(t *testing.T) {
+	// Only the files where the parser itself (not T10 semantics) should error.
+	parserErrorFiles := []string{
+		"err_02_unclosed_brace.agscript",
+		"err_03_unclosed_paren.agscript",
+		"err_04_missing_semicolon.agscript",
+		"err_05_export_outside_namespace.agscript",
+		"err_07_missing_function_body.agscript",
+		"err_08_missing_if_condition.agscript",
+		"err_09_bad_for_loop.agscript",
+		"err_10_switch_no_brace.agscript",
+		"err_11_enum_missing_brace.agscript",
+		"err_12_namespace_missing_name.agscript",
+		"err_15_double_operator.agscript",
+	}
+	for _, name := range parserErrorFiles {
+		name := name
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(testdataDir, "invalid", name)
+			src, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read file: %v", err)
+			}
+			s := scanner.New(name, string(src))
+			p := parser.New(s)
+			_, errs := p.Parse(name)
+			if len(errs) == 0 {
+				t.Errorf("expected at least one parse error, got none")
+			}
+		})
+	}
+}
+
+// -------------------------------------------------------------------
+// T09 — Parser unit tests (inline source strings)
+// -------------------------------------------------------------------
+
+func TestParser_FunctionDecl_VoidReturn(t *testing.T) {
+	f := mustParse(t, "function room_Load() {}")
+	if len(f.Decls) != 1 {
+		t.Fatalf("expected 1 decl, got %d", len(f.Decls))
+	}
+	fn, ok := f.Decls[0].(*parser.FunctionDecl)
+	if !ok {
+		t.Fatalf("expected *FunctionDecl, got %T", f.Decls[0])
+	}
+	if fn.Name != "room_Load" {
+		t.Errorf("Name = %q, want room_Load", fn.Name)
+	}
+	if fn.ReturnType != "" {
+		t.Errorf("ReturnType = %q, want \"\" (void)", fn.ReturnType)
+	}
+	if len(fn.Params) != 0 {
+		t.Errorf("Params len = %d, want 0", len(fn.Params))
+	}
+}
+
+func TestParser_FunctionDecl_WithReturnType(t *testing.T) {
+	f := mustParse(t, "int function getScore() {}")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	if fn.ReturnType != "int" {
+		t.Errorf("ReturnType = %q, want int", fn.ReturnType)
+	}
+}
+
+func TestParser_FunctionDecl_WithParams(t *testing.T) {
+	f := mustParse(t, "function move(int x, int y) {}")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	if len(fn.Params) != 2 {
+		t.Fatalf("Params len = %d, want 2", len(fn.Params))
+	}
+	if fn.Params[0].Type != "int" || fn.Params[0].Name != "x" {
+		t.Errorf("Param[0] = {%q %q}, want {int x}", fn.Params[0].Type, fn.Params[0].Name)
+	}
+	if fn.Params[1].Type != "int" || fn.Params[1].Name != "y" {
+		t.Errorf("Param[1] = {%q %q}, want {int y}", fn.Params[1].Type, fn.Params[1].Name)
+	}
+}
+
+func TestParser_NamespaceDecl(t *testing.T) {
+	src := `namespace CharUtils {
+		export function doThing() {}
+		function helper() {}
+	}`
+	f := mustParse(t, src)
+	if len(f.Decls) != 1 {
+		t.Fatalf("expected 1 top-level decl, got %d", len(f.Decls))
+	}
+	ns, ok := f.Decls[0].(*parser.NamespaceDecl)
+	if !ok {
+		t.Fatalf("expected *NamespaceDecl, got %T", f.Decls[0])
+	}
+	if ns.Name != "CharUtils" {
+		t.Errorf("Name = %q, want CharUtils", ns.Name)
+	}
+	if len(ns.Members) != 2 {
+		t.Fatalf("Members len = %d, want 2", len(ns.Members))
+	}
+	exported := ns.Members[0].(*parser.FunctionDecl)
+	if !exported.IsExport {
+		t.Error("first member should be exported")
+	}
+	internal := ns.Members[1].(*parser.FunctionDecl)
+	if internal.IsExport {
+		t.Error("second member should not be exported")
+	}
+}
+
+func TestParser_EnumDecl(t *testing.T) {
+	src := `enum Direction { eNorth = 0, eSouth, eEast, eWest };`
+	f := mustParse(t, src)
+	ed, ok := f.Decls[0].(*parser.EnumDecl)
+	if !ok {
+		t.Fatalf("expected *EnumDecl, got %T", f.Decls[0])
+	}
+	if ed.Name != "Direction" {
+		t.Errorf("Name = %q, want Direction", ed.Name)
+	}
+	if len(ed.Members) != 4 {
+		t.Fatalf("Members = %d, want 4", len(ed.Members))
+	}
+	if ed.Members[0].Value == nil {
+		t.Error("first member should have explicit value (= 0)")
+	}
+	if ed.Members[1].Value != nil {
+		t.Error("second member should have implicit value")
+	}
+}
+
+func TestParser_EnumDecl_TrailingComma(t *testing.T) {
+	src := `enum Flags { A, B, C, };`
+	f := mustParse(t, src)
+	ed := f.Decls[0].(*parser.EnumDecl)
+	if len(ed.Members) != 3 {
+		t.Errorf("Members = %d, want 3", len(ed.Members))
+	}
+}
+
+func TestParser_TopVarDecl(t *testing.T) {
+	f := mustParse(t, "int score = 0;")
+	tv, ok := f.Decls[0].(*parser.TopVarDecl)
+	if !ok {
+		t.Fatalf("expected *TopVarDecl, got %T", f.Decls[0])
+	}
+	if tv.Decl.Type != "int" || tv.Decl.Name != "score" {
+		t.Errorf("VarDecl = {%q %q}, want {int score}", tv.Decl.Type, tv.Decl.Name)
+	}
+	if tv.Decl.Init == nil {
+		t.Error("expected non-nil Init")
+	}
+}
+
+func TestParser_VarDecl_InBlock(t *testing.T) {
+	f := mustParse(t, "function f() { int x = 42; bool flag; }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	if len(fn.Body.Stmts) != 2 {
+		t.Fatalf("stmts = %d, want 2", len(fn.Body.Stmts))
+	}
+	vd := fn.Body.Stmts[0].(*parser.VarDecl)
+	if vd.Name != "x" || vd.Init == nil {
+		t.Errorf("VarDecl: Name=%q Init=%v", vd.Name, vd.Init)
+	}
+	vd2 := fn.Body.Stmts[1].(*parser.VarDecl)
+	if vd2.Name != "flag" || vd2.Init != nil {
+		t.Errorf("VarDecl2: Name=%q Init=%v", vd2.Name, vd2.Init)
+	}
+}
+
+func TestParser_IfElseChain(t *testing.T) {
+	src := `function f() {
+		if (x == 1) {} else if (x == 2) {} else {}
+	}`
+	f := mustParse(t, src)
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.IfStmt)
+	if s.Else == nil {
+		t.Fatal("outer if should have else branch")
+	}
+	inner, ok := s.Else.(*parser.IfStmt)
+	if !ok {
+		t.Fatalf("else branch should be *IfStmt (else-if), got %T", s.Else)
+	}
+	if inner.Else == nil {
+		t.Fatal("inner if should have final else block")
+	}
+	if _, ok := inner.Else.(*parser.Block); !ok {
+		t.Errorf("final else should be *Block, got %T", inner.Else)
+	}
+}
+
+func TestParser_WhileStmt(t *testing.T) {
+	f := mustParse(t, "function f() { while (x > 0) { x--; } }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.WhileStmt)
+	if s.Cond == nil || s.Body == nil {
+		t.Error("while Cond and Body must be non-nil")
+	}
+}
+
+func TestParser_DoWhileStmt(t *testing.T) {
+	f := mustParse(t, "function f() { do { x++; } while (x < 10); }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	if _, ok := fn.Body.Stmts[0].(*parser.DoWhileStmt); !ok {
+		t.Errorf("expected *DoWhileStmt, got %T", fn.Body.Stmts[0])
+	}
+}
+
+func TestParser_ForStmt(t *testing.T) {
+	f := mustParse(t, "function f() { for (int i = 0; i < 3; i++) {} }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.ForStmt)
+	if s.Init == nil {
+		t.Error("Init should be non-nil")
+	}
+	if s.Cond == nil {
+		t.Error("Cond should be non-nil")
+	}
+	if s.Post == nil {
+		t.Error("Post should be non-nil")
+	}
+}
+
+func TestParser_ForStmt_Infinite(t *testing.T) {
+	f := mustParse(t, "function f() { for (;;) { break; } }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.ForStmt)
+	if s.Init != nil || s.Cond != nil || s.Post != nil {
+		t.Error("infinite for loop: Init, Cond, Post should all be nil")
+	}
+}
+
+func TestParser_SwitchStmt(t *testing.T) {
+	src := `function f() {
+		switch (dir) {
+			case 0: break;
+			default: break;
+		}
+	}`
+	f := mustParse(t, src)
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.SwitchStmt)
+	if len(s.Cases) != 2 {
+		t.Fatalf("Cases = %d, want 2", len(s.Cases))
+	}
+	if s.Cases[0].Value == nil {
+		t.Error("case clause should have non-nil Value")
+	}
+	if s.Cases[1].Value != nil {
+		t.Error("default clause should have nil Value")
+	}
+}
+
+func TestParser_ReturnStmt_WithValue(t *testing.T) {
+	f := mustParse(t, "function f() { return 42; }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.ReturnStmt)
+	if s.Value == nil {
+		t.Error("return value should be non-nil")
+	}
+}
+
+func TestParser_ReturnStmt_Bare(t *testing.T) {
+	f := mustParse(t, "function f() { return; }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	s := fn.Body.Stmts[0].(*parser.ReturnStmt)
+	if s.Value != nil {
+		t.Error("bare return should have nil value")
+	}
+}
+
+func TestParser_GlobalExpr(t *testing.T) {
+	f := mustParse(t, "function f() { global.player.Say(\"hi\"); }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	es := fn.Body.Stmts[0].(*parser.ExprStmt)
+	call := es.X.(*parser.CallExpr)
+	member := call.Callee.(*parser.MemberExpr)
+	g, ok := member.Object.(*parser.GlobalExpr)
+	if !ok {
+		t.Fatalf("expected *GlobalExpr, got %T", member.Object)
+	}
+	if g.Property != "player" {
+		t.Errorf("Property = %q, want player", g.Property)
+	}
+	if member.Field != "Say" {
+		t.Errorf("Field = %q, want Say", member.Field)
+	}
+}
+
+func TestParser_BinaryExpr_Precedence(t *testing.T) {
+	// 1 + 2 * 3 should parse as 1 + (2 * 3)
+	f := mustParse(t, "function f() { int x = 1 + 2 * 3; }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	vd := fn.Body.Stmts[0].(*parser.VarDecl)
+	add, ok := vd.Init.(*parser.BinaryExpr)
+	if !ok || add.Op != "+" {
+		t.Fatalf("expected BinaryExpr(+), got %T", vd.Init)
+	}
+	if _, ok := add.Right.(*parser.BinaryExpr); !ok {
+		t.Errorf("right of + should be BinaryExpr (*), got %T", add.Right)
+	}
+}
+
+func TestParser_AssignExpr_RightAssociative(t *testing.T) {
+	// a = b = c should parse as a = (b = c)
+	f := mustParse(t, "function f() { a = b = c; }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	es := fn.Body.Stmts[0].(*parser.ExprStmt)
+	outer := es.X.(*parser.AssignExpr)
+	if _, ok := outer.Value.(*parser.AssignExpr); !ok {
+		t.Errorf("assignment should be right-associative: value should be *AssignExpr, got %T", outer.Value)
+	}
+}
+
+func TestParser_PostfixExpr_ChainedMemberCall(t *testing.T) {
+	// global.player.WalkTo(point.door)
+	f := mustParse(t, `function f() { global.player.WalkTo(point.door); }`)
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	es := fn.Body.Stmts[0].(*parser.ExprStmt)
+	call, ok := es.X.(*parser.CallExpr)
+	if !ok {
+		t.Fatalf("expected CallExpr, got %T", es.X)
+	}
+	callee, ok := call.Callee.(*parser.MemberExpr)
+	if !ok || callee.Field != "WalkTo" {
+		t.Fatalf("callee should be MemberExpr .WalkTo")
+	}
+	if _, ok := callee.Object.(*parser.GlobalExpr); !ok {
+		t.Errorf("callee object should be *GlobalExpr, got %T", callee.Object)
+	}
+}
+
+func TestParser_UserTypeVarDecl(t *testing.T) {
+	// User-defined type name as variable type
+	f := mustParse(t, "function f() { Character c; }")
+	fn := f.Decls[0].(*parser.FunctionDecl)
+	vd := fn.Body.Stmts[0].(*parser.VarDecl)
+	if vd.Type != "Character" || vd.Name != "c" {
+		t.Errorf("VarDecl = {%q %q}, want {Character c}", vd.Type, vd.Name)
+	}
+}
+
+func TestParser_MultipleTopLevelDecls(t *testing.T) {
+	src := `
+		enum Color { Red, Green, Blue };
+		int score;
+		function room_Load() {}
+		function room_Leave() {}
+	`
+	f := mustParse(t, src)
+	if len(f.Decls) != 4 {
+		t.Errorf("expected 4 decls, got %d", len(f.Decls))
+	}
+	if _, ok := f.Decls[0].(*parser.EnumDecl); !ok {
+		t.Errorf("decl[0] should be *EnumDecl")
+	}
+	if _, ok := f.Decls[1].(*parser.TopVarDecl); !ok {
+		t.Errorf("decl[1] should be *TopVarDecl")
+	}
+}
+
+// TestParser_ExportOutsideNamespace verifies the explicit error message.
+func TestParser_ExportOutsideNamespace(t *testing.T) {
+	_, errs := parse("export function foo() {}")
+	if len(errs) == 0 {
+		t.Fatal("expected error for export outside namespace")
+	}
+	if !strings.Contains(errs[0].Message, "export") {
+		t.Errorf("error message should mention 'export', got %q", errs[0].Message)
 	}
 }
