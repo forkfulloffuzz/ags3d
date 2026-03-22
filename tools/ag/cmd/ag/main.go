@@ -69,7 +69,8 @@ Commands:
   export --platform NAME   build and export (windows|mac|linux|web|ios|android)
   new NAME                 scaffold a new AGS3D project
   viz tokens  FILE         print token stream (line/col/kind/lexeme)
-  viz ast     FILE         print AST tree
+  viz ast     FILE         print AST tree (text)
+  viz ast-dot FILE         print AST as Graphviz DOT  (pipe to: dot -Tsvg -o ast.svg)
   viz blocking FILE        print blocking call annotations
   viz emit    FILE         print side-by-side AGS-spirit ↔ GDScript
   viz         FILE         run all viz stages`)
@@ -107,6 +108,8 @@ func cmdViz(args []string) error {
 		viz.Tokens(os.Stdout, file, content)
 	case "ast":
 		viz.AST(os.Stdout, file, content)
+	case "ast-dot":
+		viz.ASTDot(os.Stdout, file, content)
 	case "blocking":
 		viz.Blocking(os.Stdout, file, content)
 	case "emit":
@@ -120,7 +123,7 @@ func cmdViz(args []string) error {
 		fmt.Fprintln(os.Stdout)
 		viz.Emit(os.Stdout, file, content)
 	default:
-		return fmt.Errorf("unknown viz stage %q — expected tokens, ast, blocking, or emit", stage)
+		return fmt.Errorf("unknown viz stage %q — expected tokens, ast, ast-dot, blocking, or emit", stage)
 	}
 	return nil
 }

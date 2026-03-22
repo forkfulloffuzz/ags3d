@@ -89,6 +89,330 @@ func AST(w io.Writer, file, src string) {
 }
 
 // --------------------------------------------------------------------
+// VIZ-02b — AST Graphviz DOT export
+// --------------------------------------------------------------------
+
+// ASTDot parses src and writes a Graphviz DOT graph to w.
+// Render with: ag viz ast-dot file.agscript | dot -Tsvg -o ast.svg
+//
+// Node colour key:
+//
+//	#AED6F1  File root
+//	#A9DFBF  Declarations  (FunctionDecl, NamespaceDecl, EnumDecl, TopVarDecl)
+//	#F9E79F  Statements    (Block, IfStmt, WhileStmt, …)
+//	#FDEBD0  Expressions   (BinaryExpr, CallExpr, Literal, …)
+func ASTDot(w io.Writer, file, src string) {
+	s := scanner.New(file, src)
+	p := parser.New(s)
+	f, errs := p.Parse(file)
+
+	if len(errs) > 0 {
+		fmt.Fprintf(w, "// parse errors in %s:\n", file)
+		for _, e := range errs {
+			fmt.Fprintf(w, "//   %v\n", e)
+		}
+		return
+	}
+
+	dg := &dotGen{w: w, id: 1}
+	fmt.Fprintf(w, "digraph AST {\n")
+	fmt.Fprintf(w, "  graph [fontname=\"Helvetica\" rankdir=\"TB\" label=%q fontsize=12]\n", "AST — "+file)
+	fmt.Fprintf(w, "  node  [fontname=\"Helvetica\" shape=\"box\" style=\"rounded,filled\" fontsize=11]\n")
+	fmt.Fprintf(w, "  edge  [fontname=\"Helvetica\" fontsize=9]\n\n")
+
+	root := dg.node("File", "#AED6F1")
+	for _, decl := range f.Decls {
+		child := dg.emitDecl(decl)
+		dg.edge(root, child, "")
+	}
+	fmt.Fprintf(w, "}\n")
+}
+
+// dotGen tracks node IDs and writes DOT statements to w.
+type dotGen struct {
+	w  io.Writer
+	id int
+}
+
+func (d *dotGen) node(label, color string) int {
+	id := d.id
+	d.id++
+	fmt.Fprintf(d.w, "  n%d [label=%q fillcolor=%q]\n", id, label, color)
+	return id
+}
+
+func (d *dotGen) edge(from, to int, label string) {
+	if label == "" {
+		fmt.Fprintf(d.w, "  n%d -> n%d\n", from, to)
+	} else {
+		fmt.Fprintf(d.w, "  n%d -> n%d [label=%q fontcolor=\"#555555\"]\n", from, to, label)
+	}
+}
+
+// emitDecl adds nodes for a top-level or namespace-member declaration.
+func (d *dotGen) emitDecl(decl parser.Decl) int {
+	const declColor = "#A9DFBF"
+	switch v := decl.(type) {
+	case *parser.FunctionDecl:
+		ret := v.ReturnType
+		if ret == "" {
+			ret = "void"
+		}
+		flags := ""
+		if v.IsExport {
+			flags += " export"
+		}
+		if v.IsBlocking {
+			flags += " blocking"
+		}
+		params := ""
+		for i, p := range v.Params {
+			if i > 0 {
+				params += ", "
+			}
+			params += p.Type + " " + p.Name
+		}
+		label := fmt.Sprintf("FunctionDecl\n%s → %s%s\n(%s)", v.Name, ret, flags, params)
+		n := d.node(label, declColor)
+		if v.Body != nil {
+			child := d.emitBlock(v.Body)
+			d.edge(n, child, "body")
+		}
+		return n
+
+	case *parser.NamespaceDecl:
+		n := d.node("NamespaceDecl\n"+v.Name, declColor)
+		for _, m := range v.Members {
+			child := d.emitDecl(m)
+			d.edge(n, child, "")
+		}
+		return n
+
+	case *parser.EnumDecl:
+		n := d.node("EnumDecl\n"+v.Name, declColor)
+		for _, m := range v.Members {
+			label := "EnumMember\n" + m.Name
+			mn := d.node(label, "#D7BDE2")
+			d.edge(n, mn, "")
+			if m.Value != nil {
+				child := d.emitExpr(m.Value)
+				d.edge(mn, child, "=")
+			}
+		}
+		return n
+
+	case *parser.TopVarDecl:
+		if v.Decl == nil {
+			return d.node("TopVarDecl", declColor)
+		}
+		n := d.node(fmt.Sprintf("TopVarDecl\n%s: %s", v.Decl.Name, v.Decl.Type), declColor)
+		if v.Decl.Init != nil {
+			child := d.emitExpr(v.Decl.Init)
+			d.edge(n, child, "=")
+		}
+		return n
+
+	default:
+		return d.node(fmt.Sprintf("%T", decl), declColor)
+	}
+}
+
+// emitBlock adds a Block node and its child statement nodes.
+func (d *dotGen) emitBlock(b *parser.Block) int {
+	n := d.node(fmt.Sprintf("Block\n[%d:%d]", b.Pos.Line, b.Pos.Column), "#E8DAEF")
+	for _, s := range b.Stmts {
+		child := d.emitStmt(s)
+		d.edge(n, child, "")
+	}
+	return n
+}
+
+// emitStmt adds nodes for a statement.
+func (d *dotGen) emitStmt(stmt parser.Stmt) int {
+	const stmtColor = "#F9E79F"
+	if stmt == nil {
+		return d.node("<nil>", "#CCCCCC")
+	}
+	switch s := stmt.(type) {
+	case *parser.Block:
+		return d.emitBlock(s)
+
+	case *parser.VarDecl:
+		n := d.node(fmt.Sprintf("VarDecl\n%s: %s", s.Name, s.Type), stmtColor)
+		if s.Init != nil {
+			child := d.emitExpr(s.Init)
+			d.edge(n, child, "=")
+		}
+		return n
+
+	case *parser.IfStmt:
+		n := d.node(fmt.Sprintf("IfStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		cond := d.emitExpr(s.Cond)
+		d.edge(n, cond, "cond")
+		then := d.emitBlock(s.Then)
+		d.edge(n, then, "then")
+		if s.Else != nil {
+			els := d.emitStmt(s.Else)
+			d.edge(n, els, "else")
+		}
+		return n
+
+	case *parser.WhileStmt:
+		n := d.node(fmt.Sprintf("WhileStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		cond := d.emitExpr(s.Cond)
+		d.edge(n, cond, "cond")
+		body := d.emitBlock(s.Body)
+		d.edge(n, body, "body")
+		return n
+
+	case *parser.DoWhileStmt:
+		n := d.node(fmt.Sprintf("DoWhileStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		body := d.emitBlock(s.Body)
+		d.edge(n, body, "body")
+		cond := d.emitExpr(s.Cond)
+		d.edge(n, cond, "cond")
+		return n
+
+	case *parser.ForStmt:
+		n := d.node(fmt.Sprintf("ForStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		if s.Init != nil {
+			child := d.emitStmt(s.Init)
+			d.edge(n, child, "init")
+		}
+		if s.Cond != nil {
+			child := d.emitExpr(s.Cond)
+			d.edge(n, child, "cond")
+		}
+		if s.Post != nil {
+			child := d.emitExpr(s.Post)
+			d.edge(n, child, "post")
+		}
+		body := d.emitBlock(s.Body)
+		d.edge(n, body, "body")
+		return n
+
+	case *parser.SwitchStmt:
+		n := d.node(fmt.Sprintf("SwitchStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		tag := d.emitExpr(s.Tag)
+		d.edge(n, tag, "tag")
+		for _, c := range s.Cases {
+			var cn int
+			if c.Value == nil {
+				cn = d.node("Default", stmtColor)
+			} else {
+				cn = d.node(fmt.Sprintf("Case\n[%d:%d]", c.Pos.Line, c.Pos.Column), stmtColor)
+				val := d.emitExpr(c.Value)
+				d.edge(cn, val, "val")
+			}
+			d.edge(n, cn, "")
+			for _, cs := range c.Body {
+				child := d.emitStmt(cs)
+				d.edge(cn, child, "")
+			}
+		}
+		return n
+
+	case *parser.ReturnStmt:
+		n := d.node(fmt.Sprintf("ReturnStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		if s.Value != nil {
+			child := d.emitExpr(s.Value)
+			d.edge(n, child, "")
+		}
+		return n
+
+	case *parser.BreakStmt:
+		return d.node(fmt.Sprintf("BreakStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+
+	case *parser.ContinueStmt:
+		return d.node(fmt.Sprintf("ContinueStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+
+	case *parser.ExprStmt:
+		n := d.node(fmt.Sprintf("ExprStmt\n[%d:%d]", s.Pos.Line, s.Pos.Column), stmtColor)
+		if s.X != nil {
+			child := d.emitExpr(s.X)
+			d.edge(n, child, "")
+		}
+		return n
+
+	default:
+		return d.node(fmt.Sprintf("%T", stmt), stmtColor)
+	}
+}
+
+// emitExpr adds nodes for an expression.
+func (d *dotGen) emitExpr(expr parser.Expr) int {
+	const exprColor = "#FDEBD0"
+	if expr == nil {
+		return d.node("<nil>", "#CCCCCC")
+	}
+	switch e := expr.(type) {
+	case *parser.Literal:
+		return d.node(fmt.Sprintf("Literal(%s)\n%q", e.Kind, e.Value), exprColor)
+
+	case *parser.Identifier:
+		return d.node("Ident\n"+e.Name, exprColor)
+
+	case *parser.GlobalExpr:
+		return d.node("Global\n."+e.Property, exprColor)
+
+	case *parser.AssignExpr:
+		n := d.node("AssignExpr\n"+e.Op, exprColor)
+		target := d.emitExpr(e.Target)
+		val := d.emitExpr(e.Value)
+		d.edge(n, target, "target")
+		d.edge(n, val, "value")
+		return n
+
+	case *parser.BinaryExpr:
+		n := d.node("BinaryExpr\n"+e.Op, exprColor)
+		left := d.emitExpr(e.Left)
+		right := d.emitExpr(e.Right)
+		d.edge(n, left, "L")
+		d.edge(n, right, "R")
+		return n
+
+	case *parser.UnaryExpr:
+		n := d.node("UnaryExpr\n"+e.Op, exprColor)
+		child := d.emitExpr(e.X)
+		d.edge(n, child, "")
+		return n
+
+	case *parser.PostfixExpr:
+		n := d.node("PostfixExpr\n"+e.Op, exprColor)
+		child := d.emitExpr(e.X)
+		d.edge(n, child, "")
+		return n
+
+	case *parser.CallExpr:
+		n := d.node(fmt.Sprintf("CallExpr\n[%d:%d]", e.Pos.Line, e.Pos.Column), exprColor)
+		callee := d.emitExpr(e.Callee)
+		d.edge(n, callee, "callee")
+		for i, arg := range e.Args {
+			child := d.emitExpr(arg)
+			d.edge(n, child, fmt.Sprintf("arg%d", i))
+		}
+		return n
+
+	case *parser.MemberExpr:
+		n := d.node("MemberExpr\n."+e.Field, exprColor)
+		obj := d.emitExpr(e.Object)
+		d.edge(n, obj, "obj")
+		return n
+
+	case *parser.IndexExpr:
+		n := d.node(fmt.Sprintf("IndexExpr\n[%d:%d]", e.Pos.Line, e.Pos.Column), exprColor)
+		obj := d.emitExpr(e.Object)
+		idx := d.emitExpr(e.Index)
+		d.edge(n, obj, "obj")
+		d.edge(n, idx, "idx")
+		return n
+
+	default:
+		return d.node(fmt.Sprintf("%T", expr), exprColor)
+	}
+}
+
+// --------------------------------------------------------------------
 // VIZ-03 — Blocking call annotation
 // --------------------------------------------------------------------
 
