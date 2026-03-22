@@ -17,7 +17,9 @@ package viz
 import (
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/scanner"
 )
@@ -871,12 +873,73 @@ func calleeString(e parser.Expr) string {
 // --------------------------------------------------------------------
 
 // Emit runs the full pipeline (scan → parse → emit) and writes a
-// side-by-side view of AGS-spirit source vs generated GDScript.
+// side-by-side view of AGS-spirit source lines vs generated GDScript lines.
 //
-// TODO(VIZ-04/T17): implement once emitter produces output and source maps.
+// Lines with no source-map entry (blank lines, generated preamble) show "~"
+// on the AGS-spirit side. Each column is truncated to colWidth runes.
 func Emit(w io.Writer, file, src string) {
-	fmt.Fprintf(w, "Transpile — %s\n", file)
-	fmt.Fprintf(w, "  (not yet implemented — available after T17)\n")
+	const colWidth = 48
+
+	fmt.Fprintf(w, "Transpile — %s\n\n", file)
+
+	// Parse and emit.
+	s := scanner.New(file, src)
+	p := parser.New(s)
+	f, parseErrs := p.Parse(file)
+	if len(parseErrs) > 0 {
+		for _, e := range parseErrs {
+			fmt.Fprintf(w, "  parse error: %v\n", e)
+		}
+		return
+	}
+	result, err := emitter.New().Emit(f)
+	if err != nil {
+		fmt.Fprintf(w, "  emit error: %v\n", err)
+		return
+	}
+
+	agLines := strings.Split(strings.TrimRight(src, "\n"), "\n")
+	gdLines := strings.Split(strings.TrimRight(result.GDScript, "\n"), "\n")
+
+	// Build map: gdscript_line (1-based) → agscript_line (1-based).
+	gdToAG := make(map[int]int, len(result.SourceMap))
+	for _, entry := range result.SourceMap {
+		gdLine, ok1 := entry[0].(int)
+		agLine, ok2 := entry[2].(int)
+		if ok1 && ok2 {
+			gdToAG[gdLine] = agLine
+		}
+	}
+
+	pad := func(s string, w int) string {
+		r := []rune(s)
+		if len(r) > w {
+			r = append(r[:w-1], '…')
+		}
+		for len(r) < w {
+			r = append(r, ' ')
+		}
+		return string(r)
+	}
+
+	hdr := pad("AGS-spirit", colWidth)
+	fmt.Fprintf(w, "  %s │  GDScript\n", hdr)
+	sep := strings.Repeat("─", colWidth)
+	fmt.Fprintf(w, "  %s─┼──%s\n", sep, sep)
+
+	for i, gdLine := range gdLines {
+		gdNum := i + 1
+		agNum, hasMapping := gdToAG[gdNum]
+
+		var agText string
+		if hasMapping && agNum >= 1 && agNum <= len(agLines) {
+			agText = fmt.Sprintf("%3d│ %s", agNum, agLines[agNum-1])
+		} else {
+			agText = "  ~│"
+		}
+		gdText := fmt.Sprintf("%3d│ %s", gdNum, gdLine)
+		fmt.Fprintf(w, "  %s │  %s\n", pad(agText, colWidth), gdText)
+	}
 }
 
 // --------------------------------------------------------------------
