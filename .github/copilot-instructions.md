@@ -113,7 +113,23 @@ AGS3D maintains three parallel test layers:
 
 Test tasks are tracked as `TEST-INFRA-xx` and `TEST-Mx-xx` GitHub issues (separate from T01–T36). Every implementation task that completes a milestone should be followed by implementing its corresponding test suite. Use the `unit-testing` skill for all test work.
 
+## AGS-Spirit Language
+
+The grammar is formally specified in [`../docs/grammar.md`](../docs/grammar.md). That document is the authoritative source for token types (scanner), AST node shapes (parser), and emit rules (emitter). Any language change must start there.
+
+Key points:
+- C-like syntax: `function`, `if`/`else`, `while`, `for`, `switch`, typed variables (`int x = 5;`)
+- Blocking calls (`WalkTo`, `Say`, `Think`, `Wait`, `WaitKey`, `FadeIn`, `FadeOut`, etc.) emit `await` in GDScript
+- Spatial references always use named points (`point.NAME`), never raw coordinates
+- Event handlers follow the naming convention: `room_Load`, `hotspot_NAME_Interact`, etc.
+- `true`, `false`, `null`, `global`, `public` are keywords, not identifiers
+- `global.player` / `global.room` / `global.score` — engine-owned game state namespace; never a magic variable
+- Type system is **structural** (Go-style): functions accept anything with the right shape, no inheritance
+- Visibility: functions are **file-scoped by default**; cross-file sharing requires a `namespace` block with `export function` — called as `X.Func()`; `export` outside a namespace is a transpiler error; the symbol table errors on duplicate exported names within the same namespace
+- `GlobalExpr` AST node represents `global.NAME` accesses — emitter maps these to `AGSRuntime` properties
+
 ## See Also
 
+- [AGS-Spirit Grammar](../docs/grammar.md) ← start here for any language / parser / emitter work
 - [AGS3D Design Document](docs/AGS3D_Design_Document.docx)
 - [Prototype Task List](docs/AGS3D_Prototype_Tasks.docx)
