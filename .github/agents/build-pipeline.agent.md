@@ -171,6 +171,12 @@ Each `internal/` package has a `_test.go` file alongside it. Run with `.dev/test
 | `internal/emitter`  | `emitter_test.go`       | GDScript output (golden files in `testdata/`)     | T13   |
 | `internal/analysis` | `analysis_test.go`      | Diagnostics, broken references                    | T12   |
 
+## Task Completion Protocol
+
+When finishing any task, always:
+1. Summarize what was done (2–5 sentences)
+2. List every file that was created or modified
+
 ## Approach
 
 1. Check `tools/ag/` for existing files before creating new ones

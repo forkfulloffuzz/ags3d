@@ -38,6 +38,12 @@ AGSRuntime      (Autoload singleton)      — indexes all rooms and characters b
 - NEVER break the clean build — test that SCsub compiles without warnings before finishing a task
 - `walk_to(point_name)` on AGSCharacter must be awaitable — emit `navigation_finished` signal after arrival
 
+## Task Completion Protocol
+
+When finishing any task, always:
+1. Summarize what was done (2–5 sentences)
+2. List every file that was created or modified
+
 ## Approach
 
 1. Read existing files in `modules/agvm/` before adding new classes to understand current patterns

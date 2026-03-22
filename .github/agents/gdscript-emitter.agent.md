@@ -74,6 +74,12 @@ Each entry: `[gdscript_line, agscript_relative_path, agscript_line]`
 
 Implementation lives in `tools/ag/internal/viz/`. Use it on `tools/ag/testdata/valid/` fixture files to verify emitter output by eye during T13–T17 development.
 
+## Task Completion Protocol
+
+When finishing any task, always:
+1. Summarize what was done (2–5 sentences)
+2. List every file that was created or modified
+
 ## Approach
 
 1. Read AST node definitions before writing emission code — do not assume node structure

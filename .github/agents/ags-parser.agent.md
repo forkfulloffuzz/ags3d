@@ -62,6 +62,12 @@ Each stage has a corresponding `ag viz` command for verifying correctness during
 
 Implementation lives in `tools/ag/internal/viz/`. Each visualizer reads from the same scanner/parser packages — no separate logic. Use these to manually verify output against the fixture files in `tools/ag/testdata/` while developing.
 
+## Task Completion Protocol
+
+When finishing any task, always:
+1. Summarize what was done (2–5 sentences)
+2. List every file that was created or modified
+
 ## Approach
 
 1. Read the grammar spec (`docs/grammar.md`) before writing any parser code

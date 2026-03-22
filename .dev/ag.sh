@@ -8,6 +8,11 @@
 #   .dev/ag.sh validate                 # static analysis
 #   .dev/ag.sh export --platform linux  # export for platform
 #   .dev/ag.sh new mygame               # scaffold new project
+#   .dev/ag.sh viz tokens  <file>       # print token stream
+#   .dev/ag.sh viz ast     <file>       # print AST tree
+#   .dev/ag.sh viz blocking <file>      # print blocking call annotations
+#   .dev/ag.sh viz emit    <file>       # print side-by-side AGS-spirit ↔ GDScript
+#   .dev/ag.sh viz         <file>       # run all viz stages
 
 set -euo pipefail
 
@@ -18,6 +23,7 @@ AG_BIN="$REPO_ROOT/bin/ag"
 if [[ $# -eq 0 ]]; then
   echo "Usage: .dev/ag.sh COMMAND [args]" >&2
   echo "  build | run | validate | export --platform NAME | new NAME" >&2
+  echo "  viz tokens  FILE | viz ast FILE | viz blocking FILE | viz emit FILE | viz FILE" >&2
   exit 1
 fi
 

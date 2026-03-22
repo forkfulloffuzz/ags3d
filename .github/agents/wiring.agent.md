@@ -63,6 +63,14 @@ Example entries:
 
 ## Approach
 
+## Task Completion Protocol
+
+When finishing any task, always:
+1. Summarize what was done (2–5 sentences)
+2. List every file that was created or modified
+
+## Approach
+
 1. Implement AGSRuntime first (T31) — both T30 and T32 depend on it
 2. Read existing `AGSScriptLanguage` stub (T03) before implementing `load()` (T30)
 3. Implement built-in name table as a loaded config before wiring emitter calls to it (T32)
