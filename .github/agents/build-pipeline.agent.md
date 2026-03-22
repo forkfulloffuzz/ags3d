@@ -176,6 +176,9 @@ Each `internal/` package has a `_test.go` file alongside it. Run with `.dev/test
 When finishing any task, always:
 1. Summarize what was done (2–5 sentences)
 2. List every file that was created or modified
+3. Commit all changes with a message referencing the task ID (e.g. `feat(T04): ...`)
+4. Close the corresponding GitHub issue — include `Closes #<N>` in the commit message (auto-closes on push) or run `gh issue close <N>` explicitly
+5. Add a comment to the closed issue summarising what was done and naming the commit SHA
 
 ## Approach
 
