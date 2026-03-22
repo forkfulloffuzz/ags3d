@@ -76,40 +76,58 @@ default_out() {
   echo "${file%.agscript}.$ext"
 }
 
+# viz_file_arg SHIFT_COUNT -- parse FILE from remaining args, skipping an
+# optional leading stage keyword (ast, ast-dot) so both forms work:
+#   viz-svg FILE [out]
+#   viz-svg ast FILE [out]
+viz_args() {
+  # $@ is the remaining args after the viz-svg/png/pdf/open token.
+  local arg1="${1:-}"
+  case "$arg1" in
+    ast|ast-dot) shift ;;   # optional stage keyword — discard it
+  esac
+  VIZ_FILE="${1:-}"
+  VIZ_OUT="${2:-}"
+}
+
 case "${1}" in
 
   viz-svg)
     require_dot
-    file="${2:?usage: .dev/ag.sh viz-svg FILE [out.svg]}"
-    out="${3:-$(default_out "$file" svg)}"
-    "$AG_BIN" viz ast-dot "$file" | dot -Tsvg -o "$out"
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-svg [ast] FILE [out.svg]" >&2; exit 1; }
+    out="${VIZ_OUT:-$(default_out "$VIZ_FILE" svg)}"
+    "$AG_BIN" viz ast-dot "$VIZ_FILE" | dot -Tsvg -o "$out"
     echo "→ $out"
     exit 0
     ;;
 
   viz-png)
     require_dot
-    file="${2:?usage: .dev/ag.sh viz-png FILE [out.png]}"
-    out="${3:-$(default_out "$file" png)}"
-    "$AG_BIN" viz ast-dot "$file" | dot -Tpng -o "$out"
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-png [ast] FILE [out.png]" >&2; exit 1; }
+    out="${VIZ_OUT:-$(default_out "$VIZ_FILE" png)}"
+    "$AG_BIN" viz ast-dot "$VIZ_FILE" | dot -Tpng -o "$out"
     echo "→ $out"
     exit 0
     ;;
 
   viz-pdf)
     require_dot
-    file="${2:?usage: .dev/ag.sh viz-pdf FILE [out.pdf]}"
-    out="${3:-$(default_out "$file" pdf)}"
-    "$AG_BIN" viz ast-dot "$file" | dot -Tpdf -o "$out"
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-pdf [ast] FILE [out.pdf]" >&2; exit 1; }
+    out="${VIZ_OUT:-$(default_out "$VIZ_FILE" pdf)}"
+    "$AG_BIN" viz ast-dot "$VIZ_FILE" | dot -Tpdf -o "$out"
     echo "→ $out"
     exit 0
     ;;
 
   viz-open)
     require_dot
-    file="${2:?usage: .dev/ag.sh viz-open FILE}"
+    viz_args "${@:2}"
+    [[ -z "$VIZ_FILE" ]] && { echo "usage: .dev/ag.sh viz-open [ast] FILE" >&2; exit 1; }
     tmp="$(mktemp --suffix=.svg)"
-    "$AG_BIN" viz ast-dot "$file" | dot -Tsvg -o "$tmp"
+    "$AG_BIN" viz ast-dot "$VIZ_FILE" | dot -Tsvg -o "$tmp"
     # Try common viewers in order.
     if command -v xdg-open &>/dev/null; then
       xdg-open "$tmp"
