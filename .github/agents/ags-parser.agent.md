@@ -50,10 +50,24 @@ Use `.dev/test-ag.sh` or `go test ./internal/scanner/...` and `go test ./interna
 - Prototype grammar scope is deliberately minimal — do not expand beyond T06's spec
 - Blocking call list is a data table, not an if/else chain in the parser
 
+## Pipeline Visualizers
+
+Each stage has a corresponding `ag viz` command for verifying correctness during development:
+
+| Stage | Command | Implemented alongside |
+|-------|---------|-----------------------|
+| Token stream | `ag viz tokens <file>` | T07 (VIZ-01) |
+| AST tree | `ag viz ast <file>` | T09 (VIZ-02) |
+| Blocking annotation | `ag viz blocking <file>` | T11 (VIZ-03) |
+
+Implementation lives in `tools/ag/internal/viz/`. Each visualizer reads from the same scanner/parser packages — no separate logic. Use these to manually verify output against the fixture files in `tools/ag/testdata/` while developing.
+
 ## Approach
 
-1. Read the grammar spec before writing any parser code
+1. Read the grammar spec (`docs/grammar.md`) before writing any parser code
 2. Write lexer unit tests covering all token types before implementing the parser
 3. Implement two-pass symbol table: first pass collects declarations, second pass resolves references
 4. Error messages must name what was expected vs what was found: `line 12:5: expected ')' but found ';'`
 5. Annotate blocking call sites during the second symbol-resolution pass, not during parsing
+6. Use `ag viz tokens <file>` on fixture files to verify scanner output while implementing T07
+7. Use `ag viz ast <file>` on fixture files to verify parser output while implementing T09

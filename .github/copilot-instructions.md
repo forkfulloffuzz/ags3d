@@ -69,6 +69,12 @@ ag build     # parse all changed .agscript files, emit GDScript to .engine/gener
 ag run       # build + launch Godot editor with the project
 ag validate  # static analysis: broken references, unreachable options, unset flags
 ag new my_game  # scaffold a new project from template
+
+ag viz tokens <file>    # token stream table: line/col/kind/lexeme (VIZ-01, after T07)
+ag viz ast <file>       # AST indented tree with node types and source positions (VIZ-02, after T09)
+ag viz blocking <file>  # which call sites are annotated blocking=true (VIZ-03, after T11)
+ag viz emit <file>      # side-by-side AGS-spirit ↔ GDScript with source-map links (VIZ-04, after T17)
+ag viz <file>           # all four stages in sequence
 ```
 
 ```sh
@@ -131,5 +137,5 @@ Key points:
 ## See Also
 
 - [AGS-Spirit Grammar](../docs/grammar.md) ← start here for any language / parser / emitter work
-- [AGS3D Design Document](docs/AGS3D_Design_Document.docx)
-- [Prototype Task List](docs/AGS3D_Prototype_Tasks.docx)
+- [AGS3D Design Document](../docs/AGS3D_Design_Document.docx)
+- [Prototype Task List](../docs/AGS3D_Prototype_Tasks.docx)

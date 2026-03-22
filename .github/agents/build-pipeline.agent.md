@@ -33,6 +33,7 @@ tools/ag/
     emitter/                # T13-T17: GDScript emitter, await transform, source maps
     analysis/               # static analysis (validate command + LSP diagnostics)
     lsp/                    # LSP server, request handlers (uses glsp or hand-rolled JSON-RPC)
+    viz/                    # VIZ-01–04: pipeline visualizers (tokens, AST, blocking, emit)
 ```
 
 ## game.agp TOML Schema
@@ -75,6 +76,56 @@ my_game/
 | `ag validate`                   | Static analysis: broken references, unreachable dialogue options, unset flags                       |
 | `ag export --platform <target>` | Build then invoke Godot's export pipeline for the named platform                                    |
 | `ag new <name>`                 | Scaffold a new project from template with correct directory layout and `game.agp`                   |
+| `ag viz tokens <file>`          | Print full token stream: line, col, kind, lexeme — one row per token (VIZ-01, requires T07)        |
+| `ag viz ast <file>`             | Print AST as indented tree with node type, name, source position (VIZ-02, requires T09)            |
+| `ag viz blocking <file>`        | Print all call sites annotated blocking=true/false (VIZ-03, requires T11)                          |
+| `ag viz emit <file>`            | Side-by-side AGS-spirit ↔ GDScript with source-map line links (VIZ-04, requires T17)              |
+| `ag viz <file>`                 | Run all four viz stages in sequence                                                                 |
+
+## Visualizer Output Formats
+
+### `ag viz tokens`
+```
+Tokens — rooms/market/market.agscript
+LINE  COL  KIND              LEXEME
+   1    1  FUNCTION          "function"
+   1   10  IDENT             "room_Load"
+   1   19  LPAREN            "("
+   1   20  RPAREN            ")"
+   1   22  LBRACE            "{"
+   2    5  INT               "int"
+   ...
+  12 tokens
+```
+
+### `ag viz ast`
+```
+AST — rooms/market/market.agscript
+File
+└── FunctionDecl "room_Load" → void  [1:1]
+    └── Block
+        └── VarDecl "x": int  [2:5]
+            └── Literal(int) "42"  [2:13]
+```
+
+### `ag viz blocking`
+```
+Blocking calls — rooms/market/market.agscript
+LINE  COL  CALL                                        BLOCKING
+   5    5  global.player.WalkTo(point.door_left)       YES → await
+   6    5  global.player.Say("Hello")                  YES → await
+   8    5  getScore()                                  no
+```
+
+### `ag viz emit`
+```
+Transpile — rooms/market/market.agscript
+  AGS-spirit                          │  GDScript
+  ────────────────────────────────────┼────────────────────────────────────
+  1│ function room_Load() {           │  1│ func room_load():
+  2│     global.player.WalkTo(…)      │  2│     await AGSRuntime…walk_to(…)
+  3│ }                                │  3│
+```
 
 ## Error Output Format
 

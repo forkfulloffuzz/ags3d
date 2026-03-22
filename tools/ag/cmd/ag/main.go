@@ -7,6 +7,11 @@
 //	ag validate                  # static analysis (broken refs, unset flags)
 //	ag export --platform <name>  # build + Godot export pipeline
 //	ag new <name>                # scaffold a new project
+//	ag viz tokens <file>         # print token stream (VIZ-01)
+//	ag viz ast <file>            # print AST tree (VIZ-02)
+//	ag viz blocking <file>       # print blocking call annotations (VIZ-03)
+//	ag viz emit <file>           # print side-by-side AGS-spirit ↔ GDScript (VIZ-04)
+//	ag viz <file>                # run all viz stages
 package main
 
 import (
@@ -21,6 +26,7 @@ import (
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
 	"github.com/ags3d/ag/internal/scanner"
+	"github.com/ags3d/ag/internal/viz"
 )
 
 func main() {
@@ -40,6 +46,8 @@ func main() {
 		err = cmdExport(os.Args[2:])
 	case "new":
 		err = cmdNew(os.Args[2:])
+	case "viz":
+		err = cmdViz(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "ag: unknown command %q\n\n", os.Args[1])
 		usage()
@@ -59,7 +67,62 @@ Commands:
   run                      build then launch Godot editor
   validate                 static analysis on the project
   export --platform NAME   build and export (windows|mac|linux|web|ios|android)
-  new NAME                 scaffold a new AGS3D project`)
+  new NAME                 scaffold a new AGS3D project
+  viz tokens  FILE         print token stream (line/col/kind/lexeme)
+  viz ast     FILE         print AST tree
+  viz blocking FILE        print blocking call annotations
+  viz emit    FILE         print side-by-side AGS-spirit ↔ GDScript
+  viz         FILE         run all viz stages`)
+}
+
+// -------------------------------------------------------------------
+// ag viz
+// -------------------------------------------------------------------
+
+func cmdViz(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("usage: ag viz [tokens|ast|blocking|emit] <file>")
+	}
+
+	// Determine sub-command and file.
+	// Accept:  ag viz <file>          — run all stages
+	//          ag viz tokens  <file>  — single stage
+	stage := "all"
+	file := args[0]
+	if len(args) == 2 {
+		stage = args[0]
+		file = args[1]
+	} else if len(args) > 2 {
+		return fmt.Errorf("usage: ag viz [tokens|ast|blocking|emit] <file>")
+	}
+
+	src, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	content := string(src)
+
+	switch stage {
+	case "tokens":
+		viz.Tokens(os.Stdout, file, content)
+	case "ast":
+		viz.AST(os.Stdout, file, content)
+	case "blocking":
+		viz.Blocking(os.Stdout, file, content)
+	case "emit":
+		viz.Emit(os.Stdout, file, content)
+	case "all":
+		viz.Tokens(os.Stdout, file, content)
+		fmt.Fprintln(os.Stdout)
+		viz.AST(os.Stdout, file, content)
+		fmt.Fprintln(os.Stdout)
+		viz.Blocking(os.Stdout, file, content)
+		fmt.Fprintln(os.Stdout)
+		viz.Emit(os.Stdout, file, content)
+	default:
+		return fmt.Errorf("unknown viz stage %q — expected tokens, ast, blocking, or emit", stage)
+	}
+	return nil
 }
 
 // requireProject finds the project root or exits with an error.

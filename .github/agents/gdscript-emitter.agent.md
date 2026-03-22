@@ -60,10 +60,24 @@ Each entry: `[gdscript_line, agscript_relative_path, agscript_line]`
 - Generated files go to `.engine/generated/` — never overwrite source files
 - `ag build` error messages must reference AGS-spirit source locations (file:line), not GDScript paths
 
+## Pipeline Visualizer
+
+`ag viz emit <file>` (VIZ-04, implemented alongside T17) prints a side-by-side view of AGS-spirit source vs generated GDScript with source-map line links:
+
+```
+  AGS-spirit                          │  GDScript
+  ────────────────────────────────────┼────────────────────────────────────
+  1│ function room_Load() {           │  1│ func room_load():
+  2│     global.player.WalkTo(…)      │  2│     await AGSRuntime…walk_to(…)
+  3│ }                                │  3│
+```
+
+Implementation lives in `tools/ag/internal/viz/`. Use it on `tools/ag/testdata/valid/` fixture files to verify emitter output by eye during T13–T17 development.
+
 ## Approach
 
 1. Read AST node definitions before writing emission code — do not assume node structure
 2. Track source position alongside each emitted line as it is written, not as a post-pass
-3. Emit the simplest correct GDScript first; verify with a GDScript syntax check if available
+3. Emit the simplest correct GDScript first; verify with `ag viz emit` and the golden files in `testdata/`
 4. Await transformation: for each call site with `is_blocking = true` annotation, prefix emission with `await`
 5. For `ag build` integration (T18): scan for changed `.agscript` files by comparing mtimes to `.engine/cache/`
