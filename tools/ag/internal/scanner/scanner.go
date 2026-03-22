@@ -163,6 +163,175 @@ type Token struct {
 	Column int
 }
 
+// String returns a human-readable name for the token kind, suitable for use
+// in error messages (e.g. "'}'" or "'function'" or "identifier").
+func (k TokenKind) String() string {
+	switch k {
+	case TokenEOF:
+		return "end of file"
+	case TokenInvalid:
+		return "invalid token"
+	case TokenIdent:
+		return "identifier"
+	case TokenIntLit:
+		return "integer literal"
+	case TokenFloatLit:
+		return "float literal"
+	case TokenStringLit:
+		return "string literal"
+	// Keywords — types
+	case TokenBool:
+		return "'bool'"
+	case TokenChar:
+		return "'char'"
+	case TokenFloat:
+		return "'float'"
+	case TokenInt:
+		return "'int'"
+	case TokenShort:
+		return "'short'"
+	case TokenString:
+		return "'string'"
+	case TokenVoid:
+		return "'void'"
+	// Keywords — control flow
+	case TokenBreak:
+		return "'break'"
+	case TokenCase:
+		return "'case'"
+	case TokenContinue:
+		return "'continue'"
+	case TokenDefault:
+		return "'default'"
+	case TokenDo:
+		return "'do'"
+	case TokenElse:
+		return "'else'"
+	case TokenFor:
+		return "'for'"
+	case TokenIf:
+		return "'if'"
+	case TokenReturn:
+		return "'return'"
+	case TokenSwitch:
+		return "'switch'"
+	case TokenWhile:
+		return "'while'"
+	// Keywords — declarations
+	case TokenEnum:
+		return "'enum'"
+	case TokenExport:
+		return "'export'"
+	case TokenFunction:
+		return "'function'"
+	case TokenNamespace:
+		return "'namespace'"
+	// Keywords — built-in namespaces / values
+	case TokenGlobal:
+		return "'global'"
+	case TokenFalse:
+		return "'false'"
+	case TokenNull:
+		return "'null'"
+	case TokenTrue:
+		return "'true'"
+	// Punctuation
+	case TokenLParen:
+		return "'('"
+	case TokenRParen:
+		return "')'"
+	case TokenLBrace:
+		return "'{'"
+	case TokenRBrace:
+		return "'}'"
+	case TokenLBracket:
+		return "'['"
+	case TokenRBracket:
+		return "']'"
+	case TokenSemicolon:
+		return "';'"
+	case TokenComma:
+		return "','"
+	case TokenColon:
+		return "':'"
+	case TokenDot:
+		return "'.'"
+	// Assignment operators
+	case TokenAssign:
+		return "'='"
+	case TokenPlusAssign:
+		return "'+='"
+	case TokenMinusAssign:
+		return "'-='"
+	case TokenStarAssign:
+		return "'*='"
+	case TokenSlashAssign:
+		return "'/='"
+	case TokenPercentAssign:
+		return "'%='"
+	case TokenAndAssign:
+		return "'&='"
+	case TokenOrAssign:
+		return "'|='"
+	case TokenXorAssign:
+		return "'^='"
+	case TokenLShiftAssign:
+		return "'<<='"
+	case TokenRShiftAssign:
+		return "'>>='"
+	// Comparison
+	case TokenEq:
+		return "'=='"
+	case TokenNeq:
+		return "'!='"
+	case TokenLt:
+		return "'<'"
+	case TokenLte:
+		return "'<='"
+	case TokenGt:
+		return "'>'"
+	case TokenGte:
+		return "'>='"
+	// Arithmetic
+	case TokenPlus:
+		return "'+'"
+	case TokenMinus:
+		return "'-'"
+	case TokenStar:
+		return "'*'"
+	case TokenSlash:
+		return "'/'"
+	case TokenPercent:
+		return "'%'"
+	case TokenPlusPlus:
+		return "'++'"
+	case TokenMinusMinus:
+		return "'--'"
+	// Logical
+	case TokenBang:
+		return "'!'"
+	case TokenAnd:
+		return "'&&'"
+	case TokenOr:
+		return "'||'"
+	// Bitwise
+	case TokenAmpersand:
+		return "'&'"
+	case TokenPipe:
+		return "'|'"
+	case TokenCaret:
+		return "'^'"
+	case TokenTilde:
+		return "'~'"
+	case TokenLShift:
+		return "'<<'"
+	case TokenRShift:
+		return "'>>'"
+	default:
+		return fmt.Sprintf("token(%d)", int(k))
+	}
+}
+
 func (t Token) String() string {
 	return fmt.Sprintf("%s:%d:%d %v %q", t.File, t.Line, t.Column, t.Kind, t.Lexeme)
 }
