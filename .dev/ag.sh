@@ -8,12 +8,14 @@
 #   .dev/ag.sh validate                 # static analysis
 #   .dev/ag.sh export --platform linux  # export for platform
 #   .dev/ag.sh new mygame               # scaffold new project
-#   .dev/ag.sh viz tokens  <file>       # print token stream
-#   .dev/ag.sh viz ast     <file>       # print AST tree (text)
-#   .dev/ag.sh viz ast-dot <file>       # print AST as Graphviz DOT
-#   .dev/ag.sh viz blocking <file>      # print blocking call annotations
-#   .dev/ag.sh viz emit    <file>       # print side-by-side AGS-spirit ↔ GDScript
-#   .dev/ag.sh viz         <file>       # run all viz stages
+#   .dev/ag.sh viz tokens      <file>   # print token stream
+#   .dev/ag.sh viz ast         <file>   # print AST tree (text)
+#   .dev/ag.sh viz ast-dot     <file>   # print AST as Graphviz DOT
+#   .dev/ag.sh viz symbols     <file>   # print symbol table (text)
+#   .dev/ag.sh viz symbols-dot <file>   # print symbol table as Graphviz DOT
+#   .dev/ag.sh viz blocking    <file>   # print blocking call annotations
+#   .dev/ag.sh viz emit        <file>   # print side-by-side AGS-spirit ↔ GDScript
+#   .dev/ag.sh viz             <file>   # run all viz stages
 #
 # Graphic visualisation shortcuts (require graphviz):
 #   .dev/ag.sh viz-svg     FILE [out]   # render AST as SVG       (default: <file>.svg)
@@ -33,7 +35,8 @@ AG_BIN="$REPO_ROOT/bin/ag"
 if [[ $# -eq 0 ]]; then
   echo "Usage: .dev/ag.sh COMMAND [args]" >&2
   echo "  build | run | validate | export --platform NAME | new NAME" >&2
-  echo "  viz tokens FILE | viz ast FILE | viz ast-dot FILE | viz blocking FILE | viz emit FILE | viz FILE" >&2
+  echo "  viz tokens FILE | viz ast FILE | viz ast-dot FILE | viz symbols FILE | viz symbols-dot FILE" >&2
+  echo "  viz blocking FILE | viz emit FILE | viz FILE" >&2
   echo "  viz-svg FILE [out] | viz-png FILE [out] | viz-pdf FILE [out] | viz-open FILE" >&2
   exit 1
 fi
