@@ -1,4 +1,4 @@
-// Package emitter generates GDScript from an AGS-spirit AST (T13–T16).
+// Package emitter generates GDScript from an AGS-spirit AST (T13–T17).
 //
 // The pipeline inside Emit():
 //  1. Build symbol table (T10) to resolve names.
@@ -14,8 +14,7 @@
 //   - switch/case → GDScript match/pattern
 //   - namespace Foo { } → inner class Foo:
 //   - `&&` / `||` / `!` → `and` / `or` / `not`
-//
-// Source maps (T17) are not yet implemented; SourceMap is always nil.
+//   - Each emitted line is recorded in SourceMap as [gd_line, src_file, src_line] (T17)
 package emitter
 
 import (
@@ -50,9 +49,9 @@ func (em *Emitter) Emit(f *parser.File) (*Result, error) {
 	st, _ := parser.BuildSymbolTable(f)
 	parser.AnnotateBlocking(f, st)
 
-	p := &printer{}
+	p := &printer{srcFile: f.Path}
 	p.emitFile(f)
-	return &Result{GDScript: p.result()}, nil
+	return &Result{GDScript: p.result(), SourceMap: p.sm}, nil
 }
 
 // -------------------------------------------------------------------
@@ -60,26 +59,37 @@ func (em *Emitter) Emit(f *parser.File) (*Result, error) {
 // -------------------------------------------------------------------
 
 type printer struct {
-	buf   strings.Builder
-	depth int
+	buf     strings.Builder
+	depth   int
+	lineNum int    // 1-based GDScript output line counter
+	srcFile string // AGS-spirit source file path
+	srcLine int    // current AGS-spirit source line (0 = unknown)
+	sm      [][3]any
 }
 
 func (p *printer) result() string { return p.buf.String() }
 
-// line writes one indented line followed by a newline.
+// setSrc records the AGS-spirit source line for subsequent emitted lines.
+func (p *printer) setSrc(line int) { p.srcLine = line }
+
+// line writes one indented line followed by a newline and records a source map entry.
 func (p *printer) line(s string) {
 	if p.depth > 0 {
 		p.buf.WriteString(strings.Repeat("\t", p.depth))
 	}
 	p.buf.WriteString(s)
 	p.buf.WriteByte('\n')
+	p.lineNum++
+	if p.srcFile != "" && p.srcLine > 0 {
+		p.sm = append(p.sm, [3]any{p.lineNum, p.srcFile, p.srcLine})
+	}
 }
 
 func (p *printer) linef(format string, args ...any) {
 	p.line(fmt.Sprintf(format, args...))
 }
 
-func (p *printer) blank() { p.buf.WriteByte('\n') }
+func (p *printer) blank() { p.buf.WriteByte('\n'); p.lineNum++ }
 func (p *printer) push()  { p.depth++ }
 func (p *printer) pop()   { p.depth-- }
 
@@ -119,6 +129,7 @@ func (p *printer) emitDecl(d parser.Decl) {
 // emitFuncDecl emits a GDScript func definition.
 // static=true is used for namespace members exported as static methods.
 func (p *printer) emitFuncDecl(fd *parser.FunctionDecl, static bool) {
+	p.setSrc(fd.Pos.Line)
 	prefix := ""
 	if static {
 		prefix = "static "
@@ -156,6 +167,7 @@ func (p *printer) formatParams(params []parser.Param) string {
 
 // emitNamespaceDecl emits a GDScript inner class for an AGS-spirit namespace.
 func (p *printer) emitNamespaceDecl(nd *parser.NamespaceDecl) {
+	p.setSrc(nd.Pos.Line)
 	p.linef("class %s:", nd.Name)
 	p.push()
 	if len(nd.Members) == 0 {
@@ -176,6 +188,7 @@ func (p *printer) emitNamespaceDecl(nd *parser.NamespaceDecl) {
 }
 
 func (p *printer) emitEnumDecl(ed *parser.EnumDecl) {
+	p.setSrc(ed.Pos.Line)
 	if len(ed.Members) == 0 {
 		p.linef("enum %s {}", ed.Name)
 		return
@@ -196,6 +209,7 @@ func (p *printer) emitTopVarDecl(tv *parser.TopVarDecl) {
 		return
 	}
 	vd := tv.Decl
+	p.setSrc(vd.Pos.Line)
 	if vd.Type != "" {
 		if vd.Init != nil {
 			p.linef("var %s: %s = %s", toSnakeCase(vd.Name), mapType(vd.Type), p.exprStr(vd.Init))
@@ -237,12 +251,14 @@ func (p *printer) emitStmt(s parser.Stmt) {
 		p.emitBlock(v)
 
 	case *parser.VarDecl:
+		p.setSrc(v.Pos.Line)
 		p.emitVarDecl(v)
 
 	case *parser.ExprStmt:
 		if v.X == nil {
 			return
 		}
+		p.setSrc(v.X.ExprPos().Line)
 		// Postfix ++ / -- as a standalone statement → x += 1 / x -= 1
 		if post, ok := v.X.(*parser.PostfixExpr); ok {
 			switch post.Op {
@@ -257,6 +273,7 @@ func (p *printer) emitStmt(s parser.Stmt) {
 		p.line(p.exprStr(v.X))
 
 	case *parser.ReturnStmt:
+		p.setSrc(v.Pos.Line)
 		if v.Value != nil {
 			p.linef("return %s", p.exprStr(v.Value))
 		} else {
@@ -264,15 +281,18 @@ func (p *printer) emitStmt(s parser.Stmt) {
 		}
 
 	case *parser.IfStmt:
+		p.setSrc(v.Pos.Line)
 		p.emitIfStmt(v, "if")
 
 	case *parser.WhileStmt:
+		p.setSrc(v.Pos.Line)
 		p.linef("while %s:", p.exprStr(v.Cond))
 		p.push()
 		p.emitBlock(v.Body)
 		p.pop()
 
 	case *parser.DoWhileStmt:
+		p.setSrc(v.Pos.Line)
 		// do { body } while (cond)  →  while true: body; if not cond: break
 		p.line("while true:")
 		p.push()
@@ -284,10 +304,12 @@ func (p *printer) emitStmt(s parser.Stmt) {
 		p.pop()
 
 	case *parser.ForStmt:
+		p.setSrc(v.Pos.Line)
 		// C-style for → optional init + while loop (GDScript has no C-style for)
 		if v.Init != nil {
 			p.emitStmt(v.Init)
 		}
+		p.setSrc(v.Pos.Line) // reset after init emission
 		cond := "true"
 		if v.Cond != nil {
 			cond = p.exprStr(v.Cond)
@@ -300,6 +322,7 @@ func (p *printer) emitStmt(s parser.Stmt) {
 			p.line("pass")
 		}
 		if v.Post != nil {
+			p.setSrc(v.Pos.Line)
 			if post, ok := v.Post.(*parser.PostfixExpr); ok {
 				switch post.Op {
 				case "++":
@@ -316,12 +339,14 @@ func (p *printer) emitStmt(s parser.Stmt) {
 		p.pop()
 
 	case *parser.SwitchStmt:
+		p.setSrc(v.Pos.Line)
 		p.linef("match %s:", p.exprStr(v.Tag))
 		p.push()
 		if len(v.Cases) == 0 {
 			p.line("pass")
 		}
 		for _, cl := range v.Cases {
+			p.setSrc(cl.Pos.Line)
 			if cl.Value == nil {
 				p.line("_:")
 			} else {
@@ -345,9 +370,11 @@ func (p *printer) emitStmt(s parser.Stmt) {
 		p.pop()
 
 	case *parser.BreakStmt:
+		p.setSrc(v.Pos.Line)
 		p.line("break")
 
 	case *parser.ContinueStmt:
+		p.setSrc(v.Pos.Line)
 		p.line("continue")
 	}
 }
@@ -369,6 +396,7 @@ func (p *printer) emitVarDecl(v *parser.VarDecl) {
 
 // emitIfStmt emits an if / elif chain recursively.
 func (p *printer) emitIfStmt(v *parser.IfStmt, keyword string) {
+	p.setSrc(v.Pos.Line)
 	p.linef("%s %s:", keyword, p.exprStr(v.Cond))
 	p.push()
 	p.emitBlock(v.Then)

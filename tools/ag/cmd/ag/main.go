@@ -15,12 +15,14 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/parser"
@@ -216,6 +218,13 @@ func build(root string) error {
 		if err := os.WriteFile(outPath, []byte(result.GDScript), 0644); err != nil {
 			errs = append(errs, err)
 			continue
+		}
+
+		// Write .agmap sidecar source map (T17):
+		// [[gdscript_line, "rel/path.agscript", agscript_line], ...]
+		agmapPath := strings.TrimSuffix(outPath, ".gd") + ".agmap"
+		if mapJSON, jsonErr := json.Marshal(result.SourceMap); jsonErr == nil {
+			_ = os.WriteFile(agmapPath, mapJSON, 0644)
 		}
 
 		project.RecordMtimes([]project.SourceFile{src}, manifest)
