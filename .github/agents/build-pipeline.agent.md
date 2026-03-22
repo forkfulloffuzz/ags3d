@@ -176,9 +176,18 @@ Each `internal/` package has a `_test.go` file alongside it. Run with `.dev/test
 When finishing any task, always:
 1. Summarize what was done (2–5 sentences)
 2. List every file that was created or modified
-3. Commit all changes with a message referencing the task ID (e.g. `feat(T04): ...`)
-4. Close the corresponding GitHub issue — include `Closes #<N>` in the commit message (auto-closes on push) or run `gh issue close <N>` explicitly
-5. Add a comment to the closed issue summarising what was done and naming the commit SHA
+3. List the tests that ran and passed (test function names and counts)
+4. Commit all changes with a message referencing the task ID (e.g. `feat(T04): ...`)
+5. Close the corresponding GitHub issue — include `Closes #<N>` in the commit message (auto-closes on push) or run `gh issue close <N>` explicitly
+6. Add a comment to the closed issue summarising what was done and naming the commit SHA
+
+## Scope Discipline
+
+**Do exactly what was asked — nothing more.**
+- Complete one task at a time. If the user asks to implement issue #X, implement only #X.
+- Do not close adjacent issues, implement follow-on tasks, or add "while we're here" improvements.
+- Do not move on to the next task in a milestone without being explicitly asked.
+- After completing a task, stop and report. Let the user decide what comes next.
 
 ## Approach
 
