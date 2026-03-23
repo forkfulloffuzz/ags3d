@@ -53,8 +53,21 @@ type SourceFile struct {
 	Ext  string
 }
 
-// ScanProject returns all source files in root.
+// ScanProject returns all source files in root (requires game.agp).
 func ScanProject(root string) ([]SourceFile, error) {
+	files, err := project.Scan(root)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SourceFile, len(files))
+	for i, f := range files {
+		out[i] = SourceFile{Path: f.Path, Rel: f.Rel, Ext: f.Ext}
+	}
+	return out, nil
+}
+
+// ScanFolder returns all AG source files under any directory (no game.agp needed).
+func ScanFolder(root string) ([]SourceFile, error) {
 	files, err := project.Scan(root)
 	if err != nil {
 		return nil, err

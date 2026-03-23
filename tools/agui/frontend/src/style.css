@@ -2,41 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ */
+/* Theme tokens — dark (default)                                       */
+/* ------------------------------------------------------------------ */
+:root {
+  --bg-base:      #030712;   /* gray-950 */
+  --bg-panel:     #111827;   /* gray-900 */
+  --bg-card:      #1f2937;   /* gray-800 */
+  --bg-sidebar:   #111827;
+  --border:       #374151;   /* gray-700 */
+  --text:         #f3f4f6;   /* gray-100 */
+  --text-dim:     #9ca3af;   /* gray-400 */
+  --text-muted:   #4b5563;   /* gray-600 */
+  --code-bg:      #030712;
+  --code-text:    #d1d5db;   /* gray-300 */
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme tokens — light                                                */
+/* ------------------------------------------------------------------ */
+.theme-light {
+  --bg-base:    #f8fafc;
+  --bg-panel:   #ffffff;
+  --bg-card:    #f1f5f9;
+  --bg-sidebar: #f1f5f9;
+  --border:     #e2e8f0;
+  --text:       #0f172a;
+  --text-dim:   #475569;
+  --text-muted: #94a3b8;
+  --code-bg:    #f8fafc;
+  --code-text:  #1e293b;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
 @layer base {
   html, body, #app { height: 100%; margin: 0; overflow: hidden; }
   body {
-    @apply bg-gray-950 text-gray-100 text-sm antialiased select-none;
+    background-color: var(--bg-base);
+    color: var(--text);
+    @apply text-sm antialiased select-none;
     font-family: Inter, system-ui, sans-serif;
   }
   ::-webkit-scrollbar        { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track  { @apply bg-gray-900; }
-  ::-webkit-scrollbar-thumb  { @apply bg-gray-600 rounded; }
-  pre, code, .mono           { font-family: "JetBrains Mono", "Fira Code", monospace; }
+  ::-webkit-scrollbar-track  { background: var(--bg-panel); }
+  ::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
+  pre, code, .mono, .app-code { font-family: "JetBrains Mono", "Fira Code", monospace; }
 }
 
+/* ------------------------------------------------------------------ */
+/* Semantic utility classes (use var() so they respect theme)         */
+/* ------------------------------------------------------------------ */
+@layer utilities {
+  .app-bg       { background-color: var(--bg-base); }
+  .app-panel    { background-color: var(--bg-panel); }
+  .app-card     { background-color: var(--bg-card); }
+  .app-sidebar  { background-color: var(--bg-sidebar); }
+  .app-header   { background-color: var(--bg-panel); }
+  .app-border   { border-color: var(--border); }
+  .border-app   { border-color: var(--border); }
+  .app-text     { color: var(--text); }
+  .app-dim      { color: var(--text-dim); }
+  .app-muted    { color: var(--text-muted); }
+  .app-code     { background-color: var(--code-bg); color: var(--code-text); }
+  .app-select   {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .hover\:app-text:hover { color: var(--text); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Components                                                          */
+/* ------------------------------------------------------------------ */
 @layer components {
   .btn {
     @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
            transition-colors cursor-pointer select-none;
+    background-color: var(--bg-card);
+    color: var(--text-dim);
   }
+  .btn:hover { color: var(--text); background-color: var(--bg-panel); }
   .btn-primary  { @apply btn bg-violet-600 hover:bg-violet-700 text-white; }
-  .btn-ghost    { @apply btn text-gray-300 hover:bg-gray-700 hover:text-white; }
+  .btn-ghost    { @apply btn; }
   .btn-danger   { @apply btn bg-red-700 hover:bg-red-600 text-white; }
 
   .tab-btn {
-    @apply px-3 py-1.5 text-xs font-medium border-b-2 border-transparent
-           text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap;
+    @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border-b-2 border-transparent
+           transition-colors cursor-pointer whitespace-nowrap;
+    color: var(--text-dim);
   }
-  .tab-btn-active { @apply tab-btn text-violet-400 border-violet-400 bg-gray-800; }
+  .tab-btn:hover { color: var(--text); background-color: var(--bg-card); }
+  .tab-btn-active { @apply tab-btn border-violet-400; color: #a78bfa; background-color: var(--bg-card); }
 
   .sidebar-item {
-    @apply flex items-center gap-2 px-3 py-2 text-xs text-gray-400
-           hover:bg-gray-800 hover:text-gray-200 rounded cursor-pointer transition-colors;
+    @apply flex items-center gap-2 px-3 py-2 text-xs rounded cursor-pointer transition-colors;
+    color: var(--text-dim);
   }
-  .sidebar-item-active { @apply sidebar-item bg-gray-800 text-violet-400; }
+  .sidebar-item:hover { background-color: var(--bg-card); color: var(--text); }
+  .sidebar-item-active { @apply sidebar-item; background-color: var(--bg-card); color: #a78bfa; }
 
-  .log-info  { @apply text-gray-300; }
+  .app-resize-handle { background-color: var(--bg-card); }
+  .app-resize-handle:hover { @apply bg-violet-600; }
+
+  /* Log */
+  .log-info  { color: var(--text-dim); }
   .log-error { @apply text-red-400 font-medium; }
   .log-warn  { @apply text-yellow-400; }
   .log-ok    { @apply text-green-400; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Syntax highlighting                                                  */
+/* ------------------------------------------------------------------ */
+.syn-kw   { color: #a78bfa; }          /* violet-400 */
+.syn-str  { color: #4ade80; }          /* green-400  */
+.syn-num  { color: #fb923c; }          /* orange-400 */
+.syn-cmt  { color: #6b7280; font-style: italic; }  /* gray-500 */
+.syn-ident { color: var(--code-text); }
+
+/* light-theme syn overrides — slightly different palette */
+.theme-light .syn-kw  { color: #7c3aed; }
+.theme-light .syn-str { color: #16a34a; }
+.theme-light .syn-num { color: #ea580c; }
+.theme-light .syn-cmt { color: #94a3b8; }

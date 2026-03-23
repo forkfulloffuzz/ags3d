@@ -6,11 +6,15 @@ export function BatchViz(arg1:Array<string>,arg2:string):Promise<number>;
 
 export function Build():Promise<string>;
 
+export function ListRefFiles(arg1:string):Promise<Array<main.SourceFile>>;
+
 export function ListSourceFiles():Promise<Array<main.SourceFile>>;
 
 export function LoadProject(arg1:string):Promise<main.ProjectInfo>;
 
 export function OpenProject():Promise<main.ProjectInfo>;
+
+export function OpenRefFolder():Promise<main.RefFolderInfo>;
 
 export function ReadFile(arg1:string):Promise<string>;
 

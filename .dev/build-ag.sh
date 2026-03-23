@@ -56,7 +56,8 @@ case "$TARGET" in
     [[ -x "$(command -v wails)" ]] && WAILS="wails"
     echo "→ Building AG Studio (agui)…"
     cd "$REPO_ROOT/tools/agui"
-    "$WAILS" build -tags webkit2_41 -o "$BIN_DIR/agui"
+    "$WAILS" build -tags webkit2_41
+    mv "build/bin/agui" "$BIN_DIR/agui"
     echo "✓ bin/agui"
     ;;
   all)

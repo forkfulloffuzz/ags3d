@@ -35,12 +35,12 @@
 <div class="h-full flex flex-col">
 
   {#if $transpileTabs.length === 0}
-    <div class="h-full flex items-center justify-center text-gray-600 text-sm">
+    <div class="h-full flex items-center justify-center app-muted text-sm">
       Click a source file in the sidebar to open it here.
     </div>
   {:else}
     <!-- Tab bar -->
-    <div class="flex items-end border-b border-gray-700 bg-gray-900 px-2 overflow-x-auto shrink-0">
+    <div class="flex items-end border-b app-border app-panel px-2 overflow-x-auto shrink-0">
       {#each $transpileTabs as tab}
         <div class="flex items-center">
           <button
@@ -48,7 +48,7 @@
             on:click={() => activeTranspileTab.set(tab.id)}
           >{tab.label}</button>
           <button
-            class="text-gray-600 hover:text-gray-300 text-xs px-1 pb-1"
+            class="app-muted hover:app-text text-xs px-1 pb-1"
             on:click|stopPropagation={() => closeTab(tab.id)}
             title="Close"
           >✕</button>
@@ -60,7 +60,7 @@
     <div class="flex-1 min-h-0 overflow-hidden">
       {#if activeTab}
         {#if activeTab.loading}
-          <div class="h-full flex items-center justify-center text-gray-600 text-sm animate-pulse">
+          <div class="h-full flex items-center justify-center app-muted text-sm animate-pulse">
             Transpiling…
           </div>
         {:else if activeTab.result}

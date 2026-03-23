@@ -10,6 +10,10 @@ export function Build() {
   return window['go']['main']['App']['Build']();
 }
 
+export function ListRefFiles(arg1) {
+  return window['go']['main']['App']['ListRefFiles'](arg1);
+}
+
 export function ListSourceFiles() {
   return window['go']['main']['App']['ListSourceFiles']();
 }
@@ -20,6 +24,10 @@ export function LoadProject(arg1) {
 
 export function OpenProject() {
   return window['go']['main']['App']['OpenProject']();
+}
+
+export function OpenRefFolder() {
+  return window['go']['main']['App']['OpenRefFolder']();
 }
 
 export function ReadFile(arg1) {

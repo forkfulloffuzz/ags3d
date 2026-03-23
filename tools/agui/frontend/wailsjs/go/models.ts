@@ -22,6 +22,22 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
+	export class RefFolderInfo {
+	    root: string;
+	    name: string;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RefFolderInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.root = source["root"];
+	        this.name = source["name"];
+	        this.error = source["error"];
+	    }
+	}
 	export class SourceFile {
 	    path: string;
 	    rel: string;

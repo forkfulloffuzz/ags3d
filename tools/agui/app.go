@@ -88,6 +88,45 @@ func (a *App) ListSourceFiles() []SourceFile {
 	return out
 }
 
+// -------------------------------------------------------------------
+// Reference folders (arbitrary directories, no game.agp required)
+// -------------------------------------------------------------------
+
+// RefFolderInfo is returned by OpenRefFolder.
+type RefFolderInfo struct {
+	Root  string `json:"root"`
+	Name  string `json:"name"`
+	Error string `json:"error,omitempty"`
+}
+
+// OpenRefFolder opens a native folder-picker and returns the chosen folder.
+func (a *App) OpenRefFolder() RefFolderInfo {
+	dir, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Open Reference Folder",
+	})
+	if err != nil || dir == "" {
+		return RefFolderInfo{Error: "cancelled"}
+	}
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return RefFolderInfo{Error: err.Error()}
+	}
+	return RefFolderInfo{Root: abs, Name: filepath.Base(abs)}
+}
+
+// ListRefFiles returns all AG source files under any arbitrary folder.
+func (a *App) ListRefFiles(root string) []SourceFile {
+	files, err := api.ScanFolder(root)
+	if err != nil {
+		return nil
+	}
+	out := make([]SourceFile, len(files))
+	for i, f := range files {
+		out[i] = SourceFile{Path: f.Path, Rel: f.Rel, Ext: f.Ext}
+	}
+	return out
+}
+
 // ReadFile returns the raw source of a file inside the project.
 func (a *App) ReadFile(absPath string) string {
 	data, err := os.ReadFile(absPath)

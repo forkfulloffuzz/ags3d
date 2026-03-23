@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import { Graphviz } from "@hpcc-js/wasm-graphviz";
 
   export let dot = "";
@@ -7,14 +7,21 @@
   let container;
   let svg = "";
   let error = "";
+
+  // Module-level singleton — loaded once, never released.
+  // Releasing the WASM worker on every unmount freezes subsequent mounts.
+  let _gvReady = null;
+  function getGv() {
+    if (!_gvReady) _gvReady = Graphviz.load();
+    return _gvReady;
+  }
+
   let gv;
 
   onMount(async () => {
-    gv = await Graphviz.load();
+    gv = await getGv();
     render();
   });
-
-  onDestroy(() => { if (gv) gv.release(); });
 
   function render() {
     if (!gv || !dot) return;
@@ -30,7 +37,7 @@
   $: dot, gv && render();
 </script>
 
-<div class="h-full overflow-auto bg-gray-950 p-4" bind:this={container}>
+<div class="h-full overflow-auto app-bg p-4" bind:this={container}>
   {#if error}
     <pre class="text-red-400 text-xs p-4">{error}</pre>
   {:else if svg}
