@@ -1,5 +1,6 @@
 #include "register_types.h"
 
+#include "ags_room.h"
 #include "ags_script.h"
 #include "ags_script_language.h"
 
@@ -19,6 +20,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	OS::get_singleton()->print("AGS3D: agvm module loaded.\n");
 
 	GDREGISTER_CLASS(AGSScript);
+	GDREGISTER_CLASS(AGSRoom);
 
 	ags_loader.instantiate();
 	ResourceLoader::add_resource_format_loader(ags_loader);
