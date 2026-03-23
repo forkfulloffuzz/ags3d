@@ -4,6 +4,7 @@
 #include "ags_point.h"
 #include "ags_room.h"
 #include "ags_script.h"
+#include "ags_trigger_region.h"
 #include "ags_walkable_surface.h"
 #include "ags_script_language.h"
 
@@ -25,6 +26,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(AGSScript);
 	GDREGISTER_CLASS(AGSRoom);
 	GDREGISTER_CLASS(AGSPoint);
+	GDREGISTER_CLASS(AGSTriggerRegion);
 	GDREGISTER_CLASS(AGSWalkableSurface);
 	GDREGISTER_CLASS(AGSBlockerVolume);
 

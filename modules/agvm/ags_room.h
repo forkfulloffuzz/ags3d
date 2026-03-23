@@ -4,12 +4,14 @@
 #include "scene/3d/node_3d.h"
 
 class AGSPoint;
+class AGSTriggerRegion;
 
 class AGSRoom : public Node3D {
 	GDCLASS(AGSRoom, Node3D);
 
 	String room_name;
 	HashMap<StringName, AGSPoint *> points;
+	HashMap<StringName, AGSTriggerRegion *> regions;
 
 protected:
 	static void _bind_methods();
@@ -21,4 +23,7 @@ public:
 	void register_point(AGSPoint *p_point);
 	void unregister_point(AGSPoint *p_point);
 	Vector3 get_point(const String &p_name) const;
+
+	void register_region(AGSTriggerRegion *p_region);
+	void unregister_region(AGSTriggerRegion *p_region);
 };
