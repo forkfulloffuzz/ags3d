@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Flat walkable plane -->
+  <polygon points="8,4 14,7 8,10 2,7" fill="#2db85540" stroke="#2db855" stroke-width="1.2"/>
+  <!-- Grid lines to suggest a mesh surface -->
+  <line x1="8" y1="4" x2="8" y2="10" stroke="#2db855" stroke-width="0.8"/>
+  <line x1="2" y1="7" x2="14" y2="7" stroke="#2db855" stroke-width="0.8"/>
+  <!-- Foot/step icon at top to indicate walkability -->
+  <circle cx="8" cy="2" r="1" fill="#2db855"/>
+</svg>
