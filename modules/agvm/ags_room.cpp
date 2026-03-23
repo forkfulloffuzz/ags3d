@@ -1,5 +1,6 @@
 #include "ags_room.h"
 
+#include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_trigger_region.h"
 
@@ -9,6 +10,8 @@ void AGSRoom::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "room_name"), "set_room_name", "get_room_name");
 
 	ClassDB::bind_method(D_METHOD("get_point", "name"), &AGSRoom::get_point);
+
+	ADD_SIGNAL(MethodInfo("hotspot_clicked", PropertyInfo(Variant::STRING, "hotspot_name")));
 }
 
 void AGSRoom::set_room_name(const String &p_name) {
@@ -43,4 +46,14 @@ void AGSRoom::register_region(AGSTriggerRegion *p_region) {
 void AGSRoom::unregister_region(AGSTriggerRegion *p_region) {
 	ERR_FAIL_NULL(p_region);
 	regions.erase(p_region->get_region_name());
+}
+
+void AGSRoom::register_hotspot(AGSHotspot *p_hotspot) {
+	ERR_FAIL_NULL(p_hotspot);
+	hotspots[p_hotspot->get_hotspot_name()] = p_hotspot;
+}
+
+void AGSRoom::unregister_hotspot(AGSHotspot *p_hotspot) {
+	ERR_FAIL_NULL(p_hotspot);
+	hotspots.erase(p_hotspot->get_hotspot_name());
 }

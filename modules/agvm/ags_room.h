@@ -3,6 +3,7 @@
 #include "core/templates/hash_map.h"
 #include "scene/3d/node_3d.h"
 
+class AGSHotspot;
 class AGSPoint;
 class AGSTriggerRegion;
 
@@ -12,6 +13,7 @@ class AGSRoom : public Node3D {
 	String room_name;
 	HashMap<StringName, AGSPoint *> points;
 	HashMap<StringName, AGSTriggerRegion *> regions;
+	HashMap<StringName, AGSHotspot *> hotspots;
 
 protected:
 	static void _bind_methods();
@@ -26,4 +28,7 @@ public:
 
 	void register_region(AGSTriggerRegion *p_region);
 	void unregister_region(AGSTriggerRegion *p_region);
+
+	void register_hotspot(AGSHotspot *p_hotspot);
+	void unregister_hotspot(AGSHotspot *p_hotspot);
 };
