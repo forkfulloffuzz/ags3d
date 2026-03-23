@@ -1,5 +1,6 @@
 #include "register_types.h"
 
+#include "ags_blocker_volume.h"
 #include "ags_room.h"
 #include "ags_script.h"
 #include "ags_walkable_surface.h"
@@ -23,6 +24,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(AGSScript);
 	GDREGISTER_CLASS(AGSRoom);
 	GDREGISTER_CLASS(AGSWalkableSurface);
+	GDREGISTER_CLASS(AGSBlockerVolume);
 
 	ags_loader.instantiate();
 	ResourceLoader::add_resource_format_loader(ags_loader);
