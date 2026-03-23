@@ -187,13 +187,14 @@ export function colorizeEmit(text) {
       agHtml = esc(agPart);
     }
 
-    // gdPart: "<lineNum>│ <code>"
-    const gdM = gdPart.match(/^(\d+)(│)(.*)$/);
+    // gdPart: "  <lineNum>│ <code>"  (%3d produces leading spaces)
+    const gdM = gdPart.match(/^(\s*)(\d+)(│)(.*)$/);
     let gdHtml;
     if (gdM) {
-      gdHtml = `<span class="app-dim">${esc(gdM[1])}</span>`
-        + `<span class="app-muted">${esc(gdM[2])}</span>`
-        + tokenize(gdM[3], GD_KW);
+      gdHtml = esc(gdM[1])
+        + `<span class="app-dim">${esc(gdM[2])}</span>`
+        + `<span class="app-muted">${esc(gdM[3])}</span>`
+        + tokenize(gdM[4], GD_KW);
     } else {
       gdHtml = esc(gdPart);
     }

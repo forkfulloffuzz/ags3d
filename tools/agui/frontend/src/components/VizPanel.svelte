@@ -4,7 +4,7 @@
     VizTokens, VizAST, VizASTDot, VizSymbols, VizSymbolsDot, VizBlocking, VizEmit
   } from "../../wailsjs/go/main/App.js";
   import GraphView from "./GraphView.svelte";
-  import { colorizeTokens } from "../lib/highlight.js";
+  import { colorizeTokens, colorizeAST, colorizeSymbols, colorizeBlocking, colorizeEmit } from "../lib/highlight.js";
 
   const stages = [
     { id: "tokens",   label: "Tokens",   hasGraph: false },
@@ -53,7 +53,8 @@
   $: if (!graphAvailable && $vizMode === "graph") vizMode.set("text");
   $: $vizFile, $vizStage, $vizMode, run();
 
-  $: coloredOutput = $vizStage === "tokens" && $vizMode === "text" ? colorizeTokens(output) : null;
+  const colorizers = { tokens: colorizeTokens, ast: colorizeAST, symbols: colorizeSymbols, blocking: colorizeBlocking, emit: colorizeEmit };
+  $: coloredOutput = $vizMode === "text" && colorizers[$vizStage] ? colorizers[$vizStage](output) : null;
 </script>
 
 <div class="h-full flex flex-col">
