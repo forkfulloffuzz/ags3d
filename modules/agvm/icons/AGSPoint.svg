@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Crosshair -->
+  <line x1="8" y1="2" x2="8" y2="14" stroke="#e8c87a" stroke-width="1.2"/>
+  <line x1="2" y1="8" x2="14" y2="8" stroke="#e8c87a" stroke-width="1.2"/>
+  <!-- Centre dot -->
+  <circle cx="8" cy="8" r="2.2" fill="#e8c87a"/>
+  <!-- Label tag hint -->
+  <rect x="9" y="3" width="5" height="3" rx="0.8" fill="#e8c87a" opacity="0.6"/>
+</svg>
