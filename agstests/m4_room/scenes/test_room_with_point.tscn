@@ -1,0 +1,8 @@
+[gd_scene load_steps=1 format=3]
+
+[node name="TestRoom" type="AGSRoom"]
+room_name = "test_room"
+
+[node name="DoorPoint" type="AGSPoint" parent="."]
+point_name = "door"
+position = Vector3(1, 0, 2)

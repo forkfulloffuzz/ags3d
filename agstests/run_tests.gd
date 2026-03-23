@@ -17,6 +17,12 @@ const C_RESET := "\u001b[0m"
 ## Register test suites here as they're implemented.
 const SUITES: Array[String] = [
 	"m1_module/test_script_language.gd",
+	"m4_room/test_room_node.gd",
+	"m4_room/test_walkable.gd",
+	"m4_room/test_blocker.gd",
+	"m4_room/test_points.gd",
+	"m4_room/test_regions.gd",
+	"m4_room/test_hotspots.gd",
 ]
 
 func _init() -> void:

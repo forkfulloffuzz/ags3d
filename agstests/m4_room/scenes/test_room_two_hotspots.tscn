@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2"]
+size = Vector3(2, 2, 2)
+
+[node name="TestRoom" type="AGSRoom"]
+room_name = "hotspot_test_room"
+
+[node name="HotspotA" type="AGSHotspot" parent="."]
+hotspot_name = "chest"
+position = Vector3(-3, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HotspotA"]
+shape = SubResource("BoxShape3D_1")
+
+[node name="HotspotB" type="AGSHotspot" parent="."]
+hotspot_name = "door"
+position = Vector3(3, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HotspotB"]
+shape = SubResource("BoxShape3D_2")

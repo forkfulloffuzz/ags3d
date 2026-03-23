@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(3, 2, 3)
+
+[node name="TestRoom" type="AGSRoom"]
+room_name = "region_test_room"
+
+[node name="Region" type="AGSTriggerRegion" parent="."]
+region_name = "entrance"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Region"]
+shape = SubResource("BoxShape3D_1")

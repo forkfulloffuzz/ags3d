@@ -9,6 +9,8 @@ void AGSHotspot::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "hotspot_name"), "set_hotspot_name", "get_hotspot_name");
 
 	ADD_SIGNAL(MethodInfo("hotspot_clicked", PropertyInfo(Variant::STRING, "hotspot_name")));
+
+	ClassDB::bind_method(D_METHOD("simulate_click"), &AGSHotspot::simulate_click);
 }
 
 void AGSHotspot::_notification(int p_what) {
@@ -59,6 +61,20 @@ void AGSHotspot::_input_event_call(Camera3D *p_camera, const Ref<InputEvent> &p_
 			}
 			parent = parent->get_parent();
 		}
+	}
+}
+
+void AGSHotspot::simulate_click() {
+	emit_signal("hotspot_clicked", hotspot_name);
+
+	Node *parent = get_parent();
+	while (parent) {
+		AGSRoom *room = Object::cast_to<AGSRoom>(parent);
+		if (room) {
+			room->emit_signal("hotspot_clicked", hotspot_name);
+			break;
+		}
+		parent = parent->get_parent();
 	}
 }
 

@@ -17,4 +17,7 @@ protected:
 public:
 	void set_hotspot_name(const String &p_name);
 	String get_hotspot_name() const;
+
+	// Programmatically fire hotspot_clicked — used in headless tests.
+	void simulate_click();
 };
