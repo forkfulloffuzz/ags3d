@@ -29,4 +29,8 @@ public:
 
 	// Navigate to a world-space position along the navmesh.
 	void navigate_to(const Vector3 &p_target);
+
+	// Blocking walk: looks up point_name in the parent AGSRoom, navigates there,
+	// and returns a Signal that GDScript can await until the character arrives.
+	Signal walk_to(const String &p_point_name);
 };

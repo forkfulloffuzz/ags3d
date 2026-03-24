@@ -1,5 +1,6 @@
 #include "ags_character.h"
 
+#include "ags_room.h"
 #include "ags_runtime.h"
 #include "core/object/class_db.h"
 #include "scene/3d/mesh_instance_3d.h"
@@ -15,9 +16,12 @@ void AGSCharacter::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "move_speed"), "set_move_speed", "get_move_speed");
 
 	ClassDB::bind_method(D_METHOD("navigate_to", "target"), &AGSCharacter::navigate_to);
+	ClassDB::bind_method(D_METHOD("walk_to", "point_name"), &AGSCharacter::walk_to);
 
 	ClassDB::bind_method(D_METHOD("_on_velocity_computed", "safe_velocity"), &AGSCharacter::_on_velocity_computed);
 	ClassDB::bind_method(D_METHOD("_on_navigation_finished"), &AGSCharacter::_on_navigation_finished);
+
+	ADD_SIGNAL(MethodInfo("walk_completed"));
 }
 
 void AGSCharacter::_notification(int p_what) {
@@ -78,6 +82,7 @@ void AGSCharacter::_on_navigation_finished() {
 	navigating = false;
 	set_physics_process(false);
 	set_velocity(Vector3());
+	emit_signal("walk_completed");
 }
 
 void AGSCharacter::navigate_to(const Vector3 &p_target) {
@@ -85,6 +90,26 @@ void AGSCharacter::navigate_to(const Vector3 &p_target) {
 	nav_agent->set_target_position(p_target);
 	navigating = true;
 	set_physics_process(true);
+}
+
+Signal AGSCharacter::walk_to(const String &p_point_name) {
+	// Find the nearest AGSRoom ancestor and look up the named point.
+	AGSRoom *room = nullptr;
+	Node *parent = get_parent();
+	while (parent) {
+		room = Object::cast_to<AGSRoom>(parent);
+		if (room) {
+			break;
+		}
+		parent = parent->get_parent();
+	}
+	ERR_FAIL_NULL_V_MSG(room, Signal(), "AGSCharacter::walk_to: No parent AGSRoom found.");
+
+	Vector3 target = room->get_point(p_point_name);
+	navigate_to(target);
+
+	// Return the walk_completed signal so GDScript can await it.
+	return Signal(this, "walk_completed");
 }
 
 void AGSCharacter::set_character_name(const String &p_name) {
