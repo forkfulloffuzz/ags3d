@@ -2,8 +2,10 @@
 
 #include "ags_room.h"
 #include "ags_runtime.h"
+#include "core/math/basis.h"
 #include "core/object/class_db.h"
 #include "scene/3d/mesh_instance_3d.h"
+#include "scene/animation/tween.h"
 #include "scene/resources/3d/primitive_meshes.h"
 
 void AGSCharacter::_bind_methods() {
@@ -17,11 +19,14 @@ void AGSCharacter::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("navigate_to", "target"), &AGSCharacter::navigate_to);
 	ClassDB::bind_method(D_METHOD("walk_to", "point_name"), &AGSCharacter::walk_to);
+	ClassDB::bind_method(D_METHOD("face_to", "point_name"), &AGSCharacter::face_to);
+	ClassDB::bind_method(D_METHOD("_on_face_tween_done"), &AGSCharacter::_on_face_tween_done);
 
 	ClassDB::bind_method(D_METHOD("_on_velocity_computed", "safe_velocity"), &AGSCharacter::_on_velocity_computed);
 	ClassDB::bind_method(D_METHOD("_on_navigation_finished"), &AGSCharacter::_on_navigation_finished);
 
 	ADD_SIGNAL(MethodInfo("walk_completed"));
+	ADD_SIGNAL(MethodInfo("face_completed"));
 }
 
 void AGSCharacter::_notification(int p_what) {
@@ -110,6 +115,43 @@ Signal AGSCharacter::walk_to(const String &p_point_name) {
 
 	// Return the walk_completed signal so GDScript can await it.
 	return Signal(this, "walk_completed");
+}
+
+Signal AGSCharacter::face_to(const String &p_point_name) {
+	// Find parent room and resolve named point.
+	AGSRoom *room = nullptr;
+	Node *parent = get_parent();
+	while (parent) {
+		room = Object::cast_to<AGSRoom>(parent);
+		if (room) {
+			break;
+		}
+		parent = parent->get_parent();
+	}
+	ERR_FAIL_NULL_V_MSG(room, Signal(), "AGSCharacter::face_to: No parent AGSRoom found.");
+
+	Vector3 target = room->get_point(p_point_name);
+
+	// Compute target Y rotation: build a look-at basis and extract the Y euler angle.
+	Vector3 dir = target - get_global_position();
+	dir.y = 0.0f;
+	if (dir.length_squared() > CMP_EPSILON) {
+		Basis look = Basis::looking_at(dir.normalized());
+		float target_y = look.get_euler().y;
+
+		Ref<Tween> tween = create_tween();
+		tween->tween_property(this, NodePath("rotation:y"), target_y, 0.3);
+		tween->tween_callback(Callable(this, "_on_face_tween_done"));
+	} else {
+		// Already facing the point (or at the same position) — complete immediately.
+		call_deferred("_on_face_tween_done");
+	}
+
+	return Signal(this, "face_completed");
+}
+
+void AGSCharacter::_on_face_tween_done() {
+	emit_signal("face_completed");
 }
 
 void AGSCharacter::set_character_name(const String &p_name) {

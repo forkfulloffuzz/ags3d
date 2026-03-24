@@ -33,4 +33,10 @@ public:
 	// Blocking walk: looks up point_name in the parent AGSRoom, navigates there,
 	// and returns a Signal that GDScript can await until the character arrives.
 	Signal walk_to(const String &p_point_name);
+
+	// Blocking rotation: smoothly rotates to face point_name, returns an
+	// awaitable Signal that fires when the tween completes.
+	Signal face_to(const String &p_point_name);
+
+	void _on_face_tween_done();
 };
