@@ -3,6 +3,7 @@
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_trigger_region.h"
+#include "core/object/class_db.h"
 
 void AGSRoom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_room_name", "name"), &AGSRoom::set_room_name);

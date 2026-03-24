@@ -1,6 +1,7 @@
 #include "ags_point.h"
 
 #include "ags_room.h"
+#include "core/object/class_db.h"
 
 void AGSPoint::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_point_name", "name"), &AGSPoint::set_point_name);

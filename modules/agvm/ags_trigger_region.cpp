@@ -1,6 +1,7 @@
 #include "ags_trigger_region.h"
 
 #include "ags_room.h"
+#include "core/object/class_db.h"
 
 void AGSTriggerRegion::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_region_name", "name"), &AGSTriggerRegion::set_region_name);

@@ -2,6 +2,7 @@
 
 #include "ags_room.h"
 #include "core/input/input_event.h"
+#include "core/object/class_db.h"
 
 void AGSHotspot::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_hotspot_name", "name"), &AGSHotspot::set_hotspot_name);
