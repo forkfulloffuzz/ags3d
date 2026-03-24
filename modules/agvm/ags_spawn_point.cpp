@@ -1,0 +1,38 @@
+#include "ags_spawn_point.h"
+
+#include "ags_character.h"
+#include "ags_runtime.h"
+#include "core/object/class_db.h"
+
+void AGSSpawnPoint::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_spawn_character", "name"), &AGSSpawnPoint::set_spawn_character);
+	ClassDB::bind_method(D_METHOD("get_spawn_character"), &AGSSpawnPoint::get_spawn_character);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "spawn_character"), "set_spawn_character", "get_spawn_character");
+}
+
+void AGSSpawnPoint::_notification(int p_what) {
+	if (p_what != NOTIFICATION_READY) {
+		return;
+	}
+	if (spawn_character.is_empty()) {
+		return;
+	}
+	AGSRuntime *runtime = AGSRuntime::get_singleton();
+	if (!runtime) {
+		return;
+	}
+	AGSCharacter *character = runtime->get_character(spawn_character);
+	if (!character) {
+		WARN_PRINT(vformat("AGSSpawnPoint: character '%s' not found in AGSRuntime.", spawn_character));
+		return;
+	}
+	character->set_global_position(get_global_position());
+}
+
+void AGSSpawnPoint::set_spawn_character(const String &p_name) {
+	spawn_character = p_name;
+}
+
+String AGSSpawnPoint::get_spawn_character() const {
+	return spawn_character;
+}

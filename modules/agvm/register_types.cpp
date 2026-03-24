@@ -2,6 +2,7 @@
 
 #include "ags_blocker_volume.h"
 #include "ags_character.h"
+#include "ags_spawn_point.h"
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_room.h"
@@ -37,6 +38,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(AGSTriggerRegion);
 	GDREGISTER_CLASS(AGSWalkableSurface);
 	GDREGISTER_CLASS(AGSBlockerVolume);
+	GDREGISTER_CLASS(AGSSpawnPoint);
 
 	ags_loader.instantiate();
 	ResourceLoader::add_resource_format_loader(ags_loader);

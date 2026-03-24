@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Pin drop circle -->
+  <circle cx="8" cy="6" r="3.2" fill="none" stroke="#e8a87a" stroke-width="1.2"/>
+  <!-- Pin tip -->
+  <line x1="8" y1="9.2" x2="8" y2="13" stroke="#e8a87a" stroke-width="1.2"/>
+  <!-- Center dot -->
+  <circle cx="8" cy="6" r="1.2" fill="#e8a87a"/>
+</svg>
