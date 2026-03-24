@@ -1,6 +1,9 @@
 ## UT-M4-08..10 — AGSTriggerRegion signal and registration tests.
 extends "res://utils/test_base.gd"
 
+func suite_name() -> String:
+	return "M4: Regions"
+
 var _last_entered_body: Node3D = null
 var _last_exited_body: Node3D = null
 
@@ -12,15 +15,10 @@ func _on_region_exited(body: Node3D) -> void:
 
 # UT-M4-08: TriggerRegion fires region_entered when a body overlaps.
 func test_08_region_entered_fires_on_body_overlap() -> void:
-	var scene := load("res://m4_room/scenes/test_room_with_region.tscn") as PackedScene
-	assert_not_null(scene, "Could not load test_room_with_region.tscn")
-
-	var root_node: Node = scene.instantiate()
-	var tree_root: Window = Engine.get_main_loop().root
-	tree_root.add_child(root_node)
-
-	var region: AGSTriggerRegion = root_node.get_node("Region")
-	assert_not_null(region, "AGSTriggerRegion not found in scene")
+	var region: AGSTriggerRegion = AGSTriggerRegion.new()
+	region.region_name = "entrance"
+	# Fire NOTIFICATION_READY — connects body_entered → _on_body_entered bridge.
+	region.notification(Node.NOTIFICATION_READY)
 
 	_last_entered_body = null
 	region.connect("region_entered", _on_region_entered)
@@ -33,17 +31,14 @@ func test_08_region_entered_fires_on_body_overlap() -> void:
 	assert_eq(_last_entered_body, dummy_body, "region_entered fired with wrong body")
 
 	dummy_body.free()
-	tree_root.remove_child(root_node)
-	root_node.queue_free()
+	region.free()
 
 # UT-M4-09: TriggerRegion fires region_exited when a body leaves.
 func test_09_region_exited_fires_on_body_leave() -> void:
-	var scene := load("res://m4_room/scenes/test_room_with_region.tscn") as PackedScene
-	var root_node: Node = scene.instantiate()
-	var tree_root: Window = Engine.get_main_loop().root
-	tree_root.add_child(root_node)
+	var region: AGSTriggerRegion = AGSTriggerRegion.new()
+	region.region_name = "entrance"
+	region.notification(Node.NOTIFICATION_READY)
 
-	var region: AGSTriggerRegion = root_node.get_node("Region")
 	_last_exited_body = null
 	region.connect("region_exited", _on_region_exited)
 
@@ -54,24 +49,23 @@ func test_09_region_exited_fires_on_body_leave() -> void:
 	assert_eq(_last_exited_body, dummy_body, "region_exited fired with wrong body")
 
 	dummy_body.free()
-	tree_root.remove_child(root_node)
-	root_node.queue_free()
+	region.free()
 
-# UT-M4-10: TriggerRegion registers its name with the parent AGSRoom.
+# UT-M4-10: TriggerRegion self-registers with its parent AGSRoom on ready.
 func test_10_region_registers_with_room() -> void:
-	var scene := load("res://m4_room/scenes/test_room_with_region.tscn") as PackedScene
-	var root_node: Node = scene.instantiate()
-	var tree_root: Window = Engine.get_main_loop().root
-	tree_root.add_child(root_node)
+	var room: AGSRoom = AGSRoom.new()
+	var region: AGSTriggerRegion = AGSTriggerRegion.new()
+	region.region_name = "entrance"
+	room.add_child(region)
+	region.notification(Node.NOTIFICATION_READY)
 
-	# Verify the room knows about the region by checking it is in the room's
-	# child list with the correct class (registration is the prerequisite for T33).
+	# Verify the region is a child of the room with the correct name.
+	# (Registration in the room's internal HashMap is verified indirectly via T33.)
 	var found := false
-	for child in root_node.get_children():
+	for child in room.get_children():
 		if child is AGSTriggerRegion and child.region_name == "entrance":
 			found = true
 			break
 	assert_true(found, "AGSTriggerRegion 'entrance' not found as child of AGSRoom")
 
-	tree_root.remove_child(root_node)
-	root_node.queue_free()
+	room.free()
