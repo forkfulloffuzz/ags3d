@@ -1,20 +1,24 @@
 #include "register_types.h"
 
 #include "ags_blocker_volume.h"
+#include "ags_character.h"
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_room.h"
+#include "ags_runtime.h"
 #include "ags_script.h"
 #include "ags_trigger_region.h"
 #include "ags_walkable_surface.h"
 #include "ags_script_language.h"
 
+#include "core/config/engine.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
 
 static AGSScriptLanguage *ags_language = nullptr;
+static AGSRuntime *ags_runtime = nullptr;
 static Ref<ResourceFormatLoaderAGSScript> ags_loader;
 static Ref<ResourceFormatSaverAGSScript> ags_saver;
 
@@ -25,6 +29,8 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	OS::get_singleton()->print("AGS3D: agvm module loaded.\n");
 
 	GDREGISTER_CLASS(AGSScript);
+	GDREGISTER_CLASS(AGSRuntime);
+	GDREGISTER_CLASS(AGSCharacter);
 	GDREGISTER_CLASS(AGSRoom);
 	GDREGISTER_CLASS(AGSPoint);
 	GDREGISTER_CLASS(AGSHotspot);
@@ -37,6 +43,9 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 
 	ags_saver.instantiate();
 	ResourceSaver::add_resource_format_saver(ags_saver);
+
+	ags_runtime = memnew(AGSRuntime);
+	Engine::get_singleton()->add_singleton(Engine::Singleton("AGSRuntime", ags_runtime));
 
 	ags_language = memnew(AGSScriptLanguage);
 	ScriptServer::register_language(ags_language);
@@ -55,4 +64,9 @@ void uninitialize_agvm_module(ModuleInitializationLevel p_level) {
 	ags_loader.unref();
 	ResourceSaver::remove_resource_format_saver(ags_saver);
 	ags_saver.unref();
+
+	if (ags_runtime) {
+		memdelete(ags_runtime);
+		ags_runtime = nullptr;
+	}
 }
