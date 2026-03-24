@@ -23,6 +23,10 @@ const SUITES: Array[String] = [
 	"m4_room/test_points.gd",
 	"m4_room/test_regions.gd",
 	"m4_room/test_hotspots.gd",
+	"m5_character/test_character_node.gd",
+	"m5_character/test_navigation.gd",
+	"m5_character/test_faceto.gd",
+	"m5_character/test_spawnpoint.gd",
 ]
 
 func _init() -> void:

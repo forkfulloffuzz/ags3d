@@ -1,0 +1,11 @@
+[gd_scene load_steps=1 format=3]
+
+[node name="TestRoom" type="AGSRoom"]
+room_name = "spawn_test_room"
+
+[node name="Player" type="AGSCharacter" parent="."]
+character_name = "spawn_player"
+
+[node name="SpawnPoint" type="AGSSpawnPoint" parent="."]
+spawn_character = "spawn_player"
+position = Vector3(3, 0, 2)

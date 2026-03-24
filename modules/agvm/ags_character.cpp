@@ -139,9 +139,17 @@ Signal AGSCharacter::face_to(const String &p_point_name) {
 		Basis look = Basis::looking_at(dir.normalized());
 		float target_y = look.get_euler().y;
 
-		Ref<Tween> tween = create_tween();
-		tween->tween_property(this, NodePath("rotation:y"), target_y, 0.3);
-		tween->tween_callback(Callable(this, "_on_face_tween_done"));
+		if (is_inside_tree()) {
+			Ref<Tween> tween = create_tween();
+			tween->tween_property(this, NodePath("rotation:y"), target_y, 0.3);
+			tween->tween_callback(Callable(this, "_on_face_tween_done"));
+		} else {
+			// Outside scene tree (headless tests): apply instantly, defer signal.
+			Vector3 rot = get_rotation();
+			rot.y = target_y;
+			set_rotation(rot);
+			call_deferred("_on_face_tween_done");
+		}
 	} else {
 		// Already facing the point (or at the same position) — complete immediately.
 		call_deferred("_on_face_tween_done");

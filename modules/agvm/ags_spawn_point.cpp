@@ -26,7 +26,13 @@ void AGSSpawnPoint::_notification(int p_what) {
 		WARN_PRINT(vformat("AGSSpawnPoint: character '%s' not found in AGSRuntime.", spawn_character));
 		return;
 	}
-	character->set_global_position(get_global_position());
+	// Use global position when in the scene tree; fall back to local position
+	// in headless test contexts where global transform is unavailable.
+	if (is_inside_tree()) {
+		character->set_global_position(get_global_position());
+	} else {
+		character->set_position(get_position());
+	}
 }
 
 void AGSSpawnPoint::set_spawn_character(const String &p_name) {
