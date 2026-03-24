@@ -57,6 +57,9 @@ void AGSWalkableSurface::_setup_navmesh() {
 	nav_mesh->set_source_group_name("ags_walkable");
 
 	nav_region->set_navigation_mesh(nav_mesh);
-	// Bake synchronously on scene load; use threaded bake for larger scenes.
-	nav_region->bake_navigation_mesh(false);
+	// Bake synchronously on scene load. Baking requires the node to be inside
+	// the SceneTree (NavigationServer constraint), so skip it in unit-test contexts.
+	if (is_inside_tree()) {
+		nav_region->bake_navigation_mesh(false);
+	}
 }

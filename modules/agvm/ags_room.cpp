@@ -35,7 +35,9 @@ void AGSRoom::unregister_point(AGSPoint *p_point) {
 
 Vector3 AGSRoom::get_point(const String &p_name) const {
 	const AGSPoint *const *found = points.getptr(StringName(p_name));
-	ERR_FAIL_COND_V_MSG(!found, Vector3(), vformat("AGSRoom: no point named '%s'.", p_name));
+	if (!found) {
+		return Vector3();
+	}
 	const AGSPoint *pt = *found;
 	return pt->is_inside_tree() ? pt->get_global_position() : pt->get_position();
 }
