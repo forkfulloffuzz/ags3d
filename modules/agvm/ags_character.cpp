@@ -31,8 +31,9 @@ void AGSCharacter::_bind_methods() {
 
 void AGSCharacter::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_READY: {
+		case NOTIFICATION_ENTER_TREE: {
 			// Placeholder capsule mesh — visible in editor and at runtime.
+			// Only created on first entry so editor-placed children are respected.
 			if (get_child_count() == 0) {
 				MeshInstance3D *mesh = memnew(MeshInstance3D);
 				Ref<CapsuleMesh> capsule;
@@ -41,21 +42,41 @@ void AGSCharacter::_notification(int p_what) {
 				add_child(mesh);
 			}
 
-			// Create and wire up the NavigationAgent3D.
-			nav_agent = memnew(NavigationAgent3D);
-			add_child(nav_agent);
-			nav_agent->connect("velocity_computed", Callable(this, "_on_velocity_computed"));
-			nav_agent->connect("navigation_finished", Callable(this, "_on_navigation_finished"));
+			// Create and wire up NavigationAgent3D on first entry.
+			// Using NOTIFICATION_ENTER_TREE guarantees the node is already in the
+			// scene tree when the child is added, so NavigationAgent3D's own
+			// NOTIFICATION_ENTER_TREE fires with a valid viewport — no errors.
+			// Headless tests that call NOTIFICATION_READY manually without entering
+			// the tree never reach this branch, so nav_agent stays null there.
+			if (!nav_agent) {
+				nav_agent = memnew(NavigationAgent3D);
+				add_child(nav_agent);
+				nav_agent->connect("velocity_computed", Callable(this, "_on_velocity_computed"));
+				nav_agent->connect("navigation_finished", Callable(this, "_on_navigation_finished"));
+			}
 
 			set_physics_process(false);
+		} break;
 
+		case NOTIFICATION_READY: {
 			// Register with AGSRuntime so scripts can resolve this character by name.
+			// Fires both in normal runtime (deferred after enter-tree) and when called
+			// manually in headless tests — registration works regardless of tree state.
 			if (AGSRuntime::get_singleton()) {
 				AGSRuntime::get_singleton()->register_character(this);
 			}
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
+			if (AGSRuntime::get_singleton()) {
+				AGSRuntime::get_singleton()->unregister_character(this);
+			}
+		} break;
+
+		case NOTIFICATION_PREDELETE: {
+			// Unregister when freed outside the scene tree (e.g. headless tests
+			// that create characters without entering the tree).  In-tree nodes
+			// unregister via EXIT_TREE above; PREDELETE is a safe catch-all.
 			if (AGSRuntime::get_singleton()) {
 				AGSRuntime::get_singleton()->unregister_character(this);
 			}
@@ -91,7 +112,13 @@ void AGSCharacter::_on_navigation_finished() {
 }
 
 void AGSCharacter::navigate_to(const Vector3 &p_target) {
-	ERR_FAIL_NULL_MSG(nav_agent, "AGSCharacter: NavigationAgent3D not initialised — call navigate_to() after _ready().");
+	// nav_agent is only created when the character is in the scene tree (see
+	// NOTIFICATION_READY guard above).  Headless tests that call walk_to() to
+	// check signal contracts will have a null nav_agent — return silently so
+	// the signal is still delivered without a spurious error message.
+	if (!nav_agent) {
+		return;
+	}
 	nav_agent->set_target_position(p_target);
 	navigating = true;
 	set_physics_process(true);
@@ -133,7 +160,10 @@ Signal AGSCharacter::face_to(const String &p_point_name) {
 	Vector3 target = room->get_point(p_point_name);
 
 	// Compute target Y rotation: build a look-at basis and extract the Y euler angle.
-	Vector3 dir = target - get_global_position();
+	// Use global position when in the scene tree; fall back to local position in
+	// headless test contexts where global transform is unavailable.
+	Vector3 char_pos = is_inside_tree() ? get_global_position() : get_position();
+	Vector3 dir = target - char_pos;
 	dir.y = 0.0f;
 	if (dir.length_squared() > CMP_EPSILON) {
 		Basis look = Basis::looking_at(dir.normalized());

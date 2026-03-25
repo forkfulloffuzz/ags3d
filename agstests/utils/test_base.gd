@@ -15,6 +15,7 @@ var _fail_count: int = 0
 var _failures: Array[String] = []
 var _current_test: String = ""
 var _current_test_failures: Array[String] = []
+var _tree: SceneTree = null
 
 ## Override to return a human-readable name for this suite.
 func suite_name() -> String:
@@ -25,6 +26,18 @@ func setUpSuite() -> void: pass
 func tearDownSuite() -> void: pass
 func setUp() -> void: pass
 func tearDown() -> void: pass
+
+## Attach p_node to the real scene tree so viewport-dependent nodes
+## (e.g. NavigationAgent3D, CharacterBody3D) initialise without errors.
+## Works correctly only when called from _run_tests() (deferred from _init()),
+## at which point SceneTree.initialize() has already run and root.is_inside_tree()
+## is true.  NOTIFICATION_ENTER_TREE propagates automatically to p_node and all
+## children added afterwards.  Free the returned node in teardown — Godot
+## propagates EXIT_TREE to all descendants automatically.
+## Requires _tree to be set by run_tests.gd before run_suite() is called.
+func add_to_tree(p_node: Node) -> Node:
+	_tree.root.add_child(p_node)
+	return p_node
 
 # ─── Assert helpers ───────────────────────────────────────────────────────────
 

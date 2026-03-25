@@ -9,11 +9,14 @@ extends "res://utils/test_base.gd"
 func suite_name() -> String:
 	return "M5: Navigation"
 
-# UT-M5-04: AGSCharacter has a NavigationAgent3D child after NOTIFICATION_READY.
+# UT-M5-04: AGSCharacter has a NavigationAgent3D child after entering the scene tree.
 func test_04_character_has_nav_agent_after_ready() -> void:
+	var root := Node.new()
+	add_to_tree(root)
 	var ch: AGSCharacter = AGSCharacter.new()
 	ch.character_name = "nav_test_char"
-	ch.notification(Node.NOTIFICATION_READY)
+	root.add_child(ch)  # ENTER_TREE fires since root is in real tree
+	ch.notification(Node.NOTIFICATION_READY)  # _ready() is deferred; fire manually
 
 	var nav_agent: NavigationAgent3D = null
 	for child in ch.get_children():
@@ -23,13 +26,13 @@ func test_04_character_has_nav_agent_after_ready() -> void:
 
 	assert_not_null(nav_agent, "No NavigationAgent3D child found on AGSCharacter after ready")
 
-	ch.notification(Node.NOTIFICATION_EXIT_TREE)
-	ch.free()
+	root.free()
 
 # UT-M5-05: walk_to() returns a Signal named "walk_completed".
 func test_05_walk_to_returns_walk_completed_signal() -> void:
 	var room: AGSRoom = AGSRoom.new()
 	room.room_name = "nav_test_room"
+	add_to_tree(room)
 
 	var point: AGSPoint = AGSPoint.new()
 	point.point_name = "target"
@@ -46,7 +49,6 @@ func test_05_walk_to_returns_walk_completed_signal() -> void:
 	assert_true(sig.get_name() == "walk_completed", \
 		"walk_to() returned signal with wrong name: '%s'" % sig.get_name())
 
-	ch.notification(Node.NOTIFICATION_EXIT_TREE)
 	room.free()
 
 # UT-M5-06: Scene with WalkableSurface, BlockerVolume, and Character loads without crash.
@@ -58,7 +60,9 @@ func test_06_nav_room_scene_loads_without_crash() -> void:
 	var root_node: Node = scene.instantiate()
 	assert_not_null(root_node, "Scene instantiation returned null")
 
-	# Fire ready on key nodes to verify no crashes during setup.
+	# Add to scene tree first so NavigationAgent3D has a valid viewport,
+	# then fire ready manually (deferred _ready() never runs in _init()).
+	add_to_tree(root_node)
 	for child in root_node.get_children():
 		child.notification(Node.NOTIFICATION_READY)
 

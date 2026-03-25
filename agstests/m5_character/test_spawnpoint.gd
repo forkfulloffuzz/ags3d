@@ -8,6 +8,7 @@ func suite_name() -> String:
 func test_10_spawn_point_places_character_at_position() -> void:
 	var room: AGSRoom = AGSRoom.new()
 	room.room_name = "spawn_test_room"
+	add_to_tree(room)
 
 	var ch: AGSCharacter = AGSCharacter.new()
 	ch.character_name = "spawn_player"
@@ -20,15 +21,14 @@ func test_10_spawn_point_places_character_at_position() -> void:
 	room.add_child(spawn)
 	spawn.notification(Node.NOTIFICATION_READY)  # places character
 
-	# Outside the scene tree global_position is unavailable; the C++ fallback
-	# uses set_position(), so we check local position here.
+	# Check local position: room is at origin so local == global, and
+	# AGSSpawnPoint falls back to set_position() when outside the scene tree.
 	var char_pos: Vector3 = ch.position
 	assert_true(
 		char_pos.is_equal_approx(Vector3(3.0, 0.0, 2.0)),
 		"Character not placed at spawn position. Got: %s" % char_pos
 	)
 
-	ch.notification(Node.NOTIFICATION_EXIT_TREE)
 	room.free()
 
 # UT-M5-11: SpawnPoint with unknown character name — scene loads without crash.

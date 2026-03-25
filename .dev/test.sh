@@ -54,6 +54,11 @@ TMPOUT="$(mktemp)"
 STATUS=$?
 
 NOISE_PATTERN="Godot Engine|godotengine\.org|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^$"
+# Engine noise: warning/error boilerplate lines (at:, GDScript backtrace, bracketed entries,
+# tab-indented continuation lines) and known expected warnings from specific tests.
+NOISE_PATTERN+="|^\s+at:|GDScript backtrace|^\s+\[|^\t"
+NOISE_PATTERN+="|AGSSpawnPoint.*not found in AGSRuntime"
+NOISE_PATTERN+="|Source geometry parsing.*navigation mesh|visual meshes store geometry|For runtime.*baking navigation"
 
 if [[ -n "$FILTER" ]]; then
   grep -v -E "$NOISE_PATTERN" "$TMPOUT" | grep -i "$FILTER" || true

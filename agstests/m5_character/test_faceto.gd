@@ -43,7 +43,6 @@ func test_07_sequential_walk_to_returns_valid_signals() -> void:
 		"Second walk_to() signal has wrong name: '%s'" % sig_b.get_name())
 	assert_true(sig_a.get_object() == ch, "Signal is not on the character")
 
-	ch.notification(Node.NOTIFICATION_EXIT_TREE)
 	room.free()
 
 # UT-M5-08: face_to() returns a Signal named "face_completed".
@@ -57,7 +56,6 @@ func test_08_face_to_returns_face_completed_signal() -> void:
 		"face_to() returned signal with wrong name: '%s'" % sig.get_name())
 	assert_true(sig.get_object() == ch, "Signal is not on the character")
 
-	ch.notification(Node.NOTIFICATION_EXIT_TREE)
 	room.free()
 
 # UT-M5-09: face_to() applies rotation immediately in headless mode
@@ -73,5 +71,4 @@ func test_09_face_to_applies_rotation_headless() -> void:
 	assert_true(not is_equal_approx(ch.rotation.y, initial_y),
 		"face_to() did not rotate the character in headless mode")
 
-	ch.notification(Node.NOTIFICATION_EXIT_TREE)
 	room.free()

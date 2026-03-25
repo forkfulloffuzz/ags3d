@@ -30,6 +30,13 @@ const SUITES: Array[String] = [
 ]
 
 func _init() -> void:
+	# Defer test execution so SceneTree.initialize() has time to run first.
+	# By the time _run_tests() is called, root.is_inside_tree() == true, which
+	# allows add_to_tree() to properly propagate NOTIFICATION_ENTER_TREE to
+	# nodes that require a live scene tree (e.g. CharacterBody3D, NavigationAgent3D).
+	call_deferred("_run_tests")
+
+func _run_tests() -> void:
 	var reporter := Reporter.new()
 
 	print("")
@@ -53,6 +60,7 @@ func _init() -> void:
 			print("%s[ERROR]%s %s does not extend TestBase" % [C_RED, C_RESET, suite_path])
 			continue
 
+		suite._tree = self
 		var result: Dictionary = suite.run_suite()
 		reporter.record(result)
 
