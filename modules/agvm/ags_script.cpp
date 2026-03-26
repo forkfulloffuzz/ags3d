@@ -41,6 +41,15 @@ ScriptInstance *AGSScript::instance_create(Object *p_this) {
 	return nullptr;
 }
 
+PlaceHolderScriptInstance *AGSScript::placeholder_instance_create(Object *p_this) {
+	if (_inner_script.is_valid()) {
+		return _inner_script->placeholder_instance_create(p_this);
+	}
+	// No inner script yet (editor mode before transpilation). Return a plain
+	// placeholder so the editor keeps the script assignment when saving.
+	return memnew(PlaceHolderScriptInstance(get_language(), Ref<Script>(this), p_this));
+}
+
 bool AGSScript::instance_has(const Object *p_this) const {
 	if (_inner_script.is_valid()) {
 		return _inner_script->instance_has(p_this);
