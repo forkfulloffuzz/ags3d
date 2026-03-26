@@ -255,41 +255,41 @@ func cmdRun(_ []string) error {
 	if err != nil {
 		return err
 	}
-	engineDir := filepath.Join(root, ".engine")
-	if err := os.MkdirAll(engineDir, 0755); err != nil {
-		return err
+	// Use the project root as the Godot project path when project.godot is
+	// present there (the normal case for game_prototype and ag-new projects).
+	godotProject := root
+	if _, err := os.Stat(filepath.Join(root, "project.godot")); errors.Is(err, os.ErrNotExist) {
+		// Fallback: look in .engine/ for legacy or generated project layouts.
+		godotProject = filepath.Join(root, ".engine")
 	}
-	projectFile := filepath.Join(engineDir, "project.godot")
-	if _, err := os.Stat(projectFile); errors.Is(err, os.ErrNotExist) {
-		stub := "; Engine configuration file.\n[application]\nconfig/name=\"AGS3D Game\"\n"
-		if err := os.WriteFile(projectFile, []byte(stub), 0644); err != nil {
-			return err
-		}
-	}
-	fmt.Printf("ag run: launching %s --editor --path %s\n", godot, engineDir)
-	cmd := exec.Command(godot, "--editor", "--path", engineDir)
+	fmt.Printf("ag run: launching %s --editor --path %s\n", godot, godotProject)
+	cmd := exec.Command(godot, "--editor", "--path", godotProject)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func findGodot() (string, error) {
+	// 1. Explicit override via environment variable.
 	if env := os.Getenv("GODOT"); env != "" {
 		if path, err := exec.LookPath(env); err == nil {
 			return path, nil
 		}
 	}
+	// 2. Standard names on PATH.
 	for _, name := range []string{"godot", "godot4", "Godot"} {
 		if path, err := exec.LookPath(name); err == nil {
 			return path, nil
 		}
 	}
-	// Fall back to repo-local build artefact
+	// 3. Repo-local build artefact: bin/ sibling of the ag binary's directory.
+	//    ag lives at tools/ag/ag (or bin/ after install), so walk up to find bin/.
 	exe, _ := os.Executable()
-	repoRoot := filepath.Join(filepath.Dir(exe), "..", "..", "..")
-	matches, _ := filepath.Glob(filepath.Join(repoRoot, "bin", "godot.linuxbsd.editor.*"))
-	if len(matches) > 0 {
-		return matches[0], nil
+	for dir := filepath.Dir(exe); dir != filepath.Dir(dir); dir = filepath.Dir(dir) {
+		matches, _ := filepath.Glob(filepath.Join(dir, "bin", "godot.linuxbsd.editor.*"))
+		if len(matches) > 0 {
+			return matches[0], nil
+		}
 	}
 	return "", fmt.Errorf("Godot binary not found — set the GODOT environment variable or ensure 'godot' is on PATH")
 }
