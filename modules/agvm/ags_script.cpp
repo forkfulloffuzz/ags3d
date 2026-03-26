@@ -13,6 +13,10 @@ ScriptLanguage *AGSScript::get_language() const {
 	return AGSScriptLanguage::get_singleton();
 }
 
+void AGSScript::set_base_type(const StringName &p_type) {
+	_base_type = p_type;
+}
+
 void AGSScript::set_inner_script(const Ref<Script> &p_script) {
 	_inner_script = p_script;
 }
@@ -25,7 +29,9 @@ StringName AGSScript::get_instance_base_type() const {
 	if (_inner_script.is_valid()) {
 		return _inner_script->get_instance_base_type();
 	}
-	return StringName();
+	// Fall back to the path-derived base type so the Godot editor keeps the
+	// script assignment when saving a scene (editor mode has no inner script).
+	return _base_type;
 }
 
 ScriptInstance *AGSScript::instance_create(Object *p_this) {
@@ -59,6 +65,14 @@ Ref<Resource> ResourceFormatLoaderAGSScript::load(const String &p_path, const St
 
 	Ref<AGSScript> script;
 	script.instantiate();
+
+	// Derive the Godot base class from the file path so the editor can keep
+	// the script assigned to a node even before transpilation has run.
+	if (p_path.contains("rooms/")) {
+		script->set_base_type("AGSRoom");
+	} else if (p_path.contains("characters/")) {
+		script->set_base_type("AGSCharacter");
+	}
 
 	// Load .agscript source text for editor display.
 	Error err;

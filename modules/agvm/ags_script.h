@@ -11,6 +11,12 @@ protected:
 	static void _bind_methods() {}
 
 public:
+	// Set the intended Godot base class (e.g. "AGSRoom") derived from the
+	// source file path. Used by get_instance_base_type() in editor mode when
+	// _inner_script is not yet available, so the editor preserves the script
+	// assignment when saving the scene.
+	void set_base_type(const StringName &p_type);
+
 	// Wire to the generated GDScript after transpilation.
 	void set_inner_script(const Ref<Script> &p_script);
 
@@ -52,6 +58,7 @@ public:
 private:
 	String source_code;
 	Ref<Script> _inner_script;
+	StringName _base_type;
 };
 
 class ResourceFormatLoaderAGSScript : public ResourceFormatLoader {
