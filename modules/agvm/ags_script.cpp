@@ -2,10 +2,49 @@
 
 #include "ags_script_language.h"
 
+#include "core/config/project_settings.h"
 #include "core/io/file_access.h"
+#include "core/io/resource_loader.h"
+#include "core/os/os.h"
 
 ScriptLanguage *AGSScript::get_language() const {
 	return AGSScriptLanguage::get_singleton();
+}
+
+void AGSScript::set_inner_script(const Ref<Script> &p_script) {
+	_inner_script = p_script;
+}
+
+bool AGSScript::can_instantiate() const {
+	return _inner_script.is_valid() && _inner_script->can_instantiate();
+}
+
+StringName AGSScript::get_instance_base_type() const {
+	if (_inner_script.is_valid()) {
+		return _inner_script->get_instance_base_type();
+	}
+	return StringName();
+}
+
+ScriptInstance *AGSScript::instance_create(Object *p_this) {
+	if (_inner_script.is_valid()) {
+		return _inner_script->instance_create(p_this);
+	}
+	return nullptr;
+}
+
+bool AGSScript::instance_has(const Object *p_this) const {
+	if (_inner_script.is_valid()) {
+		return _inner_script->instance_has(p_this);
+	}
+	return false;
+}
+
+bool AGSScript::is_valid() const {
+	if (_inner_script.is_valid()) {
+		return _inner_script->is_valid();
+	}
+	return true;
 }
 
 // ---- ResourceFormatLoaderAGSScript ----
@@ -19,11 +58,55 @@ Ref<Resource> ResourceFormatLoaderAGSScript::load(const String &p_path, const St
 	Ref<AGSScript> script;
 	script.instantiate();
 
+	// Load .agscript source text for editor display.
 	Error err;
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
 	if (f.is_valid()) {
-		String source = f->get_as_text();
-		script->set_source_code(source);
+		script->set_source_code(f->get_as_text());
+	}
+
+	// Transpile and wire to generated GDScript.
+	// Only runs when a game.agp file is present (skipped in test/non-project environments).
+	if (ProjectSettings::get_singleton() != nullptr) {
+		String project_root = ProjectSettings::get_singleton()->globalize_path("res://");
+		if (!project_root.ends_with("/")) {
+			project_root += "/";
+		}
+		if (FileAccess::exists(project_root + "game.agp")) {
+			String global_src = ProjectSettings::get_singleton()->globalize_path(p_path);
+			String rel = global_src.substr(project_root.length());
+			String gd_global = project_root + ".engine/generated/" + rel + ".gd";
+			String gd_res = "res://.engine/generated/" + rel + ".gd";
+
+			// Transpile if .gd output is absent or older than the .agscript source.
+			uint64_t src_mtime = FileAccess::get_modified_time(global_src);
+			uint64_t gd_mtime = FileAccess::exists(gd_global) ? FileAccess::get_modified_time(gd_global) : 0;
+
+			if (src_mtime > gd_mtime) {
+				// Run: cd {project_root} && {ag_binary} build
+				// ag binary lives alongside the Godot executable.
+				String ag = OS::get_singleton()->get_executable_path().get_base_dir().path_join("ag");
+				String cmd = "cd " + project_root.trim_suffix("/") + " && " + ag + " build";
+				List<String> sh_args;
+				sh_args.push_back("-c");
+				sh_args.push_back(cmd);
+				String output;
+				int exit_code = 0;
+				OS::get_singleton()->execute("/bin/sh", sh_args, &output, &exit_code, true);
+				if (exit_code != 0) {
+					OS::get_singleton()->print("AGSScript: transpilation failed for '%s':\n%s\n",
+							p_path.utf8().get_data(), output.utf8().get_data());
+				}
+			}
+
+			// Back this AGSScript with the generated GDScript for runtime execution.
+			if (FileAccess::exists(gd_global)) {
+				Ref<Resource> inner = ResourceLoader::load(gd_res, "GDScript");
+				if (inner.is_valid()) {
+					script->set_inner_script(inner);
+				}
+			}
+		}
 	}
 
 	if (r_error) {

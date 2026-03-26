@@ -11,14 +11,17 @@ protected:
 	static void _bind_methods() {}
 
 public:
-	// Script pure virtuals
-	virtual bool can_instantiate() const override { return false; }
+	// Wire to the generated GDScript after transpilation.
+	void set_inner_script(const Ref<Script> &p_script);
+
+	// Script pure virtuals — delegate to _inner_script when available.
+	virtual bool can_instantiate() const override;
 	virtual Ref<Script> get_base_script() const override { return Ref<Script>(); }
 	virtual StringName get_global_name() const override { return StringName(); }
 	virtual bool inherits_script(const Ref<Script> &p_script) const override { return false; }
-	virtual StringName get_instance_base_type() const override { return StringName(); }
-	virtual ScriptInstance *instance_create(Object *p_this) override { return nullptr; }
-	virtual bool instance_has(const Object *p_this) const override { return false; }
+	virtual StringName get_instance_base_type() const override;
+	virtual ScriptInstance *instance_create(Object *p_this) override;
+	virtual bool instance_has(const Object *p_this) const override;
 
 	virtual bool has_source_code() const override { return true; }
 	virtual String get_source_code() const override { return source_code; }
@@ -33,7 +36,7 @@ public:
 	virtual MethodInfo get_method_info(const StringName &p_method) const override { return MethodInfo(); }
 
 	virtual bool is_tool() const override { return false; }
-	virtual bool is_valid() const override { return true; }
+	virtual bool is_valid() const override;
 	virtual bool is_abstract() const override { return false; }
 
 	virtual ScriptLanguage *get_language() const override;
@@ -48,6 +51,7 @@ public:
 
 private:
 	String source_code;
+	Ref<Script> _inner_script;
 };
 
 class ResourceFormatLoaderAGSScript : public ResourceFormatLoader {
