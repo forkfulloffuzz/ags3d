@@ -96,6 +96,9 @@ else
   rm -rf "$REPO_ROOT/agstests/.godot"
 
   NOISE="Godot Engine|godotengine\.org|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^$"
+  NOISE+="|^\s+at:|GDScript backtrace|^\s+\[|^\t"
+  NOISE+="|AGSSpawnPoint.*not found in AGSRuntime"
+  NOISE+="|Source geometry parsing.*navigation mesh|visual meshes store geometry|For runtime.*baking navigation"
   TMPOUT="$(mktemp)"
 
   if [[ $VERBOSE -eq 1 ]]; then

@@ -1,11 +1,15 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
 
 config/name="AGS3D Prototype"
-config/features=PackedStringArray("4.7")
 run/main_scene="res://rooms/start/start.tscn"
-
-[rendering]
-
-renderer/rendering_method="forward_plus"
+config/features=PackedStringArray("4.7")

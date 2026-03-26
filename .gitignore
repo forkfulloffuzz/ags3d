@@ -432,3 +432,4 @@ ag.spec
 !.vscode/launch.json
 !.vscode/tasks.json
 tools/agui/agui
+game_prototype/.godot

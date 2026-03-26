@@ -25,15 +25,10 @@ void AGSRoom::_notification(int p_what) {
 			}
 
 			// T33 — bind AGS-spirit event handlers from the attached script.
-			// Connect AGSRoom signals to their script-side handler functions.
-			// has_method() returns true when the attached GDScript defines the function.
+			// Script handlers are called directly to avoid a signal/method name
+			// collision (e.g. signal "room_enter" vs. GDScript func "room_enter").
+			// The signals are still emitted for external listeners.
 
-			if (has_method("room_enter")) {
-				connect("room_enter", Callable(this, "room_enter"));
-			}
-			if (has_method("room_load")) {
-				connect("room_enter", Callable(this, "room_load"));
-			}
 			if (has_method("hotspot_interact")) {
 				connect("hotspot_clicked", Callable(this, "hotspot_interact"));
 			}
@@ -52,7 +47,18 @@ void AGSRoom::_notification(int p_what) {
 				}
 			}
 
-			emit_signal("room_enter");
+			// Call room_load first (fires before room_enter in AGS semantics).
+			if (has_method("room_load")) {
+				call("room_load");
+			}
+			// Call room_enter directly — do not connect via signal to avoid the
+			// "Method not found" error Godot raises when the signal name and the
+			// GDScript method name are identical and the callable is dispatched
+			// through the signal machinery.
+			emit_signal("room_enter"); // for external listeners
+			if (has_method("room_enter")) {
+				call("room_enter");
+			}
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			if (AGSRuntime::get_singleton()) {

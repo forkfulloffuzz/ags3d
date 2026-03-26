@@ -42,11 +42,10 @@ ScriptInstance *AGSScript::instance_create(Object *p_this) {
 }
 
 PlaceHolderScriptInstance *AGSScript::placeholder_instance_create(Object *p_this) {
-	if (_inner_script.is_valid()) {
-		return _inner_script->placeholder_instance_create(p_this);
-	}
-	// No inner script yet (editor mode before transpilation). Return a plain
-	// placeholder so the editor keeps the script assignment when saving.
+	// Always back the placeholder with this AGSScript (never the inner GDScript).
+	// If we delegate to _inner_script here, Godot's editor resolves the script
+	// reference to the generated .gd and overwrites the .agscript path in the
+	// saved .tscn file.
 	return memnew(PlaceHolderScriptInstance(get_language(), Ref<Script>(this), p_this));
 }
 
