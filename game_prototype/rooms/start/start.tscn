@@ -70,4 +70,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 spawn_character = "player"
 
 [node name="Camera" type="Camera3D" parent="." unique_id=2045123701]
-transform = Transform3D(1, 0, 0, 0, 0.43714708, 0.89939, 0, -0.89939, 0.43714708, 0, 6.9386473, 4.436016)
+transform = Transform3D(0.83388525, -0.40905955, 0.37054777, 0, 0.6713578, 0.7411334, -0.5519378, -0.6180202, 0.5598354, 4.7882776, 5.521952, 5.603934)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1145516584]

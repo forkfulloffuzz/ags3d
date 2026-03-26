@@ -23,6 +23,10 @@ class AGSRuntime : public Object {
 
 	static AGSRuntime *singleton;
 
+	// Trace flag — true by default so every runtime function logs its calls.
+	// Set false in production builds (see GitHub issue for build-flag task).
+	static bool _trace_enabled;
+
 	HashMap<StringName, AGSCharacter *> characters;
 	HashMap<StringName, AGSRoom *> rooms;
 
@@ -34,6 +38,12 @@ protected:
 
 public:
 	static AGSRuntime *get_singleton();
+
+	// Tracing — when enabled every runtime call emits a [AGS/Type::func] log line.
+	// is_trace_enabled() is a static so ags_trace.h can call it without a null check.
+	static bool is_trace_enabled();
+	void set_trace_enabled(bool p_enabled);
+	bool get_trace_enabled() const;
 
 	// Character registry — called by AGSCharacter on NOTIFICATION_READY / EXIT_TREE.
 	void register_character(AGSCharacter *p_character);

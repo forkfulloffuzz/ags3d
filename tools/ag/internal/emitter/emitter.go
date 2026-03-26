@@ -569,7 +569,8 @@ func (p *printer) calleeStr(e parser.Expr) string {
 //	await some_func("arg")
 //	print("[AGS]   some_func('arg') AWAIT END")
 func (p *printer) emitExprStmtTrace(call *parser.CallExpr) {
-	p.linef(`print("[AGS] %s:%d")`, p.srcFile, p.srcLine)
+	gdPath := ".engine/generated/" + p.srcFile + ".gd"
+	p.linef(`print("[AGS] %s:%d | %s")`, p.srcFile, p.srcLine, gdPath)
 
 	if recv, gdMethod, isBuiltin := characterBuiltinCallee(call.Callee); isBuiltin {
 		charName := p.receiverName(recv)

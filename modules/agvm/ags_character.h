@@ -11,6 +11,7 @@ class AGSCharacter : public CharacterBody3D {
 
 	NavigationAgent3D *nav_agent = nullptr;
 	bool navigating = false;
+	int _physics_trace_count = 0; // frames counted since last navigate_to call
 
 	void _on_navigation_finished();
 

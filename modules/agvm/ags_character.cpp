@@ -2,6 +2,7 @@
 
 #include "ags_room.h"
 #include "ags_runtime.h"
+#include "ags_trace.h"
 #include "core/math/basis.h"
 #include "core/object/class_db.h"
 #include "scene/3d/mesh_instance_3d.h"
@@ -92,6 +93,15 @@ void AGSCharacter::_physics_process(double p_delta) {
 		return;
 	}
 
+	_physics_trace_count++;
+	// Log the first 3 frames so navigation startup is visible, then every 60.
+	if (AGSRuntime::is_trace_enabled() && (_physics_trace_count <= 3 || _physics_trace_count % 60 == 0)) {
+		print_line(vformat("[AGS/AGSCharacter::_physics_process] frame=%d, pos=%s, nav_finished=%s",
+				_physics_trace_count,
+				get_global_position(),
+				nav_agent->is_navigation_finished() ? "true" : "false"));
+	}
+
 	Vector3 next_pos = nav_agent->get_next_path_position();
 	Vector3 direction = (next_pos - get_global_position()).normalized();
 	// Apply velocity directly — avoidance is not enabled, so velocity_computed
@@ -101,6 +111,7 @@ void AGSCharacter::_physics_process(double p_delta) {
 }
 
 void AGSCharacter::_on_navigation_finished() {
+	AGS_TRACE("AGSCharacter", "_on_navigation_finished", vformat("arrived after %d frames, emitting walk_completed", _physics_trace_count))
 	navigating = false;
 	set_physics_process(false);
 	set_velocity(Vector3());
@@ -112,15 +123,19 @@ void AGSCharacter::navigate_to(const Vector3 &p_target) {
 	// NOTIFICATION_READY guard above).  Headless tests that call walk_to() to
 	// check signal contracts will have a null nav_agent — return silently so
 	// the signal is still delivered without a spurious error message.
+	AGS_TRACE("AGSCharacter", "navigate_to", vformat("target=%s, nav_agent=%s", p_target, nav_agent ? "ok" : "null (headless)"))
 	if (!nav_agent) {
 		return;
 	}
+	_physics_trace_count = 0;
 	nav_agent->set_target_position(p_target);
 	navigating = true;
 	set_physics_process(true);
+	AGS_TRACE("AGSCharacter", "navigate_to", "physics_process enabled")
 }
 
 Signal AGSCharacter::walk_to(const String &p_point_name) {
+	AGS_TRACE("AGSCharacter", "walk_to", vformat("point=%s", p_point_name))
 	// Find the nearest AGSRoom ancestor and look up the named point.
 	AGSRoom *room = nullptr;
 	Node *parent = get_parent();
@@ -133,14 +148,18 @@ Signal AGSCharacter::walk_to(const String &p_point_name) {
 	}
 	ERR_FAIL_NULL_V_MSG(room, Signal(), "AGSCharacter::walk_to: No parent AGSRoom found.");
 
+	AGS_TRACE("AGSCharacter", "walk_to", vformat("room=%s", room->get_room_name()))
 	Vector3 target = room->get_point(p_point_name);
+	AGS_TRACE("AGSCharacter", "walk_to", vformat("point=%s → target=%s", p_point_name, target))
 	navigate_to(target);
 
 	// Return the walk_completed signal so GDScript can await it.
+	AGS_TRACE("AGSCharacter", "walk_to", "returning walk_completed signal")
 	return Signal(this, "walk_completed");
 }
 
 Signal AGSCharacter::face_to(const String &p_point_name) {
+	AGS_TRACE("AGSCharacter", "face_to", vformat("point=%s", p_point_name))
 	// Find parent room and resolve named point.
 	AGSRoom *room = nullptr;
 	Node *parent = get_parent();
