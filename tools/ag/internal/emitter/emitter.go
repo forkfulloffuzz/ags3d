@@ -37,7 +37,14 @@ type Result struct {
 }
 
 // Emitter walks an AGS-spirit AST and produces GDScript output.
-type Emitter struct{}
+type Emitter struct {
+	// Trace, when true, wraps blocking calls with print() debug traces:
+	//   - a line print at the start of each statement ([AGS] file:line)
+	//   - for character calls: intermediate temp var for the receiver,
+	//     a print of the resolved value, and AWAIT START/END bracketing
+	//   - for other blocking calls: AWAIT START/END bracketing
+	Trace bool
+}
 
 // New creates a new Emitter.
 func New() *Emitter { return &Emitter{} }
@@ -49,7 +56,7 @@ func (em *Emitter) Emit(f *parser.File) (*Result, error) {
 	st, _ := parser.BuildSymbolTable(f)
 	parser.AnnotateBlocking(f, st)
 
-	p := &printer{srcFile: f.Path}
+	p := &printer{srcFile: f.Path, trace: em.Trace}
 	p.emitFile(f)
 	return &Result{GDScript: p.result(), SourceMap: p.sm}, nil
 }
@@ -59,12 +66,14 @@ func (em *Emitter) Emit(f *parser.File) (*Result, error) {
 // -------------------------------------------------------------------
 
 type printer struct {
-	buf     strings.Builder
-	depth   int
-	lineNum int    // 1-based GDScript output line counter
-	srcFile string // AGS-spirit source file path
-	srcLine int    // current AGS-spirit source line (0 = unknown)
-	sm      [][3]any
+	buf        strings.Builder
+	depth      int
+	lineNum    int    // 1-based GDScript output line counter
+	srcFile    string // AGS-spirit source file path
+	srcLine    int    // current AGS-spirit source line (0 = unknown)
+	sm         [][3]any
+	trace      bool // emit debug print() traces around blocking calls
+	tmpCounter int  // counter for unique _agsN temp variable names
 }
 
 func (p *printer) result() string { return p.buf.String() }
@@ -291,6 +300,12 @@ func (p *printer) emitStmt(s parser.Stmt) {
 				return
 			case "--":
 				p.linef("%s -= 1", p.exprStr(post.X))
+				return
+			}
+		}
+		if p.trace {
+			if call, ok := v.X.(*parser.CallExpr); ok && call.IsBlocking {
+				p.emitExprStmtTrace(call)
 				return
 			}
 		}
@@ -529,6 +544,61 @@ func (p *printer) calleeStr(e parser.Expr) string {
 		return toSnakeCase(v.Property)
 	}
 	return p.exprStr(e)
+}
+
+// -------------------------------------------------------------------
+// Trace mode — debug print() wrappers around blocking calls
+// -------------------------------------------------------------------
+
+// emitExprStmtTrace emits a blocking call statement with surrounding
+// print() traces. Called only when p.trace is true.
+//
+// For character built-in calls (e.g. player.WalkTo("door_left")):
+//
+//	print("[AGS] file:line")
+//	var _ags0 = AGSRuntime.get_character("player")
+//	print("[AGS]   get_character('player') = ", _ags0)
+//	print("[AGS]   walk_to('door_left') AWAIT START")
+//	await _ags0.walk_to("door_left")
+//	print("[AGS]   walk_to('door_left') AWAIT END")
+//
+// For other blocking calls:
+//
+//	print("[AGS] file:line")
+//	print("[AGS]   some_func('arg') AWAIT START")
+//	await some_func("arg")
+//	print("[AGS]   some_func('arg') AWAIT END")
+func (p *printer) emitExprStmtTrace(call *parser.CallExpr) {
+	p.linef(`print("[AGS] %s:%d")`, p.srcFile, p.srcLine)
+
+	if recv, gdMethod, isBuiltin := characterBuiltinCallee(call.Callee); isBuiltin {
+		charName := p.receiverName(recv)
+		args := make([]string, len(call.Args))
+		for i, a := range call.Args {
+			args[i] = p.pointArgStr(a)
+		}
+		argsStr := strings.Join(args, ", ")
+		// Use single quotes in display strings to avoid breaking GDScript string literals.
+		argsDisplay := strings.ReplaceAll(argsStr, `"`, `'`)
+
+		tmp := fmt.Sprintf("_ags%d", p.tmpCounter)
+		p.tmpCounter++
+
+		p.linef(`var %s = AGSRuntime.get_character("%s")`, tmp, charName)
+		p.linef(`print("[AGS]   get_character('%s') = ", %s)`, charName, tmp)
+		p.linef(`print("[AGS]   %s(%s) AWAIT START")`, gdMethod, argsDisplay)
+		p.linef(`await %s.%s(%s)`, tmp, gdMethod, argsStr)
+		p.linef(`print("[AGS]   %s(%s) AWAIT END")`, gdMethod, argsDisplay)
+		return
+	}
+
+	// Generic blocking call.
+	callStr := p.exprStr(call)
+	callPart := strings.TrimPrefix(callStr, "await ")
+	callDisplay := strings.ReplaceAll(callPart, `"`, `'`)
+	p.linef(`print("[AGS]   %s AWAIT START")`, callDisplay)
+	p.line(callStr)
+	p.linef(`print("[AGS]   %s AWAIT END")`, callDisplay)
 }
 
 // -------------------------------------------------------------------

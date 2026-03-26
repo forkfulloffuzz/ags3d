@@ -160,14 +160,15 @@ func requireProject() (string, *project.Manifest) {
 func cmdBuild(args []string) error {
 	fs := flag.NewFlagSet("build", flag.ContinueOnError)
 	force := fs.Bool("force", false, "rebuild all files regardless of mtime")
+	trace := fs.Bool("trace", false, "emit print() debug traces around blocking calls")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	root, _ := requireProject()
-	return build(root, *force)
+	return build(root, *force, *trace)
 }
 
-func build(root string, force bool) error {
+func build(root string, force bool, trace bool) error {
 	all, err := project.Scan(root)
 	if err != nil {
 		return err
@@ -203,6 +204,7 @@ func build(root string, force bool) error {
 	}
 
 	em := emitter.New()
+	em.Trace = trace
 	var errs []error
 
 	for _, src := range changed {
@@ -266,7 +268,7 @@ func build(root string, force bool) error {
 
 func cmdRun(_ []string) error {
 	root, _ := requireProject()
-	if err := build(root, false); err != nil {
+	if err := build(root, false, false); err != nil {
 		return err
 	}
 	godot, err := findGodot()
