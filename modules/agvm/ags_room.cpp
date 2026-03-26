@@ -14,6 +14,7 @@ void AGSRoom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point", "name"), &AGSRoom::get_point);
 
 	ADD_SIGNAL(MethodInfo("hotspot_clicked", PropertyInfo(Variant::STRING, "hotspot_name")));
+	ADD_SIGNAL(MethodInfo("room_enter"));
 }
 
 void AGSRoom::_notification(int p_what) {
@@ -22,6 +23,36 @@ void AGSRoom::_notification(int p_what) {
 			if (AGSRuntime::get_singleton()) {
 				AGSRuntime::get_singleton()->register_room(this);
 			}
+
+			// T33 — bind AGS-spirit event handlers from the attached script.
+			// Connect AGSRoom signals to their script-side handler functions.
+			// has_method() returns true when the attached GDScript defines the function.
+
+			if (has_method("room_enter")) {
+				connect("room_enter", Callable(this, "room_enter"));
+			}
+			if (has_method("room_load")) {
+				connect("room_enter", Callable(this, "room_load"));
+			}
+			if (has_method("hotspot_interact")) {
+				connect("hotspot_clicked", Callable(this, "hotspot_interact"));
+			}
+
+			// Connect each child AGSTriggerRegion's signals to the room's handlers.
+			for (int i = 0; i < get_child_count(); i++) {
+				AGSTriggerRegion *region = Object::cast_to<AGSTriggerRegion>(get_child(i));
+				if (!region) {
+					continue;
+				}
+				if (has_method("region_walked_into")) {
+					region->connect("region_entered", Callable(this, "region_walked_into"));
+				}
+				if (has_method("region_walked_off")) {
+					region->connect("region_exited", Callable(this, "region_walked_off"));
+				}
+			}
+
+			emit_signal("room_enter");
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			if (AGSRuntime::get_singleton()) {

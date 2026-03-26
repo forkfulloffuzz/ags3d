@@ -27,6 +27,7 @@ const SUITES: Array[String] = [
 	"m5_character/test_navigation.gd",
 	"m5_character/test_faceto.gd",
 	"m5_character/test_spawnpoint.gd",
+	"m6_bindings/test_event_binding.gd",
 ]
 
 func _init() -> void:
