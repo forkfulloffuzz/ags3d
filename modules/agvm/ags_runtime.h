@@ -33,6 +33,9 @@ public:
 	void unregister_room(AGSRoom *p_room);
 	AGSRoom *get_room(const String &p_name) const;
 
+	// Cross-room point lookup — delegates to AGSRoom::get_point().
+	Vector3 get_point(const String &p_room_name, const String &p_point_name) const;
+
 	AGSRuntime();
 	~AGSRuntime();
 };

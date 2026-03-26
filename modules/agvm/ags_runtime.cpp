@@ -22,6 +22,7 @@ AGSRuntime *AGSRuntime::get_singleton() {
 void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_character", "name"), &AGSRuntime::get_character);
 	ClassDB::bind_method(D_METHOD("get_room", "name"), &AGSRuntime::get_room);
+	ClassDB::bind_method(D_METHOD("get_point", "room_name", "point_name"), &AGSRuntime::get_point);
 }
 
 void AGSRuntime::register_character(AGSCharacter *p_character) {
@@ -58,4 +59,10 @@ AGSRoom *AGSRuntime::get_room(const String &p_name) const {
 		return nullptr;
 	}
 	return const_cast<AGSRoom *>(*found);
+}
+
+Vector3 AGSRuntime::get_point(const String &p_room_name, const String &p_point_name) const {
+	AGSRoom *room = get_room(p_room_name);
+	ERR_FAIL_NULL_V_MSG(room, Vector3(), vformat("AGSRuntime: room '%s' not found.", p_room_name));
+	return room->get_point(p_point_name);
 }

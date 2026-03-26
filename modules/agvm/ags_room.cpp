@@ -2,6 +2,7 @@
 
 #include "ags_hotspot.h"
 #include "ags_point.h"
+#include "ags_runtime.h"
 #include "ags_trigger_region.h"
 #include "core/object/class_db.h"
 
@@ -13,6 +14,26 @@ void AGSRoom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point", "name"), &AGSRoom::get_point);
 
 	ADD_SIGNAL(MethodInfo("hotspot_clicked", PropertyInfo(Variant::STRING, "hotspot_name")));
+}
+
+void AGSRoom::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_READY: {
+			if (AGSRuntime::get_singleton()) {
+				AGSRuntime::get_singleton()->register_room(this);
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			if (AGSRuntime::get_singleton()) {
+				AGSRuntime::get_singleton()->unregister_room(this);
+			}
+		} break;
+		case NOTIFICATION_PREDELETE: {
+			if (AGSRuntime::get_singleton()) {
+				AGSRuntime::get_singleton()->unregister_room(this);
+			}
+		} break;
+	}
 }
 
 void AGSRoom::set_room_name(const String &p_name) {

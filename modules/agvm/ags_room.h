@@ -17,6 +17,7 @@ class AGSRoom : public Node3D {
 
 protected:
 	static void _bind_methods();
+	void _notification(int p_what);
 
 public:
 	void set_room_name(const String &p_name);
