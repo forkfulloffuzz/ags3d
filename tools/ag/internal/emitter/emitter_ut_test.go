@@ -121,11 +121,11 @@ func TestUT_M3_06_MemberCallEmit(t *testing.T) {
 	}
 }
 
-// UT-M3-07: Blocking call emits await prefix.
+// UT-M3-07: Blocking call emits await prefix with AGSRuntime rewrite (T32).
 func TestUT_M3_07_BlockingCallEmitsAwait(t *testing.T) {
 	got := emitUT(t, `function f() { global.player.WalkTo(point.door); }`)
-	if !strings.Contains(got, "await player.walk_to(") {
-		t.Errorf("UT-M3-07: missing 'await player.walk_to(', got:\n%s", got)
+	if !strings.Contains(got, `await AGSRuntime.get_character("player").walk_to("door")`) {
+		t.Errorf("UT-M3-07: missing runtime call, got:\n%s", got)
 	}
 }
 
@@ -157,7 +157,7 @@ function room_AfterFadeIn() {
     global.player.Say("Hello!");
     Wait(60);
 }`)
-	if !strings.Contains(got, "await player.walk_to(") {
+	if !strings.Contains(got, `await AGSRuntime.get_character("player").walk_to("door")`) {
 		t.Errorf("UT-M3-09: missing walk_to await, got:\n%s", got)
 	}
 	if !strings.Contains(got, "await player.say(") {

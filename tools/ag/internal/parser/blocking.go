@@ -38,6 +38,7 @@ var blockingGlobalFuncs = map[string]bool{
 var blockingMethodNames = map[string]bool{
 	"WalkTo":         true,
 	"WalkStraight":   true,
+	"FaceTo":         true,
 	"Say":            true,
 	"Think":          true,
 	"PlayAnimation":  true,

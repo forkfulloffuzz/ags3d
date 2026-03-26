@@ -460,6 +460,19 @@ func (p *printer) exprStr(e parser.Expr) string {
 		return p.exprStr(v.X)
 
 	case *parser.CallExpr:
+		// T32: character built-in methods are rewritten to AGSRuntime calls.
+		if recv, gdMethod, ok := characterBuiltinCallee(v.Callee); ok {
+			charName := p.receiverName(recv)
+			args := make([]string, len(v.Args))
+			for i, a := range v.Args {
+				args[i] = p.pointArgStr(a)
+			}
+			call := fmt.Sprintf(`AGSRuntime.get_character(%q).%s(%s)`, charName, gdMethod, strings.Join(args, ", "))
+			if v.IsBlocking {
+				return "await " + call
+			}
+			return call
+		}
 		callee := p.calleeStr(v.Callee)
 		args := make([]string, len(v.Args))
 		for i, arg := range v.Args {
@@ -492,6 +505,57 @@ func (p *printer) calleeStr(e parser.Expr) string {
 		return toSnakeCase(v.Property)
 	}
 	return p.exprStr(e)
+}
+
+// -------------------------------------------------------------------
+// T32 — AGS-spirit built-in → AGSRuntime call mapping
+// -------------------------------------------------------------------
+
+// builtinCharacterMethods maps AGS-spirit PascalCase character method names
+// to their GDScript snake_case counterparts on AGSCharacter.  Calls to these
+// are rewritten from  obj.Method(arg)  to
+//   AGSRuntime.get_character("obj").method("point_name")
+var builtinCharacterMethods = map[string]string{
+	"WalkTo": "walk_to",
+	"FaceTo": "face_to",
+}
+
+// characterBuiltinCallee returns the receiver expression, the GDScript method
+// name, and true when callee is a character built-in member call.
+func characterBuiltinCallee(e parser.Expr) (recv parser.Expr, gdMethod string, ok bool) {
+	m, isMember := e.(*parser.MemberExpr)
+	if !isMember {
+		return nil, "", false
+	}
+	gdMethod, ok = builtinCharacterMethods[m.Field]
+	if !ok {
+		return nil, "", false
+	}
+	return m.Object, gdMethod, true
+}
+
+// receiverName extracts the character name string from a receiver expression.
+// global.player → "player", player → "player".
+func (p *printer) receiverName(recv parser.Expr) string {
+	switch v := recv.(type) {
+	case *parser.GlobalExpr:
+		return toSnakeCase(v.Property)
+	case *parser.Identifier:
+		return toSnakeCase(v.Name)
+	}
+	return p.exprStr(recv)
+}
+
+// pointArgStr extracts a point name string from a point argument.
+// point.door → "door", point.door_left → "door_left".
+// Any other expression falls back to the default expression renderer.
+func (p *printer) pointArgStr(arg parser.Expr) string {
+	if m, ok := arg.(*parser.MemberExpr); ok {
+		if id, ok := m.Object.(*parser.Identifier); ok && id.Name == "point" {
+			return fmt.Sprintf("%q", m.Field)
+		}
+	}
+	return p.exprStr(arg)
 }
 
 // -------------------------------------------------------------------

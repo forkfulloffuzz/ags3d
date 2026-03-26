@@ -374,7 +374,7 @@ func TestEmitter_CompoundAssign(t *testing.T) {
 
 func TestEmitter_BlockingCall_MethodGetsAwait(t *testing.T) {
 	got := emit(t, `function f() { global.player.WalkTo(point.door); }`)
-	assertContains(t, got, "await player.walk_to(")
+	assertContains(t, got, `await AGSRuntime.get_character("player").walk_to("door")`)
 }
 
 func TestEmitter_BlockingCall_GlobalBuiltin(t *testing.T) {
@@ -406,6 +406,44 @@ function room_AfterFadeIn() {
 func TestEmitter_NonBlockingCall_NoAwait(t *testing.T) {
 	got := emit(t, `function f() { SetGlobalInt(0, 1); }`)
 	assertNotContains(t, got, "await ")
+}
+
+// -------------------------------------------------------------------
+// T32 — map AGS-spirit built-in names to AGSRuntime calls
+// -------------------------------------------------------------------
+
+func TestEmitter_T32_WalkTo_MapsToRuntimeCall(t *testing.T) {
+	got := emit(t, `function f() { global.player.WalkTo(point.door); }`)
+	assertContains(t, got, `AGSRuntime.get_character("player").walk_to("door")`)
+	assertNotContains(t, got, "player.walk_to")
+}
+
+func TestEmitter_T32_FaceTo_MapsToRuntimeCall(t *testing.T) {
+	got := emit(t, `function f() { global.player.FaceTo(point.entrance); }`)
+	assertContains(t, got, `AGSRuntime.get_character("player").face_to("entrance")`)
+}
+
+func TestEmitter_T32_WalkTo_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { global.player.WalkTo(point.door); }`)
+	assertContains(t, got, `await AGSRuntime.get_character("player").walk_to("door")`)
+}
+
+func TestEmitter_T32_FaceTo_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { global.player.FaceTo(point.door); }`)
+	assertContains(t, got, `await AGSRuntime.get_character("player").face_to("door")`)
+}
+
+func TestEmitter_T32_NonBuiltin_Unchanged(t *testing.T) {
+	// WalkStraight is not in T32's table — uses the old receiver.method format.
+	got := emit(t, `function f() { global.player.WalkStraight(point.window); }`)
+	assertContains(t, got, "player.walk_straight(point.window)")
+	assertNotContains(t, got, "AGSRuntime.get_character")
+}
+
+func TestEmitter_T32_CharacterName_FromIdentifier(t *testing.T) {
+	// Non-global receiver: identifier name is used as the character name string.
+	got := emit(t, `function f() { cGuard.WalkTo(point.door); }`)
+	assertContains(t, got, `AGSRuntime.get_character("c_guard").walk_to("door")`)
 }
 
 // -------------------------------------------------------------------

@@ -1,5 +1,5 @@
 func test_character_blocking():
-	await player.walk_to(point.door_left)
+	await AGSRuntime.get_character("player").walk_to("door_left")
 	await player.walk_straight(point.window)
 	await player.say("Hello, world.")
 	await player.think("I wonder what that is.")
@@ -19,14 +19,14 @@ func test_global_blocking():
 	await display_message("Chapter 1: The Beginning")
 
 func test_blocking_chain():
-	await player.walk_to(point.stage_centre)
+	await AGSRuntime.get_character("player").walk_to("stage_centre")
 	await player.face_point(point.audience)
 	await fade_out(15)
 	await player.say("And so it ends.")
 	await fade_in(15)
 
 func walk_and_greet():
-	await player.walk_to(point.npc_guard)
+	await AGSRuntime.get_character("player").walk_to("npc_guard")
 	await player.say("Good day!")
 
 func room_after_fade_in():
