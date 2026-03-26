@@ -47,7 +47,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2)
 point_name = "window"
 
 [node name="BlockerVolume" type="AGSBlockerVolume" parent="." unique_id=103623192]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 2.5327282)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1.1451793)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BlockerVolume" unique_id=662124315]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3700285)
