@@ -22,7 +22,6 @@ void AGSCharacter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("face_to", "point_name"), &AGSCharacter::face_to);
 	ClassDB::bind_method(D_METHOD("_on_face_tween_done"), &AGSCharacter::_on_face_tween_done);
 
-	ClassDB::bind_method(D_METHOD("_on_velocity_computed", "safe_velocity"), &AGSCharacter::_on_velocity_computed);
 	ClassDB::bind_method(D_METHOD("_on_navigation_finished"), &AGSCharacter::_on_navigation_finished);
 
 	ADD_SIGNAL(MethodInfo("walk_completed"));
@@ -51,7 +50,6 @@ void AGSCharacter::_notification(int p_what) {
 			if (!nav_agent) {
 				nav_agent = memnew(NavigationAgent3D);
 				add_child(nav_agent);
-				nav_agent->connect("velocity_computed", Callable(this, "_on_velocity_computed"));
 				nav_agent->connect("navigation_finished", Callable(this, "_on_navigation_finished"));
 			}
 
@@ -85,22 +83,20 @@ void AGSCharacter::_notification(int p_what) {
 }
 
 void AGSCharacter::_physics_process(double p_delta) {
-	if (!nav_agent || nav_agent->is_navigation_finished()) {
-		navigating = false;
+	if (!nav_agent) {
 		set_physics_process(false);
+		return;
+	}
+	if (nav_agent->is_navigation_finished()) {
+		// Path done — wait for _on_navigation_finished to fire.
 		return;
 	}
 
 	Vector3 next_pos = nav_agent->get_next_path_position();
 	Vector3 direction = (next_pos - get_global_position()).normalized();
-	Vector3 desired_velocity = direction * move_speed;
-
-	// Submit to avoidance; movement is applied in _on_velocity_computed.
-	nav_agent->set_velocity(desired_velocity);
-}
-
-void AGSCharacter::_on_velocity_computed(const Vector3 &p_safe_velocity) {
-	set_velocity(p_safe_velocity);
+	// Apply velocity directly — avoidance is not enabled, so velocity_computed
+	// never fires. move_and_slide() is called here instead.
+	set_velocity(direction * move_speed);
 	move_and_slide();
 }
 

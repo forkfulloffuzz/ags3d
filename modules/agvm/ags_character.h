@@ -12,7 +12,6 @@ class AGSCharacter : public CharacterBody3D {
 	NavigationAgent3D *nav_agent = nullptr;
 	bool navigating = false;
 
-	void _on_velocity_computed(const Vector3 &p_safe_velocity);
 	void _on_navigation_finished();
 
 protected:
