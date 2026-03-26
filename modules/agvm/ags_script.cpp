@@ -1,9 +1,11 @@
 #include "ags_script.h"
 
+#include "ags_runtime.h"
 #include "ags_script_language.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
+#include "core/io/json.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 
@@ -104,6 +106,21 @@ Ref<Resource> ResourceFormatLoaderAGSScript::load(const String &p_path, const St
 				Ref<Resource> inner = ResourceLoader::load(gd_res, "GDScript");
 				if (inner.is_valid()) {
 					script->set_inner_script(inner);
+				}
+
+				// Load the .agmap sidecar and register it with AGSRuntime for
+				// error translation (T34 — source map routing).
+				String agmap_global = gd_global.trim_suffix(".gd") + ".agmap";
+				if (FileAccess::exists(agmap_global)) {
+					Error map_err;
+					Ref<FileAccess> mf = FileAccess::open(agmap_global, FileAccess::READ, &map_err);
+					if (mf.is_valid()) {
+						JSON json;
+						Error json_err = json.parse(mf->get_as_text());
+						if (json_err == OK && AGSRuntime::get_singleton()) {
+							AGSRuntime::get_singleton()->register_source_map(gd_res, json.get_data());
+						}
+					}
 				}
 			}
 		}

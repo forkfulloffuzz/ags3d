@@ -1,8 +1,15 @@
 #pragma once
 
+#include "core/error/error_macros.h"
 #include "core/object/script_language.h"
 
 class AGSScriptLanguage : public ScriptLanguage {
+	ErrorHandlerList _error_handler;
+
+	static void _on_script_error(void *p_ud, const char *p_func, const char *p_file,
+			int p_line, const char *p_error, const char *p_errorexp,
+			bool p_editor_notify, ErrorHandlerType p_type);
+
 public:
 	static AGSScriptLanguage *singleton;
 
@@ -14,8 +21,8 @@ public:
 	virtual String get_type() const override { return "AGSScript"; }
 	virtual String get_extension() const override { return "agscript"; }
 
-	virtual void init() override {}
-	virtual void finish() override {}
+	virtual void init() override;
+	virtual void finish() override;
 
 	virtual Vector<String> get_reserved_words() const override { return Vector<String>(); }
 	virtual bool is_control_flow_keyword(const String &p_string) const override { return false; }
