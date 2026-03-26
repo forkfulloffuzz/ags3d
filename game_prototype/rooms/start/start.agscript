@@ -1,5 +1,6 @@
 // start.agscript — room script for 'start'
 
-function room_Load() {
-    // Called when the room loads
+function room_Enter() {
+    player.WalkTo("door_left");
+    player.FaceTo("window");
 }

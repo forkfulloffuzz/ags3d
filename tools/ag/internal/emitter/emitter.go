@@ -98,6 +98,16 @@ func (p *printer) pop()   { p.depth-- }
 // -------------------------------------------------------------------
 
 func (p *printer) emitFile(f *parser.File) {
+	// Emit extends clause based on source path conventions:
+	//   rooms/…      → extends AGSRoom
+	//   characters/… → extends AGSCharacter
+	base := baseClass(f.Path)
+	if base != "" {
+		p.line("extends " + base)
+		if len(f.Decls) > 0 {
+			p.blank()
+		}
+	}
 	for i, d := range f.Decls {
 		if i > 0 {
 			p.blank()
@@ -106,6 +116,20 @@ func (p *printer) emitFile(f *parser.File) {
 	}
 	if len(f.Decls) > 0 {
 		p.blank()
+	}
+}
+
+// baseClass returns the GDScript base class for a source file based on its
+// path within the project (e.g. "rooms/start/start.agscript" → "AGSRoom").
+// Returns "" for files that don't match a known convention.
+func baseClass(path string) string {
+	switch {
+	case strings.Contains(path, "rooms/"):
+		return "AGSRoom"
+	case strings.Contains(path, "characters/"):
+		return "AGSCharacter"
+	default:
+		return ""
 	}
 }
 

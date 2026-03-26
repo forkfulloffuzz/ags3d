@@ -1,0 +1,11 @@
+config_version=5
+
+[application]
+
+config/name="AGS3D Prototype"
+config/features=PackedStringArray("4.7")
+run/main_scene="res://rooms/start/start.tscn"
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
