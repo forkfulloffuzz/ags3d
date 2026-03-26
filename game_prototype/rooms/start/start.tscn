@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cidyvwrpn0qcc" path="res://rooms/start/start.agscript" id="Script_1"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nmdg3"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8pcs3"]
 transparency = 1
 shading_mode = 0
 albedo_color = Color(0, 0.8, 0.2, 0.35)
@@ -32,14 +32,14 @@ script = ExtResource("Script_1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1970905290]
-material_overlay = SubResource("StandardMaterial3D_nmdg3")
+material_overlay = SubResource("StandardMaterial3D_8pcs3")
 mesh = SubResource("BoxMesh_1")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1544359558]
 shape = SubResource("BoxShape3D_1")
 
 [node name="DoorLeft" type="AGSPoint" parent="." unique_id=1561299466]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.17733717, 3.4277897)
 point_name = "door_left"
 
 [node name="Window" type="AGSPoint" parent="." unique_id=579585807]
@@ -68,3 +68,6 @@ shape = SubResource("CapsuleShape3D_1")
 [node name="SpawnPoint" type="AGSSpawnPoint" parent="." unique_id=1830879939]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 spawn_character = "player"
+
+[node name="Camera" type="Camera3D" parent="." unique_id=2045123701]
+transform = Transform3D(1, 0, 0, 0, 0.866025, -0.5, 0, 0.5, 0.866025, 0, 5, 8)

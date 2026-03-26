@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	ag build                     # parse changed .agscript files, emit GDScript
+//	ag build [--force]           # parse changed .agscript files, emit GDScript
 //	ag run                       # build + launch Godot editor
 //	ag validate                  # static analysis (broken refs, unset flags)
 //	ag export --platform <name>  # build + Godot export pipeline
@@ -157,21 +157,39 @@ func requireProject() (string, *project.Manifest) {
 // ag build
 // -------------------------------------------------------------------
 
-func cmdBuild(_ []string) error {
+func cmdBuild(args []string) error {
+	fs := flag.NewFlagSet("build", flag.ContinueOnError)
+	force := fs.Bool("force", false, "rebuild all files regardless of mtime")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
 	root, _ := requireProject()
-	return build(root)
+	return build(root, *force)
 }
 
-func build(root string) error {
-	files, err := project.Scan(root)
+func build(root string, force bool) error {
+	all, err := project.Scan(root)
 	if err != nil {
 		return err
+	}
+	// Only .agscript files are transpiled to GDScript; other types (.agroom,
+	// .agchar, etc.) are data/config files not yet processed by the emitter.
+	var files []project.SourceFile
+	for _, f := range all {
+		if f.Ext == ".agscript" {
+			files = append(files, f)
+		}
 	}
 	manifest, err := project.LoadManifest(root)
 	if err != nil {
 		return err
 	}
-	changed := project.Changed(files, manifest)
+	var changed []project.SourceFile
+	if force {
+		changed = files
+	} else {
+		changed = project.Changed(files, manifest)
+	}
 	if len(changed) == 0 {
 		fmt.Println("ag build: nothing to do (no changed source files)")
 		return nil
@@ -248,7 +266,7 @@ func build(root string) error {
 
 func cmdRun(_ []string) error {
 	root, _ := requireProject()
-	if err := build(root); err != nil {
+	if err := build(root, false); err != nil {
 		return err
 	}
 	godot, err := findGodot()

@@ -4,6 +4,7 @@
 #
 # Standard commands (forwarded to ag binary):
 #   .dev/ag.sh build                    # parse changed .agscript files, emit GDScript
+#   .dev/ag.sh build --force            # rebuild all files regardless of mtime
 #   .dev/ag.sh run                      # build + launch Godot editor
 #   .dev/ag.sh validate                 # static analysis
 #   .dev/ag.sh export --platform linux  # export for platform

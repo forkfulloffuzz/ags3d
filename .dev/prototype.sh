@@ -3,7 +3,8 @@
 #
 # Usage:
 #   .dev/prototype.sh          # open in editor
-#   .dev/prototype.sh --run    # run the project (headless, no editor UI)
+#   .dev/prototype.sh --play   # run the game with display (no editor UI)
+#   .dev/prototype.sh --run    # run the project headless (no display, for CI)
 
 set -euo pipefail
 
@@ -18,8 +19,12 @@ if [[ ! -x "$GODOT" ]]; then
 fi
 
 case "${1:-}" in
+  --play)
+    echo "→ Playing prototype project…"
+    exec "$GODOT" --path "$PROTOTYPE_DIR"
+    ;;
   --run)
-    echo "→ Running prototype project…"
+    echo "→ Running prototype project (headless)…"
     exec "$GODOT" --path "$PROTOTYPE_DIR" --headless
     ;;
   "")
@@ -27,7 +32,7 @@ case "${1:-}" in
     exec "$GODOT" --editor --path "$PROTOTYPE_DIR"
     ;;
   *)
-    echo "Usage: .dev/prototype.sh [--run]" >&2
+    echo "Usage: .dev/prototype.sh [--play|--run]" >&2
     exit 1
     ;;
 esac
