@@ -1,6 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://cfjnrrxdvryg3"]
 
-[ext_resource type="Script" path="res://rooms/start/start.agscript" id="1"]
+[ext_resource type="Script" path="res://rooms/start/start.agscript" id="Script_1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nmdg3"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0.8, 0.2, 0.35)
 
 [sub_resource type="BoxMesh" id="BoxMesh_1"]
 size = Vector3(10, 0.1, 10)
@@ -19,44 +24,47 @@ height = 1.8
 radius = 0.3
 height = 1.8
 
-[node name="StartRoom" type="AGSRoom"]
+[node name="StartRoom" type="AGSRoom" unique_id=681283904]
 room_name = "start"
-script = ExtResource("1")
+script = ExtResource("Script_1")
 
-[node name="Floor" type="AGSWalkableSurface" parent="."]
-position = Vector3(0, -0.05, 0)
+[node name="Floor" type="AGSWalkableSurface" parent="." unique_id=1459410990]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1970905290]
+material_overlay = SubResource("StandardMaterial3D_nmdg3")
 mesh = SubResource("BoxMesh_1")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1544359558]
 shape = SubResource("BoxShape3D_1")
 
-[node name="DoorLeft" type="AGSPoint" parent="."]
+[node name="DoorLeft" type="AGSPoint" parent="." unique_id=1561299466]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 0)
 point_name = "door_left"
-position = Vector3(-3, 0, 0)
 
-[node name="Window" type="AGSPoint" parent="."]
+[node name="Window" type="AGSPoint" parent="." unique_id=579585807]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2)
 point_name = "window"
-position = Vector3(3, 0, 2)
 
-[node name="BlockerVolume" type="AGSBlockerVolume" parent="."]
-position = Vector3(0, 1, 4)
+[node name="BlockerVolume" type="AGSBlockerVolume" parent="." unique_id=103623192]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1.9939823, 0, 1, 2.5327282)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BlockerVolume"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BlockerVolume" unique_id=662124315]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3700285)
 shape = SubResource("BoxShape3D_2")
 
-[node name="Player" type="AGSCharacter" parent="."]
+[node name="Player" type="AGSCharacter" parent="." unique_id=1173258901]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 character_name = "player"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
-position = Vector3(0, 0.9, 0)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player" unique_id=1824204278]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("CapsuleMesh_1")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
-position = Vector3(0, 0.9, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=638913553]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_1")
 
-[node name="SpawnPoint" type="AGSSpawnPoint" parent="."]
+[node name="SpawnPoint" type="AGSSpawnPoint" parent="." unique_id=1830879939]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 spawn_character = "player"
-position = Vector3(-4, 0, -3)
