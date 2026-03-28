@@ -6,7 +6,12 @@
       "Bash(echo \"exit: $?\")",
       "Bash(.dev/test.sh --verbose)",
       "Bash(.dev/test-all.sh)",
-      "Bash(grep -v \"^\\\\[AGS\\\\|AGS3D: agvm\\\\|^\\\\s*$\")"
+      "Bash(grep -v \"^\\\\[AGS\\\\|AGS3D: agvm\\\\|^\\\\s*$\")",
+      "Bash(grep -r \"M8\\\\|#7[4-9]\\\\|#8[0-2]\\\\|T-M8\\\\|milestone\" /home/sebastian/Projects/ags3d --include=*.md)",
+      "Bash(find /home/sebastian/Projects/ags3d -name *.md -type f)",
+      "Bash(ls tools/ag/*.go)",
+      "Bash(python3 -c \"import sys,json; [print\\(f\"\"{m[''''number'''']}: {m[''''title'''']} \\({m[''''state'''']}\\)\"\"\\) for m in json.load\\(sys.stdin\\)]\")",
+      "Bash(python3 -c \"import sys,json; m=json.load\\(sys.stdin\\); print\\(m[''''number''''], m[''''title'''']\\)\")"
     ]
   }
 }
