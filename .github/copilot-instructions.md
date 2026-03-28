@@ -19,8 +19,12 @@ tools/ag/              # Go module: ag CLI + transpiler pipeline + agls language
   internal/lsp/        # LSP server and request handlers
 game_prototype/        # Minimal test project used for end-to-end validation
   game.agp             # TOML project manifest
-  characters/          # .agchar files
-  rooms/               # .agroom and .agscript files
+  characters/          # .agchar files — source-of-truth for character definitions
+  rooms/               # .agroom and .agscript files — source-of-truth for all room data
+    start/
+      start.agroom     # Room config: cameras, points, geometry, spawn points
+      start.agscript   # Room logic: event handlers, character commands
+      start.tscn       # ⚠ currently hand-maintained; will be generated from .agroom
   .engine/             # Mixed: generated artifacts + authored runtime scripts
     generated/         # Transpiled GDScript output (gitignored, regenerated each build)
     cache/             # Build manifest (gitignored)
@@ -36,6 +40,7 @@ game_prototype/        # Minimal test project used for end-to-end validation
 - **Scripting output**: GDScript (`.gd`) — generated build artifact, never hand-edited
 - **CLI tool + transpiler + LSP**: Go — `tools/ag/` is a single Go module containing `ag` CLI, the full parser/emitter pipeline, and the `agls` language server
 - **Build artifact dir**: `.engine/generated/` — deleted and regenerated on each build
+- **Scene generation**: Godot `.tscn` scene files are generated from `.agroom` source files by `ag build`. Authors never edit `.tscn` files. (Implementation pending — prototype `.tscn` is hand-maintained in the interim.)
 
 ## Key Architecture Rules
 
@@ -44,10 +49,11 @@ game_prototype/        # Minimal test project used for end-to-end validation
 - Authors never reference 3D coordinates. All spatial references use named points (`point.door_left`).
 - Logic geometry (WalkableSurface, BlockerVolume, TriggerRegion, HotspotSurface) is invisible at runtime — it exists only for pathfinding, collision, and hit testing.
 - Blocking calls in AGS-spirit (`WalkTo`, `PlayAnimation`, `Wait`) must emit `await` in GDScript. The parser annotates blocking call sites; the emitter acts on those annotations.
+- **ALL Godot files are generated** — `.tscn` scenes from `.agroom`, `.gd` scripts from `.agscript`. Authors only edit AGS source files. Never hand-edit generated files.
 - `.engine/generated/` and `.engine/cache/` are gitignored build artifacts — never commit them.
 - `.engine/runtime/` is version-controlled authored GDScript — commit changes there like any source file.
 - Navigation/movement behavior for AGSCharacter lives in `.engine/runtime/ags_character.gd`, not in C++.
-- Room cameras: set `initial_camera` on AGSRoom to a camera name; AGSRuntime activates it before room scripts run.
+- Room cameras: `initial_camera` in `.agroom` names the camera to activate before room scripts run; `ag build` sets the `initial_camera` property on the generated `AGSRoom` node.
 
 ## Dev Scripts
 
@@ -138,6 +144,17 @@ Key points:
 - Type system is **structural** (Go-style): functions accept anything with the right shape, no inheritance
 - Visibility: functions are **file-scoped by default**; cross-file sharing requires a `namespace` block with `export function` — called as `X.Func()`; `export` outside a namespace is a transpiler error; the symbol table errors on duplicate exported names within the same namespace
 - `GlobalExpr` AST node represents `global.NAME` accesses — emitter maps these to `AGSRuntime` properties
+
+## AGS Source File Types
+
+| Extension   | Purpose | Skill |
+|-------------|---------|-------|
+| `.agroom`   | Room config — cameras, points, geometry, spawn points | [ags-room](skills/ags-room/SKILL.md) |
+| `.agscript` | Room logic — event handlers, character commands | [ags-script](skills/ags-script/SKILL.md) |
+| `.agchar`   | Character definition — display name, move speed | [ags-character](skills/ags-character/SKILL.md) |
+| `game.agp`  | TOML project manifest — start room, start character, settings | — |
+
+Use the corresponding skill when creating or modifying any of these file types.
 
 ## See Also
 
