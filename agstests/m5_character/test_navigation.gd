@@ -1,22 +1,26 @@
 ## UT-M5-04..06 — AGSCharacter navigation setup tests.
 ##
-## NOTE: UT-M5-04 and UT-M5-05 verify structural setup only (NavigationAgent3D
-## child exists, walk_to() returns the correct Signal). Actual movement behaviour
-## — character arriving at destination, routing around BlockerVolume — requires
-## multi-frame physics processing and is covered by TEST-END-01 (IT-END-02,03).
+## Navigation behaviour (walk_to, face_to, NavigationAgent3D) is implemented in
+## the GDScript runtime (.engine/runtime/ags_character.gd), not in C++.
+## The C++ AGSCharacter owns: character_name, move_speed, walk_completed, face_completed.
+## Actual movement is covered by UT-M6-10..12 (end-to-end physics tests).
 extends "res://utils/test_base.gd"
+
+const CHAR_SCRIPT := "res://m6_integration/runtime/ags_character.gd"
 
 func suite_name() -> String:
 	return "M5: Navigation"
 
-# UT-M5-04: AGSCharacter has a NavigationAgent3D child after entering the scene tree.
+# UT-M5-04: AGSCharacter with the runtime script attached has a NavigationAgent3D
+# child after _ready() runs. NavigationAgent3D creation is the runtime's responsibility.
 func test_04_character_has_nav_agent_after_ready() -> void:
 	var root := Node.new()
 	add_to_tree(root)
+
 	var ch: AGSCharacter = AGSCharacter.new()
 	ch.character_name = "nav_test_char"
-	root.add_child(ch)  # ENTER_TREE fires since root is in real tree
-	ch.notification(Node.NOTIFICATION_READY)  # _ready() is deferred; fire manually
+	ch.set_script(load(CHAR_SCRIPT))  # runtime script creates NavigationAgent3D in _ready()
+	root.add_child(ch)  # tree propagates READY since root is live
 
 	var nav_agent: NavigationAgent3D = null
 	for child in ch.get_children():
@@ -24,32 +28,20 @@ func test_04_character_has_nav_agent_after_ready() -> void:
 			nav_agent = child
 			break
 
-	assert_not_null(nav_agent, "No NavigationAgent3D child found on AGSCharacter after ready")
+	assert_not_null(nav_agent, "No NavigationAgent3D child found after runtime script _ready()")
 
 	root.free()
 
-# UT-M5-05: walk_to() returns a Signal named "walk_completed".
-func test_05_walk_to_returns_walk_completed_signal() -> void:
-	var room: AGSRoom = AGSRoom.new()
-	room.room_name = "nav_test_room"
-	add_to_tree(room)
-
-	var point: AGSPoint = AGSPoint.new()
-	point.point_name = "target"
-	point.position = Vector3(5, 0, 0)
-	room.add_child(point)
-	point.notification(Node.NOTIFICATION_READY)
-
-	var ch: AGSCharacter = AGSCharacter.new()
-	ch.character_name = "walker"
-	room.add_child(ch)
-	ch.notification(Node.NOTIFICATION_READY)
-
-	var sig: Signal = ch.walk_to("target")
-	assert_true(sig.get_name() == "walk_completed", \
-		"walk_to() returned signal with wrong name: '%s'" % sig.get_name())
-
-	room.free()
+# UT-M5-05: AGSCharacter (C++) declares walk_completed and face_completed signals.
+# walk_to / face_to are GDScript coroutines on the runtime script; this verifies
+# the signals the coroutines emit are declared at the C++ level.
+func test_05_walk_completed_and_face_completed_signals_declared() -> void:
+	var ch := AGSCharacter.new()
+	assert_true(ch.has_signal("walk_completed"),
+			"AGSCharacter must declare walk_completed signal")
+	assert_true(ch.has_signal("face_completed"),
+			"AGSCharacter must declare face_completed signal")
+	ch.free()
 
 # UT-M5-06: Scene with WalkableSurface, BlockerVolume, and Character loads without crash.
 # Full routing-around-blocker behaviour is tested in TEST-END-01 (IT-END-03).
