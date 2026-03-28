@@ -3,4 +3,5 @@
 function room_Enter() {
 	player.FaceTo("window");
 	player.WalkTo("door_left");
+	player.FaceTo("window");
 }
