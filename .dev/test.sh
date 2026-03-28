@@ -44,14 +44,15 @@ rm -rf "$TEST_PROJECT/.godot"
 echo ""
 
 if [[ $VERBOSE -eq 1 ]]; then
-  "$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT"
-  exit $?
+  STATUS=0
+  "$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT" || STATUS=$?
+  exit $STATUS
 fi
 
 # Suppress Godot engine noise; only show AGS3D test output.
 TMPOUT="$(mktemp)"
-"$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT" >"$TMPOUT" 2>&1
-STATUS=$?
+STATUS=0
+"$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT" >"$TMPOUT" 2>&1 || STATUS=$?
 
 NOISE_PATTERN="Godot Engine|godotengine\.org|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^$"
 # Engine noise: warning/error boilerplate lines (at:, GDScript backtrace, bracketed entries,

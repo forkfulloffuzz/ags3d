@@ -105,12 +105,11 @@ else
   NOISE+="|RID allocations.*were leaked|ObjectDB instances were leaked|resources still in use"
   TMPOUT="$(mktemp)"
 
+  GDX=0
   if [[ $VERBOSE -eq 1 ]]; then
-    "$GODOT" --headless --path "$REPO_ROOT/agstests" --script run_tests.gd
-    GDX=$?
+    "$GODOT" --headless --path "$REPO_ROOT/agstests" --script run_tests.gd || GDX=$?
   else
-    "$GODOT" --headless --path "$REPO_ROOT/agstests" --script run_tests.gd >"$TMPOUT" 2>&1
-    GDX=$?
+    "$GODOT" --headless --path "$REPO_ROOT/agstests" --script run_tests.gd >"$TMPOUT" 2>&1 || GDX=$?
     if [[ -n "$FILTER" ]]; then
       grep -v -E "$NOISE" "$TMPOUT" | grep -i "$FILTER" || true
     else
