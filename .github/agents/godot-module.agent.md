@@ -9,7 +9,7 @@ You are a specialist in Godot 4 engine C++ module development. You write clean, 
 
 - All code in `modules/agvm/`
 - Node types: AGSRoom, AGSCharacter, AGSCamera, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint
-- AGSRuntime autoload singleton: `get_room(name)`, `get_character(name)`, `get_camera(name)`, `get_point(room, point_name)`
+- AGSRuntime autoload singleton: `get_room(name)`, `get_character(name)`, `get_camera(name)`, `set_camera(name)`, `get_point(room, point_name)`
 - Godot registration: `ClassDB::bind_method`, `ADD_PROPERTY`, `GDREGISTER_CLASS`, `register_types()`
 - SCsub build files and SConstruct integration
 - NavigationAgent3D, `move_and_slide`, navmesh baking from WalkableSurface mesh
@@ -27,6 +27,7 @@ AGSRoom         (extends Node3D)      — owns all AGS subsystems for a location
 
 AGSCharacter    (extends CharacterBody3D) — navigation behavior in .engine/runtime/ags_character.gd
 AGSCamera       (extends Camera3D)        — named camera; registers with AGSRuntime on READY
+AGSCameraZone   (extends Area3D)          — switches to target_camera when AGSCharacter enters; optional revert_on_exit
 AGSSpawnPoint   (extends Node3D)          — places a named character on room load
 AGSRuntime      (Autoload singleton)      — indexes rooms, characters, and cameras by name
 

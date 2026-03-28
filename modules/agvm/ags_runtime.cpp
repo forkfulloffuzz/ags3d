@@ -36,6 +36,7 @@ bool AGSRuntime::get_trace_enabled() const {
 
 void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_camera", "name"), &AGSRuntime::get_camera);
+	ClassDB::bind_method(D_METHOD("set_camera", "name"), &AGSRuntime::set_camera);
 	ClassDB::bind_method(D_METHOD("get_character", "name"), &AGSRuntime::get_character);
 	ClassDB::bind_method(D_METHOD("get_room", "name"), &AGSRuntime::get_room);
 	ClassDB::bind_method(D_METHOD("get_point", "room_name", "point_name"), &AGSRuntime::get_point);
@@ -63,6 +64,16 @@ AGSCamera *AGSRuntime::get_camera(const String &p_name) const {
 		return nullptr;
 	}
 	return const_cast<AGSCamera *>(*found);
+}
+
+void AGSRuntime::set_camera(const String &p_name) {
+	AGSCamera *cam = get_camera(p_name);
+	if (!cam) {
+		WARN_PRINT(vformat("AGSRuntime::set_camera: camera '%s' not found.", p_name));
+		return;
+	}
+	AGS_TRACE("AGSRuntime", "set_camera", vformat("activating '%s'", p_name))
+	cam->make_current();
 }
 
 void AGSRuntime::register_character(AGSCharacter *p_character) {

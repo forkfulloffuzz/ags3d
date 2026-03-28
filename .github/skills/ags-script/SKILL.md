@@ -39,6 +39,7 @@ These are the primary built-in calls available in `.agscript`. Blocking calls (m
 | `Character(name).walk_to(point)` | ⏳ yes | Walk character to named point |
 | `Character(name).face_to(point)` | ⏳ yes | Rotate character to face named point |
 | `Character(name).say(text)` | ⏳ yes | Character speaks a line |
+| `SetCamera(name)` | no | Switch the active camera by name |
 | `Wait(frames)` | ⏳ yes | Pause script for N frames |
 | `FadeIn()` / `FadeOut()` | ⏳ yes | Screen fade transitions |
 | `ChangeRoom(room)` | ⏳ yes | Transition to another room |

@@ -499,6 +499,20 @@ func (p *printer) exprStr(e parser.Expr) string {
 		return p.exprStr(v.X)
 
 	case *parser.CallExpr:
+		// T38: top-level global built-ins (SetCamera, etc.) map to AGSRuntime methods.
+		if id, ok := v.Callee.(*parser.Identifier); ok {
+			if gdCallee, ok := builtinGlobalFunctions[id.Name]; ok {
+				args := make([]string, len(v.Args))
+				for i, a := range v.Args {
+					args[i] = p.exprStr(a)
+				}
+				call := gdCallee + "(" + strings.Join(args, ", ") + ")"
+				if v.IsBlocking {
+					return "await " + call
+				}
+				return call
+			}
+		}
 		// T32: character built-in methods are rewritten to AGSRuntime calls.
 		if recv, gdMethod, ok := characterBuiltinCallee(v.Callee); ok {
 			charName := p.receiverName(recv)
@@ -605,6 +619,13 @@ func (p *printer) emitExprStmtTrace(call *parser.CallExpr) {
 // -------------------------------------------------------------------
 // T32 — AGS-spirit built-in → AGSRuntime call mapping
 // -------------------------------------------------------------------
+
+// builtinGlobalFunctions maps top-level AGS-spirit PascalCase function names
+// to their GDScript equivalents on AGSRuntime.
+//   SetCamera("overview") → AGSRuntime.set_camera("overview")
+var builtinGlobalFunctions = map[string]string{
+	"SetCamera": "AGSRuntime.set_camera",
+}
 
 // builtinCharacterMethods maps AGS-spirit PascalCase character method names
 // to their GDScript snake_case counterparts on AGSCharacter.  Calls to these

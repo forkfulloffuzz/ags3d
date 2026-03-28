@@ -52,6 +52,12 @@ public:
 	void unregister_camera(AGSCamera *p_camera);
 	AGSCamera *get_camera(const String &p_name) const;
 
+	// Activate a named camera; deactivates the previously active one.
+	void set_camera(const String &p_name);
+
+	// Read-only access to the camera map — used by AGSCameraZone to find the current camera.
+	const HashMap<StringName, AGSCamera *> &get_cameras() const { return cameras; }
+
 	// Character registry — called by AGSCharacter on NOTIFICATION_READY / EXIT_TREE.
 	void register_character(AGSCharacter *p_character);
 	void unregister_character(AGSCharacter *p_character);
