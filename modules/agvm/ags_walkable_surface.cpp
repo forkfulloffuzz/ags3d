@@ -52,7 +52,7 @@ void AGSWalkableSurface::_setup_navmesh() {
 
 	Ref<NavigationMesh> nav_mesh;
 	nav_mesh.instantiate();
-	nav_mesh->set_parsed_geometry_type(NavigationMesh::PARSED_GEOMETRY_MESH_INSTANCES);
+	nav_mesh->set_parsed_geometry_type(NavigationMesh::PARSED_GEOMETRY_STATIC_COLLIDERS);
 	nav_mesh->set_source_geometry_mode(NavigationMesh::SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN);
 	nav_mesh->set_source_group_name("ags_walkable");
 

@@ -1568,21 +1568,32 @@ def generated_wrapper(
     unassigned, the value is determined by file extension.
     """
 
-    with open(path, "wt", encoding="utf-8", newline="\n") as file:
+    with StringIO(newline="\n") as buf:
         if not path.endswith(".out"):  # For test output, we only care about the content.
-            file.write(generate_copyright_header(path))
-            file.write("\n/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n\n")
+            buf.write(generate_copyright_header(path))
+            buf.write("\n/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n\n")
 
             if guard is None:
                 guard = path.endswith((".h", ".hh", ".hpp", ".hxx", ".inc"))
             if guard:
-                file.write("#pragma once\n\n")
+                buf.write("#pragma once\n\n")
 
         with StringIO(newline="\n") as str_io:
             yield str_io
-            file.write(str_io.getvalue().strip() or "/* NO CONTENT */")
+            buf.write(str_io.getvalue().strip() or "/* NO CONTENT */")
 
-        file.write("\n")
+        buf.write("\n")
+        new_content = buf.getvalue()
+
+    # Only write if content changed — avoids spurious mtime updates that
+    # cause SCons to cascade-recompile all files including version.h.
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8", newline="\n") as existing:
+            if existing.read() == new_content:
+                return
+
+    with open(path, "wt", encoding="utf-8", newline="\n") as file:
+        file.write(new_content)
 
 
 def get_buffer(path: str) -> bytes:

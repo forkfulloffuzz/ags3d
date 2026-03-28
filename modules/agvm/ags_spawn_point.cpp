@@ -2,6 +2,7 @@
 
 #include "ags_character.h"
 #include "ags_runtime.h"
+#include "ags_trace.h"
 #include "core/object/class_db.h"
 
 void AGSSpawnPoint::_bind_methods() {
@@ -28,11 +29,13 @@ void AGSSpawnPoint::_notification(int p_what) {
 	}
 	// Use global position when in the scene tree; fall back to local position
 	// in headless test contexts where global transform is unavailable.
+	AGS_TRACE("AGSSpawnPoint", "_notification", vformat("spawning '%s' at %s", spawn_character, get_global_position()))
 	if (is_inside_tree()) {
 		character->set_global_position(get_global_position());
 	} else {
 		character->set_position(get_position());
 	}
+	AGS_TRACE("AGSSpawnPoint", "_notification", "set_global_position done")
 }
 
 void AGSSpawnPoint::set_spawn_character(const String &p_name) {

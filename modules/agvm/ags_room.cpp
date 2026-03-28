@@ -3,6 +3,7 @@
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_runtime.h"
+#include "ags_trace.h"
 #include "ags_trigger_region.h"
 #include "core/object/class_db.h"
 
@@ -48,6 +49,7 @@ void AGSRoom::_notification(int p_what) {
 			}
 
 			// Call room_load first (fires before room_enter in AGS semantics).
+			AGS_TRACE("AGSRoom", "_notification", vformat("room_name=%s, calling room_load", room_name))
 			if (has_method("room_load")) {
 				call("room_load");
 			}
@@ -55,10 +57,12 @@ void AGSRoom::_notification(int p_what) {
 			// "Method not found" error Godot raises when the signal name and the
 			// GDScript method name are identical and the callable is dispatched
 			// through the signal machinery.
+			AGS_TRACE("AGSRoom", "_notification", "calling room_enter")
 			emit_signal("room_enter"); // for external listeners
 			if (has_method("room_enter")) {
 				call("room_enter");
 			}
+			AGS_TRACE("AGSRoom", "_notification", "room_enter done")
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			if (AGSRuntime::get_singleton()) {

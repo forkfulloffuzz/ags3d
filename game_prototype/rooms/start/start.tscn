@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://cfjnrrxdvryg3"]
 
 [ext_resource type="Script" uid="uid://cidyvwrpn0qcc" path="res://rooms/start/start.agscript" id="Script_1"]
+[ext_resource type="Script" path="res://.engine/runtime/ags_character.gd" id="Script_2"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8pcs3"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_baxj2"]
 transparency = 1
 shading_mode = 0
 albedo_color = Color(0, 0.8, 0.2, 0.35)
@@ -13,12 +14,18 @@ size = Vector3(10, 0.1, 10)
 [sub_resource type="BoxShape3D" id="BoxShape3D_1"]
 size = Vector3(10, 0.1, 10)
 
+[sub_resource type="PrismMesh" id="PrismMesh_baxj2"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_abaw8"]
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_2"]
 size = Vector3(1, 2, 3)
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
 radius = 0.3
 height = 1.8
+
+[sub_resource type="PrismMesh" id="PrismMesh_abaw8"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.3
@@ -32,19 +39,27 @@ script = ExtResource("Script_1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1970905290]
-material_overlay = SubResource("StandardMaterial3D_8pcs3")
+material_overlay = SubResource("StandardMaterial3D_baxj2")
 mesh = SubResource("BoxMesh_1")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1544359558]
 shape = SubResource("BoxShape3D_1")
 
 [node name="DoorLeft" type="AGSPoint" parent="." unique_id=1561299466]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.17733717, 3.4277897)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.121089, 0.17733717, 3.4277897)
 point_name = "door_left"
 
+[node name="MeshInstance3D" type="MeshInstance3D" parent="DoorLeft" unique_id=868025717]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50649977, 0)
+mesh = SubResource("PrismMesh_baxj2")
+
 [node name="Window" type="AGSPoint" parent="." unique_id=579585807]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1477208, 0, -3.5543761)
 point_name = "window"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Window" unique_id=1652396993]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7751117, 0)
+mesh = SubResource("SphereMesh_abaw8")
 
 [node name="BlockerVolume" type="AGSBlockerVolume" parent="." unique_id=103623192]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1.1451793)
@@ -56,10 +71,15 @@ shape = SubResource("BoxShape3D_2")
 [node name="Player" type="AGSCharacter" parent="." unique_id=1173258901]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 character_name = "player"
+script = ExtResource("Script_2")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Player" unique_id=1824204278]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("CapsuleMesh_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player/MeshInstance3D" unique_id=2079513390]
+transform = Transform3D(-0.00021605095, 1, 0, -1, -0.00021605095, 0, 0, 0, 0.28916556, 0.7784438, 0, 0)
+mesh = SubResource("PrismMesh_abaw8")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=638913553]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
