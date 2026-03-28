@@ -21,9 +21,11 @@ game_prototype/        # Minimal test project used for end-to-end validation
   game.agp             # TOML project manifest
   characters/          # .agchar files
   rooms/               # .agroom and .agscript files
-  .engine/             # Build artifact — never manually edited
-    generated/         # Transpiled GDScript output
-    cache/
+  .engine/             # Mixed: generated artifacts + authored runtime scripts
+    generated/         # Transpiled GDScript output (gitignored, regenerated each build)
+    cache/             # Build manifest (gitignored)
+    runtime/           # Authored GDScript runtime behavior — version-controlled, never generated
+      ags_character.gd # Navigation behavior for AGSCharacter (walk_to, face_to, _physics_process)
 ```
 
 ## Tech Stack
@@ -42,7 +44,10 @@ game_prototype/        # Minimal test project used for end-to-end validation
 - Authors never reference 3D coordinates. All spatial references use named points (`point.door_left`).
 - Logic geometry (WalkableSurface, BlockerVolume, TriggerRegion, HotspotSurface) is invisible at runtime — it exists only for pathfinding, collision, and hit testing.
 - Blocking calls in AGS-spirit (`WalkTo`, `PlayAnimation`, `Wait`) must emit `await` in GDScript. The parser annotates blocking call sites; the emitter acts on those annotations.
-- `.engine/` is gitignored. Never commit generated GDScript.
+- `.engine/generated/` and `.engine/cache/` are gitignored build artifacts — never commit them.
+- `.engine/runtime/` is version-controlled authored GDScript — commit changes there like any source file.
+- Navigation/movement behavior for AGSCharacter lives in `.engine/runtime/ags_character.gd`, not in C++.
+- Room cameras: set `initial_camera` on AGSRoom to a camera name; AGSRuntime activates it before room scripts run.
 
 ## Dev Scripts
 

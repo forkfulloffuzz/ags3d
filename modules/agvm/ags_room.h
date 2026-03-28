@@ -11,6 +11,7 @@ class AGSRoom : public Node3D {
 	GDCLASS(AGSRoom, Node3D);
 
 	String room_name;
+	String initial_camera;
 	HashMap<StringName, AGSPoint *> points;
 	HashMap<StringName, AGSTriggerRegion *> regions;
 	HashMap<StringName, AGSHotspot *> hotspots;
@@ -22,6 +23,9 @@ protected:
 public:
 	void set_room_name(const String &p_name);
 	String get_room_name() const;
+
+	void set_initial_camera(const String &p_name);
+	String get_initial_camera() const;
 
 	void register_point(AGSPoint *p_point);
 	void unregister_point(AGSPoint *p_point);

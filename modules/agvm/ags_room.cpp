@@ -1,5 +1,6 @@
 #include "ags_room.h"
 
+#include "ags_camera.h"
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_runtime.h"
@@ -12,6 +13,10 @@ void AGSRoom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_room_name"), &AGSRoom::get_room_name);
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "room_name"), "set_room_name", "get_room_name");
 
+	ClassDB::bind_method(D_METHOD("set_initial_camera", "name"), &AGSRoom::set_initial_camera);
+	ClassDB::bind_method(D_METHOD("get_initial_camera"), &AGSRoom::get_initial_camera);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "initial_camera"), "set_initial_camera", "get_initial_camera");
+
 	ClassDB::bind_method(D_METHOD("get_point", "name"), &AGSRoom::get_point);
 
 	ADD_SIGNAL(MethodInfo("hotspot_clicked", PropertyInfo(Variant::STRING, "hotspot_name")));
@@ -23,6 +28,19 @@ void AGSRoom::_notification(int p_what) {
 		case NOTIFICATION_READY: {
 			if (AGSRuntime::get_singleton()) {
 				AGSRuntime::get_singleton()->register_room(this);
+			}
+
+			// Activate the initial camera before any room script runs.
+			// Children's NOTIFICATION_READY fires before the parent's, so the
+			// AGSCamera is guaranteed to be registered by the time we get here.
+			if (!initial_camera.is_empty() && AGSRuntime::get_singleton()) {
+				AGSCamera *cam = AGSRuntime::get_singleton()->get_camera(initial_camera);
+				if (cam) {
+					cam->make_current();
+					AGS_TRACE("AGSRoom", "_notification", vformat("activated camera '%s'", initial_camera))
+				} else {
+					WARN_PRINT(vformat("AGSRoom: initial_camera '%s' not found.", initial_camera));
+				}
 			}
 
 			// T33 — bind AGS-spirit event handlers from the attached script.
@@ -83,6 +101,14 @@ void AGSRoom::set_room_name(const String &p_name) {
 
 String AGSRoom::get_room_name() const {
 	return room_name;
+}
+
+void AGSRoom::set_initial_camera(const String &p_name) {
+	initial_camera = p_name;
+}
+
+String AGSRoom::get_initial_camera() const {
+	return initial_camera;
 }
 
 void AGSRoom::register_point(AGSPoint *p_point) {

@@ -1,5 +1,5 @@
 ---
-description: "Use when working on Godot C++ module code in modules/agvm/: node types (AGSRoom, AGSCharacter, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint), ClassDB registration, SCsub build files, AGSRuntime singleton, NavigationAgent3D integration, or any Godot engine fork modification. Also use for Milestone M1 tasks (T01–T03) and M4–M5 node implementation tasks (T19–T29). NOTE: T04–T05 (ag CLI, project scanner) are Go, not C++ — use the build-pipeline agent for those."
+description: "Use when working on Godot C++ module code in modules/agvm/: node types (AGSRoom, AGSCharacter, AGSCamera, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint), ClassDB registration, SCsub build files, AGSRuntime singleton, NavigationAgent3D integration, or any Godot engine fork modification. Also use for Milestone M1 tasks (T01–T03) and M4–M5 node implementation tasks (T19–T29). NOTE: T04–T05 (ag CLI, project scanner) are Go, not C++ — use the build-pipeline agent for those."
 tools: [read, edit, search, execute]
 ---
 
@@ -8,8 +8,8 @@ You are a specialist in Godot 4 engine C++ module development. You write clean, 
 ## Your Domain
 
 - All code in `modules/agvm/`
-- Node types: AGSRoom, AGSCharacter, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint
-- AGSRuntime autoload singleton: `get_room(name)`, `get_character(name)`, `get_point(room, point_name)`
+- Node types: AGSRoom, AGSCharacter, AGSCamera, AGSWalkableSurface, AGSBlockerVolume, AGSPoint, AGSTriggerRegion, AGSHotspot, AGSSpawnPoint
+- AGSRuntime autoload singleton: `get_room(name)`, `get_character(name)`, `get_camera(name)`, `get_point(room, point_name)`
 - Godot registration: `ClassDB::bind_method`, `ADD_PROPERTY`, `GDREGISTER_CLASS`, `register_types()`
 - SCsub build files and SConstruct integration
 - NavigationAgent3D, `move_and_slide`, navmesh baking from WalkableSurface mesh
@@ -25,9 +25,13 @@ AGSRoom         (extends Node3D)      — owns all AGS subsystems for a location
   AGSHotspot         (extends Area3D)       — raycast target; fires hotspot_clicked(name)
   AGSPoint           (extends Node3D)       — named spatial reference; registers with AGSRoom
 
-AGSCharacter    (extends CharacterBody3D) — NavigationAgent3D child, walk_to/face_to
+AGSCharacter    (extends CharacterBody3D) — navigation behavior in .engine/runtime/ags_character.gd
+AGSCamera       (extends Camera3D)        — named camera; registers with AGSRuntime on READY
 AGSSpawnPoint   (extends Node3D)          — places a named character on room load
-AGSRuntime      (Autoload singleton)      — indexes all rooms and characters by name
+AGSRuntime      (Autoload singleton)      — indexes rooms, characters, and cameras by name
+
+Room config: AGSRoom.initial_camera (String) — camera name to activate before room scripts run.
+Navigation behavior lives in .engine/runtime/ags_character.gd (GDScript attached to AGSCharacter nodes).
 ```
 
 ## Constraints

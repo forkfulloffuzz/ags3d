@@ -33,6 +33,7 @@ height = 1.8
 
 [node name="StartRoom" type="AGSRoom" unique_id=681283904]
 room_name = "start"
+initial_camera = "main"
 script = ExtResource("Script_1")
 
 [node name="Floor" type="AGSWalkableSurface" parent="." unique_id=1459410990]
@@ -78,7 +79,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("CapsuleMesh_1")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Player/MeshInstance3D" unique_id=2079513390]
-transform = Transform3D(-0.00021605095, 1, 0, -1, -0.00021605095, 0, 0, 0, 0.28916556, 0.7784438, 0, 0)
+transform = Transform3D(1.9106855e-15, -4.371139e-08, 0.28916556, -1, -4.371139e-08, 0, 4.371139e-08, -1, -1.2639828e-08, -0.003563881, 0.10656357, -0.72574306)
 mesh = SubResource("PrismMesh_abaw8")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=638913553]
@@ -89,8 +90,8 @@ shape = SubResource("CapsuleShape3D_1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 spawn_character = "player"
 
-[node name="Camera" type="Camera3D" parent="." unique_id=2045123701]
+[node name="Camera" type="AGSCamera" parent="." unique_id=2045123701]
 transform = Transform3D(0.83388525, -0.40905955, 0.37054777, 0, 0.6713578, 0.7411334, -0.5519378, -0.6180202, 0.5598354, 4.7882776, 5.521952, 5.603934)
-current = true
+camera_name = "main"
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1145516584]
