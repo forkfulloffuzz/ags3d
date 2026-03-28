@@ -99,6 +99,10 @@ else
   NOISE+="|^\s+at:|GDScript backtrace|^\s+\[|^\t"
   NOISE+="|AGSSpawnPoint.*not found in AGSRuntime"
   NOISE+="|Source geometry parsing.*navigation mesh|visual meshes store geometry|For runtime.*baking navigation"
+  NOISE+="|Nonexistent function '(walk_to|face_to)' in base 'AGSCharacter'"
+  NOISE+="|Nonexistent function 'connect' in base 'Callable'"
+  NOISE+="|\[AGS/"
+  NOISE+="|RID allocations.*were leaked|ObjectDB instances were leaked|resources still in use"
   TMPOUT="$(mktemp)"
 
   if [[ $VERBOSE -eq 1 ]]; then

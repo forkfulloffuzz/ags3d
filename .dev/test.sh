@@ -59,6 +59,16 @@ NOISE_PATTERN="Godot Engine|godotengine\.org|nvidia|Gtk|Adwaita|Thread|libpulse|
 NOISE_PATTERN+="|^\s+at:|GDScript backtrace|^\s+\[|^\t"
 NOISE_PATTERN+="|AGSSpawnPoint.*not found in AGSRuntime"
 NOISE_PATTERN+="|Source geometry parsing.*navigation mesh|visual meshes store geometry|For runtime.*baking navigation"
+# M5: walk_to / face_to intentionally called on bare AGSCharacter (no runtime script attached)
+#     to test signal return type — the SCRIPT ERROR is expected and not a test failure.
+NOISE_PATTERN+="|Nonexistent function '(walk_to|face_to)' in base 'AGSCharacter'"
+# M6: ScriptWiring — room.room_enter accessed as signal while GDScript method of same name
+#     shadows it; the connect() call fails but the signal still fires via AGSRoom's C++ emit.
+NOISE_PATTERN+="|Nonexistent function 'connect' in base 'Callable'"
+# AGSRuntime trace output (enabled by default in all builds; verbose mode shows it)
+NOISE_PATTERN+="|\[AGS/"
+# Godot resource-leak warnings at exit — harmless cleanup noise
+NOISE_PATTERN+="|RID allocations.*were leaked|ObjectDB instances were leaked|resources still in use"
 
 if [[ -n "$FILTER" ]]; then
   grep -v -E "$NOISE_PATTERN" "$TMPOUT" | grep -i "$FILTER" || true

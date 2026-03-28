@@ -64,9 +64,10 @@ func region_walked_into(region_name: String) -> void:
 	room.room_name = "region_routing_test"
 	room.set_script(script)
 	room.add_child(region)
-	region.notification(Node.NOTIFICATION_READY)  # connects body_entered bridge
-
-	root.add_child(room)  # READY fires; connects region.region_entered → room.region_walked_into
+	# Add to tree WITHOUT manually calling notification(READY) on region — tree
+	# propagates READY to children before parents, so AGSTriggerRegion sets up its
+	# body_entered bridge before AGSRoom connects region_entered to the script handler.
+	root.add_child(room)  # READY fires on region (body_entered bridge) then on room
 
 	# Simulate a body entering the region.
 	var dummy_body := CharacterBody3D.new()
