@@ -435,3 +435,4 @@ ag.spec
 !.vscode/tasks.json
 tools/agui/agui
 game_prototype/.godot
+tools/ag/ag

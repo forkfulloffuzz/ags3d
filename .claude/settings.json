@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git stash:*)",
+      "Bash(.dev/test.sh)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(.dev/test.sh --verbose)",
+      "Bash(.dev/test-all.sh)",
+      "Bash(grep -v \"^\\\\[AGS\\\\|AGS3D: agvm\\\\|^\\\\s*$\")"
+    ]
+  }
+}
