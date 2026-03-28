@@ -4,6 +4,7 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/vector.h"
 
+class AGSCamera;
 class AGSCharacter;
 class AGSRoom;
 
@@ -27,6 +28,7 @@ class AGSRuntime : public Object {
 	// Set false in production builds (see GitHub issue for build-flag task).
 	static bool _trace_enabled;
 
+	HashMap<StringName, AGSCamera *> cameras;
 	HashMap<StringName, AGSCharacter *> characters;
 	HashMap<StringName, AGSRoom *> rooms;
 
@@ -44,6 +46,11 @@ public:
 	static bool is_trace_enabled();
 	void set_trace_enabled(bool p_enabled);
 	bool get_trace_enabled() const;
+
+	// Camera registry — called by AGSCamera on NOTIFICATION_READY / EXIT_TREE.
+	void register_camera(AGSCamera *p_camera);
+	void unregister_camera(AGSCamera *p_camera);
+	AGSCamera *get_camera(const String &p_name) const;
 
 	// Character registry — called by AGSCharacter on NOTIFICATION_READY / EXIT_TREE.
 	void register_character(AGSCharacter *p_character);

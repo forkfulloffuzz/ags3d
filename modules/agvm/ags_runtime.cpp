@@ -1,5 +1,6 @@
 #include "ags_runtime.h"
 
+#include "ags_camera.h"
 #include "ags_character.h"
 #include "ags_room.h"
 #include "ags_trace.h"
@@ -34,6 +35,7 @@ bool AGSRuntime::get_trace_enabled() const {
 }
 
 void AGSRuntime::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_camera", "name"), &AGSRuntime::get_camera);
 	ClassDB::bind_method(D_METHOD("get_character", "name"), &AGSRuntime::get_character);
 	ClassDB::bind_method(D_METHOD("get_room", "name"), &AGSRuntime::get_room);
 	ClassDB::bind_method(D_METHOD("get_point", "room_name", "point_name"), &AGSRuntime::get_point);
@@ -43,6 +45,24 @@ void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_trace_enabled", "enabled"), &AGSRuntime::set_trace_enabled);
 	ClassDB::bind_method(D_METHOD("get_trace_enabled"), &AGSRuntime::get_trace_enabled);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "trace_enabled"), "set_trace_enabled", "get_trace_enabled");
+}
+
+void AGSRuntime::register_camera(AGSCamera *p_camera) {
+	ERR_FAIL_NULL(p_camera);
+	cameras[p_camera->get_camera_name()] = p_camera;
+}
+
+void AGSRuntime::unregister_camera(AGSCamera *p_camera) {
+	ERR_FAIL_NULL(p_camera);
+	cameras.erase(p_camera->get_camera_name());
+}
+
+AGSCamera *AGSRuntime::get_camera(const String &p_name) const {
+	const AGSCamera *const *found = cameras.getptr(StringName(p_name));
+	if (!found) {
+		return nullptr;
+	}
+	return const_cast<AGSCamera *>(*found);
 }
 
 void AGSRuntime::register_character(AGSCharacter *p_character) {

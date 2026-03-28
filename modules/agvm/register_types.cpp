@@ -1,6 +1,7 @@
 #include "register_types.h"
 
 #include "ags_blocker_volume.h"
+#include "ags_camera.h"
 #include "ags_character.h"
 #include "ags_spawn_point.h"
 #include "ags_hotspot.h"
@@ -31,6 +32,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 
 	GDREGISTER_CLASS(AGSScript);
 	GDREGISTER_CLASS(AGSRuntime);
+	GDREGISTER_CLASS(AGSCamera);
 	GDREGISTER_CLASS(AGSCharacter);
 	GDREGISTER_CLASS(AGSRoom);
 	GDREGISTER_CLASS(AGSPoint);
