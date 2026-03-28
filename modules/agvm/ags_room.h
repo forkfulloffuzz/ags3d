@@ -36,4 +36,10 @@ public:
 
 	void register_hotspot(AGSHotspot *p_hotspot);
 	void unregister_hotspot(AGSHotspot *p_hotspot);
+
+private:
+	// Bridge: drops the Node3D body from region_entered/region_exited and passes
+	// the region name (bound via Callable::bind) to the GDScript event handler.
+	void _on_region_body_entered(Node3D *p_body, const String &p_region_name);
+	void _on_region_body_exited(Node3D *p_body, const String &p_region_name);
 };

@@ -1,0 +1,4 @@
+function room_enter() {
+    e2e_player.WalkTo("door_left");
+    e2e_player.FaceTo("window");
+}

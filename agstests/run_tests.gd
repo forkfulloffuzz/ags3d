@@ -14,7 +14,7 @@ const C_RED   := "\u001b[31m"
 const C_BOLD  := "\u001b[1m"
 const C_RESET := "\u001b[0m"
 
-## Register test suites here as they're implemented.
+## Synchronous test suites — each test_* method runs to completion in one call.
 const SUITES: Array[String] = [
 	"m1_module/test_script_language.gd",
 	"m4_room/test_room_node.gd",
@@ -29,6 +29,15 @@ const SUITES: Array[String] = [
 	"m5_character/test_spawnpoint.gd",
 	"m6_bindings/test_event_binding.gd",
 	"m6_bindings/test_source_map.gd",
+	"m6_integration/test_script_wiring.gd",
+	"m6_integration/test_runtime_api.gd",
+	"m6_integration/test_event_routing.gd",
+]
+
+## Async test suites — each test_* method is awaited so coroutine-based tests
+## (multi-frame physics simulations) run to completion before the next test starts.
+const ASYNC_SUITES: Array[String] = [
+	"m6_integration/test_end_to_end.gd",
 ]
 
 func _init() -> void:
@@ -64,6 +73,27 @@ func _run_tests() -> void:
 
 		suite._tree = self
 		var result: Dictionary = suite.run_suite()
+		reporter.record(result)
+
+	for suite_path in ASYNC_SUITES:
+		var script := load("res://" + suite_path) as GDScript
+		if script == null:
+			print("%s[ERROR]%s Could not load async suite: %s" % [C_RED, C_RESET, suite_path])
+			reporter.record({
+				"suite": suite_path,
+				"pass": 0,
+				"fail": 1,
+				"failures": ["  FAIL Failed to load test file: " + suite_path],
+			})
+			continue
+
+		var suite: Object = script.new()
+		if not suite.has_method("run_suite_async"):
+			print("%s[ERROR]%s %s does not extend TestBase" % [C_RED, C_RESET, suite_path])
+			continue
+
+		suite._tree = self
+		var result: Dictionary = await suite.run_suite_async()
 		reporter.record(result)
 
 	reporter.print_summary()

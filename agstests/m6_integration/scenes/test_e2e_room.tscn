@@ -1,0 +1,43 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://m6_integration/runtime/ags_character.gd" id="Script_char"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(20, 0.1, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(20, 0.1, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_2"]
+size = Vector3(20, 0.1, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2"]
+size = Vector3(20, 0.1, 20)
+
+[node name="TestRoom" type="AGSRoom"]
+room_name = "e2e_test_room"
+
+[node name="WalkableSurface" type="AGSWalkableSurface" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WalkableSurface"]
+mesh = SubResource("BoxMesh_1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WalkableSurface"]
+shape = SubResource("BoxShape3D_1")
+
+[node name="door_left" type="AGSPoint" parent="."]
+point_name = "door_left"
+position = Vector3(-4, 0, 0)
+
+[node name="window" type="AGSPoint" parent="."]
+point_name = "window"
+position = Vector3(4, 0, 4)
+
+[node name="e2e_player" type="AGSCharacter" parent="."]
+character_name = "e2e_player"
+move_speed = 8.0
+script = ExtResource("Script_char")
+
+[node name="SpawnPoint" type="AGSSpawnPoint" parent="."]
+spawn_character = "e2e_player"
+position = Vector3(0, 0, 0)

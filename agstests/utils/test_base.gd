@@ -100,6 +100,43 @@ func _fail(msg: String) -> void:
 	_failures.append(entry)
 	_current_test_failures.append(msg)
 
+## Async version of run_suite(). Awaits each test_* method so coroutine-based
+## tests (e.g. multi-frame physics simulations) run to completion.
+## Register the suite in ASYNC_SUITES in run_tests.gd to use this runner.
+func run_suite_async() -> Dictionary:
+	setUpSuite()
+
+	var methods := []
+	for m in get_method_list():
+		if m["name"].begins_with("test_"):
+			methods.append(m["name"])
+	methods.sort()
+
+	for method in methods:
+		_current_test = method
+		_current_test_failures = []
+		var fail_before := _fail_count
+		setUp()
+		await call(method)
+		tearDown()
+
+		if _fail_count == fail_before:
+			print("  %s✓%s %s" % [C_GREEN, C_RESET, method])
+		else:
+			print("  %s✗%s %s" % [C_RED, C_RESET, method])
+			for msg in _current_test_failures:
+				print("    %s%s%s" % [C_DIM, msg, C_RESET])
+
+	tearDownSuite()
+
+	return {
+		"suite": suite_name(),
+		"pass": _pass_count,
+		"fail": _fail_count,
+		"failures": _failures,
+	}
+
+
 ## Run all test_* methods. Called by run_tests.gd.
 func run_suite() -> Dictionary:
 	setUpSuite()

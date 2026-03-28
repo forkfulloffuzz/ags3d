@@ -1,6 +1,8 @@
 #include "ags_room.h"
 
 #include "ags_camera.h"
+#include "core/object/callable_mp.h"
+#include "scene/3d/node_3d.h"
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_runtime.h"
@@ -53,16 +55,20 @@ void AGSRoom::_notification(int p_what) {
 			}
 
 			// Connect each child AGSTriggerRegion's signals to the room's handlers.
+			// region_entered/region_exited fire with a Node3D body; the bridge methods
+			// receive (body, region_name) and forward only region_name to the GDScript handler.
 			for (int i = 0; i < get_child_count(); i++) {
 				AGSTriggerRegion *region = Object::cast_to<AGSTriggerRegion>(get_child(i));
 				if (!region) {
 					continue;
 				}
 				if (has_method("region_walked_into")) {
-					region->connect("region_entered", Callable(this, "region_walked_into"));
+					region->connect("region_entered",
+							callable_mp(this, &AGSRoom::_on_region_body_entered).bind(region->get_region_name()));
 				}
 				if (has_method("region_walked_off")) {
-					region->connect("region_exited", Callable(this, "region_walked_off"));
+					region->connect("region_exited",
+							callable_mp(this, &AGSRoom::_on_region_body_exited).bind(region->get_region_name()));
 				}
 			}
 
@@ -128,6 +134,18 @@ Vector3 AGSRoom::get_point(const String &p_name) const {
 	}
 	const AGSPoint *pt = *found;
 	return pt->is_inside_tree() ? pt->get_global_position() : pt->get_position();
+}
+
+void AGSRoom::_on_region_body_entered(Node3D *p_body, const String &p_region_name) {
+	if (has_method("region_walked_into")) {
+		call("region_walked_into", p_region_name);
+	}
+}
+
+void AGSRoom::_on_region_body_exited(Node3D *p_body, const String &p_region_name) {
+	if (has_method("region_walked_off")) {
+		call("region_walked_off", p_region_name);
+	}
 }
 
 void AGSRoom::register_region(AGSTriggerRegion *p_region) {
