@@ -3,22 +3,45 @@ extends EditorPlugin
 
 ## AG Studio EditorPlugin
 ##
-## Entry point for the AG Studio editor layer. Responsible for:
-##   - Hiding Godot's native docks (FileSystem, Scene, Import)
-##   - Registering custom main screens (Room editor, Script editor)
-##   - Registering custom docks (Project panel, Build Log)
-##   - Respecting --godot-editor flag: does nothing when set
+## Entry point for the AG Studio editor layer. Uses a whitelist approach:
+## everything NOT in the keep-list is hidden, so new Godot panels are
+## automatically suppressed without having to name them explicitly.
+##
+## Whitelist sections:
+##   KEEP_DOCK_TABS    — tab titles to keep visible in side-dock containers
+##   KEEP_BOTTOM_TABS  — tab titles to keep in the bottom panel bar
+##   KEEP_MAIN_SCREENS — top-bar main-screen button labels to keep
+##   KEEP_MENUS        — top menu bar entries to keep
+##
+## Respects --godot-editor flag: skips all customisation when set.
 
 const PLUGIN_NAME := "AG Studio"
 
-# True when launched with --godot-editor (skip all AG Studio setup).
-# Uses OS.get_cmdline_args() so it works before the C++ flag is recompiled.
+# Dock tabs to keep (everything else is hidden).
+# "Project" is our own panel added via add_control_to_dock().
+const KEEP_DOCK_TABS: Array[String] = ["Project"]
+
+# Bottom-panel tabs to keep.
+# "Build Log" is our placeholder added via add_control_to_bottom_panel().
+const KEEP_BOTTOM_TABS: Array[String] = ["Build Log", "Output", "Debugger"]
+
+# Top main-screen buttons to keep (label text on the buttons).
+# "Room" will be added in T-E09. Until then only keep nothing AG-specific;
+# hide 2D, 3D, Script, Game, AssetLib.
+const KEEP_MAIN_SCREENS: Array[String] = []
+
+# Top menu bar entries to keep.
+const KEEP_MENUS: Array[String] = ["Project", "Debug", "Editor", "Help"]
+
+# True when launched with --godot-editor.
 var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
 
-# Placeholder controls — replaced by real panels in T-E08 / T-E09.
 var _project_panel: Control
 var _build_log: Control
-# _room_editor is not added until T-E09; not created here.
+
+# Nodes hidden by us so we can restore them on exit.
+var _hidden_nodes: Array[Node] = []
+
 
 func _enter_tree() -> void:
 	print("[AGS] _enter_tree: godot_editor_mode=%s" % _godot_editor_mode)
@@ -33,14 +56,9 @@ func _enter_tree() -> void:
 	_build_log = _make_placeholder("Build Log")
 
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
-	print("[AGS] added Project dock")
-
 	add_control_to_bottom_panel(_build_log, "Build Log")
-	print("[AGS] added Build Log bottom panel")
 
-	# Defer: editor layout is not fully built during _enter_tree().
-	call_deferred("_hide_native_docks")
-	print("[AGS] _enter_tree done — hide scheduled")
+	call_deferred("_apply_whitelist")
 
 
 func _exit_tree() -> void:
@@ -52,15 +70,13 @@ func _exit_tree() -> void:
 		remove_control_from_docks(_project_panel)
 		_project_panel.queue_free()
 		_project_panel = null
-		print("[AGS] removed Project dock")
 
 	if _build_log:
 		remove_control_from_bottom_panel(_build_log)
 		_build_log.queue_free()
 		_build_log = null
-		print("[AGS] removed Build Log")
 
-	_restore_native_docks()
+	_restore_all()
 
 
 # ---------------------------------------------------------------------------
@@ -80,76 +96,159 @@ func _get_plugin_icon() -> Texture2D:
 
 
 # ---------------------------------------------------------------------------
-# Dock management helpers
+# Whitelist application
 # ---------------------------------------------------------------------------
 
-func _hide_native_docks() -> void:
-	print("[AGS] _hide_native_docks called")
-	var ei := get_editor_interface()
+func _apply_whitelist() -> void:
+	print("[AGS] _apply_whitelist")
+	var base: Control = get_editor_interface().get_base_control()
 
-	# FileSystem dock — hide it and its parent container.
-	var fs_dock := ei.get_file_system_dock()
-	print("[AGS] FileSystem dock visible=%s, hiding" % fs_dock.visible)
-	fs_dock.hide()
-	# Hide the parent TabContainer too so the empty slot collapses.
-	var fs_parent := fs_dock.get_parent()
-	if fs_parent:
-		fs_parent.hide()
+	# FileSystem dock (no tab — direct child, hide explicitly).
+	var fs_dock: FileSystemDock = get_editor_interface().get_file_system_dock()
+	_hide_node(fs_dock)
+	_hide_node(fs_dock.get_parent())
 
-	for title in ["Scene", "Import", "Inspector"]:
-		var found := _set_dock_tab_hidden(title, true)
-		print("[AGS] hide dock '%s': found=%s" % [title, found])
+	# Walk the full editor tree and apply whitelists.
+	_walk(base)
 
+	# Top main-screen buttons.
+	_apply_main_screen_whitelist(base)
 
-func _restore_native_docks() -> void:
-	print("[AGS] _restore_native_docks called")
-	var ei := get_editor_interface()
-
-	var fs_dock := ei.get_file_system_dock()
-	var fs_parent := fs_dock.get_parent()
-	if fs_parent:
-		fs_parent.show()
-	fs_dock.show()
-
-	for title in ["Scene", "Import", "Inspector"]:
-		_set_dock_tab_hidden(title, false)
+	# Top menu bar.
+	_apply_menu_whitelist(base)
 
 
-## Hide or show a single named tab and collapse/restore its container.
-func _set_dock_tab_hidden(title: String, hidden: bool) -> bool:
-	var base := get_editor_interface().get_base_control()
-	return _walk_for_dock_tab(base, title, hidden)
-
-
-func _walk_for_dock_tab(node: Node, title: String, hidden: bool) -> bool:
+func _walk(node: Node) -> void:
 	if node is TabContainer:
 		var tc := node as TabContainer
-		for i in tc.get_tab_count():
-			if tc.get_tab_title(i) == title:
-				tc.set_tab_hidden(i, hidden)
-				print("[AGS]   tab '%s' set_tab_hidden=%s in %s" % [title, hidden, tc.name])
-				# Hide the container itself when all its tabs are hidden.
-				if hidden:
-					var any_visible := false
-					for j in tc.get_tab_count():
-						if not tc.is_tab_hidden(j):
-							any_visible = true
-							break
-					if not any_visible:
-						tc.hide()
-						print("[AGS]   container %s hidden (all tabs hidden)" % tc.name)
-				else:
-					tc.show()
-				return true
+		_apply_tab_whitelist(tc)
+		# Don't recurse into tab containers whose children we just processed.
+		return
 	for child in node.get_children():
-		if _walk_for_dock_tab(child, title, hidden):
+		_walk(child)
+
+
+func _apply_tab_whitelist(tc: TabContainer) -> void:
+	# Determine which whitelist applies based on the container's role.
+	# Bottom panel containers sit inside a node named "BottomPanel" or similar.
+	# We distinguish by checking whether any existing tab is a known bottom tab.
+	var is_bottom := _is_bottom_panel(tc)
+	var keep: Array[String] = KEEP_BOTTOM_TABS if is_bottom else KEEP_DOCK_TABS
+
+	var any_visible := false
+	for i in tc.get_tab_count():
+		var title := tc.get_tab_title(i)
+		var should_hide: bool = not (title in keep)
+		if should_hide and not tc.is_tab_hidden(i):
+			tc.set_tab_hidden(i, true)
+			print("[AGS]   hide tab '%s' in %s" % [title, tc.name])
+		elif not should_hide:
+			any_visible = true
+
+	if not any_visible:
+		_hide_node(tc)
+
+
+func _is_bottom_panel(tc: TabContainer) -> bool:
+	# Walk up looking for a node whose name contains "Bottom".
+	var n: Node = tc
+	for _i in 6:
+		if n == null:
+			break
+		if "Bottom" in n.name or "bottom" in n.name:
 			return true
+		n = n.get_parent()
 	return false
 
 
+func _apply_main_screen_whitelist(base: Control) -> void:
+	# Main-screen buttons are Button nodes inside a HBoxContainer that contains
+	# the 2D/3D/Script/Game/AssetLib buttons. Find by looking for buttons whose
+	# text matches known screen names.
+	var known := ["2D", "3D", "Script", "Game", "AssetLib"]
+	_walk_for_buttons(base, known, KEEP_MAIN_SCREENS)
+
+
+func _walk_for_buttons(node: Node, known: Array, keep: Array[String]) -> void:
+	if node is Button:
+		var btn := node as Button
+		if btn.text in known and not (btn.text in keep):
+			_hide_node(btn)
+			print("[AGS]   hide main-screen button '%s'" % btn.text)
+	for child in node.get_children():
+		_walk_for_buttons(child, known, keep)
+
+
+func _apply_menu_whitelist(base: Control) -> void:
+	# MenuBar or top-level MenuButton nodes.
+	_walk_for_menus(base)
+
+
+func _walk_for_menus(node: Node) -> void:
+	if node is MenuBar:
+		var mb := node as MenuBar
+		for i in mb.get_menu_count():
+			var title := mb.get_menu_title(i)
+			if not (title in KEEP_MENUS):
+				mb.set_menu_hidden(i, true)
+				print("[AGS]   hide menu '%s'" % title)
+		return
+	for child in node.get_children():
+		_walk_for_menus(child)
+
+
 # ---------------------------------------------------------------------------
-# Placeholder factory
+# Restore
 # ---------------------------------------------------------------------------
+
+func _restore_all() -> void:
+	print("[AGS] _restore_all: restoring %d nodes" % _hidden_nodes.size())
+	for n in _hidden_nodes:
+		if is_instance_valid(n):
+			n.show()
+	_hidden_nodes.clear()
+
+	# Restore all tab containers: un-hide every tab.
+	var base: Control = get_editor_interface().get_base_control()
+	_restore_tabs(base)
+
+	# Restore menu bar.
+	_restore_menus(base)
+
+
+func _restore_tabs(node: Node) -> void:
+	if node is TabContainer:
+		var tc := node as TabContainer
+		for i in tc.get_tab_count():
+			tc.set_tab_hidden(i, false)
+		tc.show()
+		return
+	for child in node.get_children():
+		_restore_tabs(child)
+
+
+func _restore_menus(node: Node) -> void:
+	if node is MenuBar:
+		var mb := node as MenuBar
+		for i in mb.get_menu_count():
+			mb.set_menu_hidden(i, false)
+		return
+	for child in node.get_children():
+		_restore_menus(child)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+func _hide_node(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if node is CanvasItem and (node as CanvasItem).visible:
+		(node as CanvasItem).hide()
+		_hidden_nodes.append(node)
+		print("[AGS]   hide node %s" % node.name)
+
 
 func _make_placeholder(label: String) -> Control:
 	var p := PanelContainer.new()
