@@ -166,13 +166,13 @@ func _on_item_activated() -> void:
 	if path.is_empty():
 		return
 	file_activated.emit(path)
-	# T-E09 will route .agroom to the Room editor main screen.
-	# For now open .agscript in the built-in editor; others via shell.
 	if path.ends_with(".agscript"):
 		var res_path: String = ProjectSettings.localize_path(path)
 		var scr = load(res_path)
 		if scr:
 			_plugin.get_editor_interface().edit_script(scr)
+	elif path.ends_with(".agroom"):
+		pass  # routed to Room editor by ag_studio._on_file_activated
 	else:
 		OS.shell_open(path)
 

@@ -22,6 +22,7 @@ var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
 
 var _project_panel: Control
 var _build_log: Control
+var _room_editor: Control
 var _hidden_nodes: Array[Node] = []
 
 
@@ -33,8 +34,17 @@ func _enter_tree() -> void:
 	pp.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	pp.set_plugin(self)
 	_project_panel = pp
+	_project_panel.file_activated.connect(_on_file_activated)
 
 	_build_log = _make_placeholder("Build Log")
+
+	# Room editor main screen
+	var re: Control = preload("res://addons/ag_studio/room_editor.gd").new()
+	re.set_plugin(self)
+	re.visible = false
+	_room_editor = re
+	get_editor_interface().get_editor_main_screen().add_child(_room_editor)
+	_room_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
 	add_control_to_bottom_panel(_build_log, "Build Log")
@@ -56,6 +66,10 @@ func _exit_tree() -> void:
 		_build_log.queue_free()
 		_build_log = null
 
+	if _room_editor:
+		_room_editor.queue_free()
+		_room_editor = null
+
 	_restore_all()
 
 
@@ -64,7 +78,11 @@ func _exit_tree() -> void:
 # ---------------------------------------------------------------------------
 
 func _has_main_screen() -> bool:
-	return false  # placeholder until T-E09
+	return true
+
+func _make_visible(visible: bool) -> void:
+	if _room_editor:
+		_room_editor.visible = visible
 
 func _get_plugin_name() -> String:
 	return PLUGIN_NAME
@@ -145,7 +163,7 @@ func _is_bottom_panel(tc: TabContainer) -> bool:
 
 
 func _apply_main_screen_whitelist(base: Control) -> void:
-	var known := ["2D", "3D", "Script", "Game", "AssetLib"]
+	var known := ["2D", "3D", "Script", "Game", "AssetLib", PLUGIN_NAME]
 	_walk_for_buttons(base, known, KEEP_MAIN_SCREENS)
 
 
@@ -259,6 +277,19 @@ func _restore_menus(node: Node) -> void:
 		return
 	for child in node.get_children():
 		_restore_menus(child)
+
+
+# ---------------------------------------------------------------------------
+# File activation routing
+# ---------------------------------------------------------------------------
+
+func _on_file_activated(abs_path: String) -> void:
+	if not abs_path.ends_with(".agroom"):
+		return
+	var res_path: String = ProjectSettings.localize_path(abs_path)
+	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)
+	if _room_editor:
+		(_room_editor as Node).call("load_room", res_path)
 
 
 # ---------------------------------------------------------------------------
