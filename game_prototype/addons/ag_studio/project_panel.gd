@@ -4,39 +4,41 @@ extends VBoxContainer
 ## AG Studio Project Panel dock
 ##
 ## Displays a tree of all AG source files grouped by type:
-##   rooms/     — .agroom + companion .agscript pairs
-##   characters/ — .agchar files
-##   scripts/    — .agscript files not paired with a room
+##   Rooms      — .agroom + companion .agscript pairs
+##   Characters — .agchar files
+##   Scripts    — .agscript files not paired with a room
 ##
-## Emits file_activated(path: String) when a tree item is double-clicked.
+## Call set_plugin(plugin) immediately after instantiation.
 
 signal file_activated(path: String)
 
-# Icons fetched from the editor theme.
+var _plugin: EditorPlugin  # set by ag_studio.gd
+
+var _tree: Tree
+var _refresh_btn: Button
+
 var _icon_room:   Texture2D
 var _icon_char:   Texture2D
 var _icon_script: Texture2D
 var _icon_folder: Texture2D
 
-var _tree: Tree
-var _refresh_btn: Button
-var _plugin: EditorPlugin  # set by ag_studio.gd after instantiation
 
-# File-watcher so we pick up external changes.
-var _dir_watcher: EditorFileSystemDirectory  # unused for now; refresh is manual + on fs_changed
+func set_plugin(p: EditorPlugin) -> void:
+	_plugin = p
+
 
 func _ready() -> void:
 	name = "Project"
 	_build_ui()
-	_fetch_icons()
-	# Connect to the editor filesystem so we refresh when files change.
-	var efs := EditorInterface.get_singleton().get_resource_filesystem()
-	efs.filesystem_changed.connect(_on_filesystem_changed)
-	call_deferred("refresh")
+	# Icons require _plugin, which is set after _ready() via set_plugin().
+	# Defer so they are available.
+	call_deferred("_fetch_icons_and_refresh")
+	# Auto-refresh when the filesystem changes.
+	var efs: EditorFileSystem = _plugin.get_editor_interface().get_resource_filesystem()
+	efs.filesystem_changed.connect(refresh)
 
 
 func _build_ui() -> void:
-	# Toolbar row.
 	var toolbar := HBoxContainer.new()
 	toolbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(toolbar)
@@ -54,11 +56,9 @@ func _build_ui() -> void:
 	_refresh_btn.pressed.connect(refresh)
 	toolbar.add_child(_refresh_btn)
 
-	# Separator.
 	var sep := HSeparator.new()
 	add_child(sep)
 
-	# Tree.
 	_tree = Tree.new()
 	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -69,40 +69,39 @@ func _build_ui() -> void:
 	add_child(_tree)
 
 
-func _fetch_icons() -> void:
-	var base := EditorInterface.get_singleton().get_base_control()
-	_icon_room   = base.get_theme_icon("Node3D",   "EditorIcons")
+func _fetch_icons_and_refresh() -> void:
+	var base: Control = _plugin.get_editor_interface().get_base_control()
+	_icon_room   = base.get_theme_icon("Node3D",          "EditorIcons")
 	_icon_char   = base.get_theme_icon("CharacterBody3D", "EditorIcons")
-	_icon_script = base.get_theme_icon("Script",   "EditorIcons")
-	_icon_folder = base.get_theme_icon("Folder",   "EditorIcons")
+	_icon_script = base.get_theme_icon("Script",          "EditorIcons")
+	_icon_folder = base.get_theme_icon("Folder",          "EditorIcons")
+	refresh()
 
 
 ## Rebuild the tree from the project filesystem.
 func refresh() -> void:
-	if not _tree:
+	if not _tree or not _plugin:
 		return
 	_tree.clear()
-	var root := _tree.create_item()
+	var root: TreeItem = _tree.create_item()
 
-	var res_base := "res://"
-	var abs_base := ProjectSettings.globalize_path(res_base)
+	var abs_base: String = ProjectSettings.globalize_path("res://")
 
-	var rooms      := _find_files(abs_base, ".agroom")
-	var chars      := _find_files(abs_base, ".agchar")
-	var all_scripts := _find_files(abs_base, ".agscript")
+	var rooms:           Array[String] = _find_files(abs_base, ".agroom")
+	var chars:           Array[String] = _find_files(abs_base, ".agchar")
+	var all_scripts:     Array[String] = _find_files(abs_base, ".agscript")
 
-	# Scripts that share a stem with a .agroom are "room scripts" — exclude
-	# them from the standalone scripts section.
-	var room_script_stems: Dictionary = {}
-	for p in rooms:
-		room_script_stems[p.get_basename()] = true
+	# Scripts that share a stem with a .agroom are room scripts — exclude them.
+	var room_stems: Dictionary = {}
+	for p: String in rooms:
+		room_stems[p.get_basename()] = true
 
 	var standalone_scripts: Array[String] = []
-	for p in all_scripts:
-		if not room_script_stems.has(p.get_basename()):
+	for p: String in all_scripts:
+		if not room_stems.has(p.get_basename()):
 			standalone_scripts.append(p)
 
-	_populate_section(root, "Rooms",      rooms,              _icon_room,   abs_base)
+	_populate_rooms_section(root, rooms, abs_base)
 	_populate_section(root, "Characters", chars,              _icon_char,   abs_base)
 	_populate_section(root, "Scripts",    standalone_scripts, _icon_script, abs_base)
 
@@ -111,53 +110,48 @@ func refresh() -> void:
 # Tree population
 # ---------------------------------------------------------------------------
 
-func _populate_section(root: TreeItem, label: String, files: Array, icon: Texture2D, base: String) -> void:
+func _populate_rooms_section(root: TreeItem, files: Array[String], abs_base: String) -> void:
 	if files.is_empty():
 		return
-	var section := _tree.create_item(root)
-	section.set_text(0, label)
+	var section: TreeItem = _tree.create_item(root)
+	section.set_text(0, "Rooms")
 	section.set_icon(0, _icon_folder)
 	section.set_selectable(0, false)
-	section.collapsed = false
 
-	# Group rooms by their containing directory (room name = folder).
-	if label == "Rooms":
-		_populate_rooms(section, files, base)
-	else:
-		for path in files:
-			_add_leaf(section, path, icon, base)
+	for room_path: String in files:
+		var room_dir: String  = room_path.get_base_dir()
+		var stem: String      = room_path.get_file().get_basename()
 
-
-func _populate_rooms(section: TreeItem, room_files: Array, base: String) -> void:
-	# Each .agroom file may have a companion .agscript with the same stem.
-	for room_path in room_files:
-		var room_dir   := room_path.get_base_dir()
-		var stem       := room_path.get_file().get_basename()
-		var rel        := room_path.replace(base, "")
-		var display    := stem
-
-		var item := _tree.create_item(section)
-		item.set_text(0, display)
+		var item: TreeItem = _tree.create_item(section)
+		item.set_text(0, stem)
 		item.set_icon(0, _icon_room)
 		item.set_metadata(0, room_path)
-		item.set_tooltip_text(0, rel)
+		item.set_tooltip_text(0, room_path.replace(abs_base, ""))
 
-		# Companion script sub-item.
-		var script_path := room_dir.path_join(stem + ".agscript")
+		var script_path: String = room_dir.path_join(stem + ".agscript")
 		if FileAccess.file_exists(script_path):
-			var sub := _tree.create_item(item)
+			var sub: TreeItem = _tree.create_item(item)
 			sub.set_text(0, stem + ".agscript")
 			sub.set_icon(0, _icon_script)
 			sub.set_metadata(0, script_path)
-			sub.set_tooltip_text(0, script_path.replace(base, ""))
+			sub.set_tooltip_text(0, script_path.replace(abs_base, ""))
 
 
-func _add_leaf(parent: TreeItem, path: String, icon: Texture2D, base: String) -> void:
-	var item := _tree.create_item(parent)
-	item.set_text(0, path.get_file())
-	item.set_icon(0, icon)
-	item.set_metadata(0, path)
-	item.set_tooltip_text(0, path.replace(base, ""))
+func _populate_section(root: TreeItem, label: String, files: Array[String],
+		icon: Texture2D, abs_base: String) -> void:
+	if files.is_empty():
+		return
+	var section: TreeItem = _tree.create_item(root)
+	section.set_text(0, label)
+	section.set_icon(0, _icon_folder)
+	section.set_selectable(0, false)
+
+	for path: String in files:
+		var item: TreeItem = _tree.create_item(section)
+		item.set_text(0, path.get_file())
+		item.set_icon(0, icon)
+		item.set_metadata(0, path)
+		item.set_tooltip_text(0, path.replace(abs_base, ""))
 
 
 # ---------------------------------------------------------------------------
@@ -165,45 +159,43 @@ func _add_leaf(parent: TreeItem, path: String, icon: Texture2D, base: String) ->
 # ---------------------------------------------------------------------------
 
 func _on_item_activated() -> void:
-	var item := _tree.get_selected()
+	var item: TreeItem = _tree.get_selected()
 	if not item:
 		return
-	var path = item.get_metadata(0)
-	if path:
-		file_activated.emit(str(path))
-		# Open in external editor for now; T-E09 will route rooms to the Room editor.
-		if str(path).ends_with(".agscript"):
-			EditorInterface.get_singleton().edit_script(
-				load(ProjectSettings.localize_path(str(path))))
-		else:
-			OS.shell_open(str(path))
+	var path: String = str(item.get_metadata(0))
+	if path.is_empty():
+		return
+	file_activated.emit(path)
+	# T-E09 will route .agroom to the Room editor main screen.
+	# For now open .agscript in the built-in editor; others via shell.
+	if path.ends_with(".agscript"):
+		var res_path: String = ProjectSettings.localize_path(path)
+		var scr = load(res_path)
+		if scr:
+			_plugin.get_editor_interface().edit_script(scr)
+	else:
+		OS.shell_open(path)
 
 
 func _on_item_right_clicked(pos: Vector2, mouse_btn: int) -> void:
 	if mouse_btn != MOUSE_BUTTON_RIGHT:
 		return
-	var item := _tree.get_selected()
+	var item: TreeItem = _tree.get_selected()
 	if not item:
 		return
-	# Placeholder — context menu will be expanded in future tasks.
+	var path: String = str(item.get_metadata(0))
 	var menu := PopupMenu.new()
 	menu.add_item("Open externally")
-	menu.id_pressed.connect(func(_id): OS.shell_open(str(item.get_metadata(0))))
+	menu.id_pressed.connect(func(_id: int) -> void: OS.shell_open(path))
 	add_child(menu)
 	menu.popup(Rect2i(DisplayServer.mouse_get_position(), Vector2i.ZERO))
 	menu.popup_hide.connect(menu.queue_free)
-
-
-func _on_filesystem_changed() -> void:
-	refresh()
 
 
 # ---------------------------------------------------------------------------
 # File scanner
 # ---------------------------------------------------------------------------
 
-## Returns absolute paths of all files with [param ext] under [param dir],
-## excluding .godot and addons directories.
 func _find_files(dir: String, ext: String) -> Array[String]:
 	var result: Array[String] = []
 	_scan_dir(dir, ext, result)
@@ -211,16 +203,16 @@ func _find_files(dir: String, ext: String) -> Array[String]:
 
 
 func _scan_dir(dir: String, ext: String, result: Array[String]) -> void:
-	var da := DirAccess.open(dir)
+	var da: DirAccess = DirAccess.open(dir)
 	if not da:
 		return
 	da.list_dir_begin()
-	var entry := da.get_next()
+	var entry: String = da.get_next()
 	while entry != "":
 		if entry.begins_with("."):
 			entry = da.get_next()
 			continue
-		var full := dir.path_join(entry)
+		var full: String = dir.path_join(entry)
 		if da.current_is_dir():
 			if entry != "addons":
 				_scan_dir(full, ext, result)

@@ -25,8 +25,9 @@ func _enter_tree() -> void:
 	if _godot_editor_mode:
 		return
 
-	var pp := preload("res://addons/ag_studio/project_panel.gd").new()
+	var pp: VBoxContainer = preload("res://addons/ag_studio/project_panel.gd").new()
 	pp.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	pp.set_plugin(self)
 	_project_panel = pp
 
 	_build_log = _make_placeholder("Build Log")
