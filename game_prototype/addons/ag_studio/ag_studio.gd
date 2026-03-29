@@ -188,19 +188,12 @@ func _apply_menu_whitelist(base: Control) -> void:
 
 
 func _apply_play_toolbar_whitelist(base: Control) -> void:
-	# The play/stop/renderer bar has no stable name, so we find it by locating
-	# a Button whose tooltip contains a known play-bar keyword, then hide its
-	# nearest HBoxContainer or VBoxContainer ancestor that sits directly inside
-	# the title bar row (depth <= 6 from base).
 	var keywords := ["Run Project", "Pause Scene", "Stop", "Remote Debug",
 					  "Play Current Scene", "Play Custom Scene", "Movie Maker Mode",
 					  "Forward+", "Mobile", "Compatibility"]
-	var container := _find_play_toolbar(base, keywords)
-	if container:
-		_hide_node(container)
-	else:
-		print("[AGS]   play toolbar not found — hiding by tooltip scan")
-		_hide_buttons_by_tooltips(base, keywords)
+	# Only log — don't hide yet. Run prototype and read [AGS] output to pick
+	# the correct container, then we'll target it precisely.
+	_log_play_toolbar(base, keywords)
 
 
 func _walk_for_menus(node: Node) -> void:
@@ -216,49 +209,23 @@ func _walk_for_menus(node: Node) -> void:
 		_walk_for_menus(child)
 
 
-## Find the container that holds the play toolbar by locating a button whose
-## tooltip contains one of [param keywords], then walking up to find the
-## highest BoxContainer ancestor within [param max_depth] levels of [param base].
-func _find_play_toolbar(base: Control, keywords: Array) -> Node:
-	return _walk_find_play_container(base, keywords, base)
-
-
-func _walk_find_play_container(node: Node, keywords: Array, base: Node) -> Node:
+func _log_play_toolbar(node: Node, keywords: Array) -> void:
 	if node is Button or node is MenuButton:
 		var tooltip: String = (node as Control).tooltip_text
 		for kw: String in keywords:
 			if kw.to_lower() in tooltip.to_lower():
-				# Walk up from this button to find the direct BoxContainer
-				# child of the title-bar row.
-				return _ancestor_box_container(node, base)
-	for child in node.get_children():
-		var result := _walk_find_play_container(child, keywords, base)
-		if result:
-			return result
-	return null
-
-
-func _ancestor_box_container(node: Node, stop: Node) -> Node:
-	# Return the highest HBoxContainer/VBoxContainer ancestor before stop.
-	var best: Node = null
-	var cur: Node = node.get_parent()
-	while cur and cur != stop:
-		if cur is HBoxContainer or cur is VBoxContainer:
-			best = cur
-		cur = cur.get_parent()
-	return best if best else node.get_parent()
-
-
-func _hide_buttons_by_tooltips(node: Node, keywords: Array) -> void:
-	if node is Button or node is MenuButton:
-		var tooltip: String = (node as Control).tooltip_text
-		for kw: String in keywords:
-			if kw.to_lower() in tooltip.to_lower():
-				_hide_node(node)
-				print("[AGS]   hide button tooltip='%s'" % tooltip)
+				# Print the full ancestor chain so we can pick the right container.
+				var chain := ""
+				var cur: Node = node
+				for _i in 10:
+					chain = "%s(%s) > " % [cur.name, cur.get_class()] + chain
+					cur = cur.get_parent()
+					if cur == null:
+						break
+				print("[AGS] play-bar button '%s' ancestors: %s" % [tooltip.left(40), chain])
 				break
 	for child in node.get_children():
-		_hide_buttons_by_tooltips(child, keywords)
+		_log_play_toolbar(child, keywords)
 
 
 # ---------------------------------------------------------------------------
