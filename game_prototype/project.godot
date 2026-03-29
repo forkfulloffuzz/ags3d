@@ -13,3 +13,7 @@ config_version=5
 config/name="AGS3D Prototype"
 run/main_scene="res://rooms/start/start.tscn"
 config/features=PackedStringArray("4.7")
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/ag_studio/plugin.cfg")

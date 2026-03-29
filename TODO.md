@@ -12,7 +12,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **#87 T-E05** — Go: `ag validate` cross-reference checks
 - [x] **#152 T-UI-01** — Go/Wails: agui room/char parser, generator and validator panel
 - [x] **#88 T-E06** — C++: `--godot-editor` launch flag
-- [ ] **#91 T-E07** — GDScript: `EditorPlugin` skeleton — hide Godot docks, register custom screens
+- [x] **#91 T-E07** — GDScript: `EditorPlugin` skeleton — hide Godot docks, register custom screens
 - [ ] **#90 T-E08** — GDScript: Project panel dock
 - [ ] **#89 T-E09** — GDScript: Room editor main screen + 3D viewport embed
 - [ ] **#93 T-E10** — GDScript: AGS gizmo plugins for all node types
