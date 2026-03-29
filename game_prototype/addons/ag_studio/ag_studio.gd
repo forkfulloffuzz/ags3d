@@ -23,7 +23,7 @@ const KEEP_DOCK_TABS: Array[String] = ["Project"]
 
 # Bottom-panel tabs to keep.
 # "Build Log" is our placeholder added via add_control_to_bottom_panel().
-const KEEP_BOTTOM_TABS: Array[String] = ["Build Log", "Output", "Debugger"]
+const KEEP_BOTTOM_TABS: Array[String] = ["Build Log", "Output"]
 
 # Top main-screen buttons to keep (label text on the buttons).
 # "Room" will be added in T-E09. Until then only keep nothing AG-specific;
@@ -31,7 +31,7 @@ const KEEP_BOTTOM_TABS: Array[String] = ["Build Log", "Output", "Debugger"]
 const KEEP_MAIN_SCREENS: Array[String] = []
 
 # Top menu bar entries to keep.
-const KEEP_MENUS: Array[String] = ["Project", "Debug", "Editor", "Help"]
+const KEEP_MENUS: Array[String] = []
 
 # True when launched with --godot-editor.
 var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
