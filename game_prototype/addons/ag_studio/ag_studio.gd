@@ -87,41 +87,62 @@ func _hide_native_docks() -> void:
 	print("[AGS] _hide_native_docks called")
 	var ei := get_editor_interface()
 
+	# FileSystem dock — hide it and its parent container.
 	var fs_dock := ei.get_file_system_dock()
 	print("[AGS] FileSystem dock visible=%s, hiding" % fs_dock.visible)
 	fs_dock.hide()
+	# Hide the parent TabContainer too so the empty slot collapses.
+	var fs_parent := fs_dock.get_parent()
+	if fs_parent:
+		fs_parent.hide()
 
 	for title in ["Scene", "Import"]:
-		var found := _set_dock_visible_by_title(title, false)
+		var found := _set_dock_tab_hidden(title, true)
 		print("[AGS] hide dock '%s': found=%s" % [title, found])
 
 
 func _restore_native_docks() -> void:
 	print("[AGS] _restore_native_docks called")
 	var ei := get_editor_interface()
-	ei.get_file_system_dock().show()
+
+	var fs_dock := ei.get_file_system_dock()
+	var fs_parent := fs_dock.get_parent()
+	if fs_parent:
+		fs_parent.show()
+	fs_dock.show()
+
 	for title in ["Scene", "Import"]:
-		_set_dock_visible_by_title(title, true)
+		_set_dock_tab_hidden(title, false)
 
 
-## Walk the editor tree looking for a dock tab whose text matches [param title]
-## and set its visibility.
-func _set_dock_visible_by_title(title: String, visible: bool) -> bool:
+## Hide or show a single named tab and collapse/restore its container.
+func _set_dock_tab_hidden(title: String, hidden: bool) -> bool:
 	var base := get_editor_interface().get_base_control()
-	return _walk_for_dock_tab(base, title, visible, 0)
+	return _walk_for_dock_tab(base, title, hidden)
 
 
-func _walk_for_dock_tab(node: Node, title: String, visible: bool, depth: int) -> bool:
+func _walk_for_dock_tab(node: Node, title: String, hidden: bool) -> bool:
 	if node is TabContainer:
 		var tc := node as TabContainer
 		for i in tc.get_tab_count():
-			var tab_title := tc.get_tab_title(i)
-			if tab_title == title:
-				tc.set_tab_hidden(i, !visible)
-				print("[AGS]   found tab '%s' in %s, set_tab_hidden=%s" % [title, tc.get_path(), !visible])
+			if tc.get_tab_title(i) == title:
+				tc.set_tab_hidden(i, hidden)
+				print("[AGS]   tab '%s' set_tab_hidden=%s in %s" % [title, hidden, tc.name])
+				# Hide the container itself when all its tabs are hidden.
+				if hidden:
+					var any_visible := false
+					for j in tc.get_tab_count():
+						if not tc.is_tab_hidden(j):
+							any_visible = true
+							break
+					if not any_visible:
+						tc.hide()
+						print("[AGS]   container %s hidden (all tabs hidden)" % tc.name)
+				else:
+					tc.show()
 				return true
 	for child in node.get_children():
-		if _walk_for_dock_tab(child, title, visible, depth + 1):
+		if _walk_for_dock_tab(child, title, hidden):
 			return true
 	return false
 
