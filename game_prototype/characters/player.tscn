@@ -10,7 +10,7 @@ height = 1.8
 radius = 0.3
 height = 1.8
 
-[node name="Player" type="AGSCharacter3D" unique_id=3138639655]
+[node name="Player" type="AGSCharacter" unique_id=3138639655]
 character_name = "player"
 display_name = "Player"
 script = ExtResource("CharScript")

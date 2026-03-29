@@ -239,12 +239,9 @@ func _restore_tabs(node: Node) -> void:
 		return
 	if node is TabContainer:
 		var tc := node as TabContainer
-		# Un-hide tab 0 first so the TabBar has a valid selection before
-		# we touch current_tab; then un-hide the rest.
-		if tc.get_tab_count() > 0:
-			tc.set_tab_hidden(0, false)
-			tc.current_tab = 0
-		for i in range(1, tc.get_tab_count()):
+		# Un-hide all tabs without touching current_tab — setting current_tab
+		# while tabs are hidden triggers internal deselect errors in TabBar.
+		for i in tc.get_tab_count():
 			tc.set_tab_hidden(i, false)
 		tc.show()
 		return
