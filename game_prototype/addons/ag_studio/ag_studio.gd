@@ -25,8 +25,11 @@ func _enter_tree() -> void:
 	if _godot_editor_mode:
 		return
 
-	_project_panel = _make_placeholder("Project")
-	_build_log     = _make_placeholder("Build Log")
+	var pp := preload("res://addons/ag_studio/project_panel.gd").new()
+	pp.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_project_panel = pp
+
+	_build_log = _make_placeholder("Build Log")
 
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
 	print("[AGS] added Project dock")
