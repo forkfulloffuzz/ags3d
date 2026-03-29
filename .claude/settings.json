@@ -15,7 +15,11 @@
       "Read(//home/sebastian/**)",
       "Bash(/home/sebastian/Projects/ags3d/tools/ag/ag build:*)",
       "Bash(/home/sebastian/Projects/ags3d/tools/ag/ag validate:*)",
-      "Bash(find /home/sebastian/Projects/ags3d/tools/agui/frontend -name *.svelte -o -name *.js -not -path */node_modules/*)"
+      "Bash(find /home/sebastian/Projects/ags3d/tools/agui/frontend -name *.svelte -o -name *.js -not -path */node_modules/*)",
+      "Bash(find /home/sebastian/Projects/ags3d -path */addons/ag_studio* -o -path *ag_studio*plugin*)",
+      "Bash(find /home/sebastian/Projects/ags3d/game_prototype -name *.gd -o -name plugin.cfg)",
+      "Bash(grep -rn \"get_file_system_dock\\\\|_hide_dock\\\\|DOCK_SLOT\\\\|add_control_to_dock\\\\|_has_main_screen\\\\|_get_plugin_name\\\\|_get_plugin_icon\" /home/sebastian/Projects/ags3d/editor/ --include=*.h)",
+      "Bash(find /home/sebastian/Projects/ags3d/game_prototype -name *.agroom -o -name *.agchar -o -name *.agscript)"
     ]
   }
 }
