@@ -11,6 +11,10 @@ extends EditorPlugin
 
 const PLUGIN_NAME := "AG Studio"
 
+# True when launched with --godot-editor (skip all AG Studio setup).
+# Uses OS.get_cmdline_args() so it works before the C++ flag is recompiled.
+var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
+
 # Placeholder controls — replaced by real panels in T-E08 / T-E09.
 var _project_panel: Control
 var _build_log: Control
@@ -18,7 +22,7 @@ var _room_editor: Control
 
 func _enter_tree() -> void:
 	# --godot-editor: skip all AG Studio setup, leave the standard editor intact.
-	if Engine.is_godot_editor_mode():
+	if _godot_editor_mode:
 		return
 
 	_project_panel = _make_placeholder("Project")
@@ -34,7 +38,7 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
-	if Engine.is_godot_editor_mode():
+	if _godot_editor_mode:
 		return
 
 	if _project_panel:
@@ -110,7 +114,7 @@ func _walk_for_dock_tab(node: Node, title: String, visible: bool) -> bool:
 	if node is TabContainer:
 		for i in node.get_tab_count():
 			if node.get_tab_title(i) == title:
-				var child := node.get_tab_control(i)
+				var child: Control = node.get_tab_control(i)
 				if child:
 					child.visible = visible
 				return true
