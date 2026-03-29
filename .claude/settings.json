@@ -12,7 +12,10 @@
       "Bash(ls tools/ag/*.go)",
       "Bash(python3 -c \"import sys,json; [print\\(f\"\"{m[''''number'''']}: {m[''''title'''']} \\({m[''''state'''']}\\)\"\"\\) for m in json.load\\(sys.stdin\\)]\")",
       "Bash(python3 -c \"import sys,json; m=json.load\\(sys.stdin\\); print\\(m[''''number''''], m[''''title'''']\\)\")",
-      "Read(//home/sebastian/**)"
+      "Read(//home/sebastian/**)",
+      "Bash(/home/sebastian/Projects/ags3d/tools/ag/ag build:*)",
+      "Bash(/home/sebastian/Projects/ags3d/tools/ag/ag validate:*)",
+      "Bash(find /home/sebastian/Projects/ags3d/tools/agui/frontend -name *.svelte -o -name *.js -not -path */node_modules/*)"
     ]
   }
 }
