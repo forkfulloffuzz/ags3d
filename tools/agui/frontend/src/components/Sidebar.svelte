@@ -10,17 +10,18 @@
   import { transpileTabs, activeTranspileTab } from "../store.js";
   import { get } from "svelte/store";
   import {
-    Hammer, Repeat2, Workflow, LayoutGrid,
+    Hammer, Repeat2, Workflow, LayoutGrid, MapPin,
     FolderOpen, ChevronDown, ChevronRight,
     FileCode, LayoutTemplate, User, Package, MessageSquare, File,
     Clock, X,
   } from "lucide-svelte";
 
   const navItems = [
-    { id: "build",     label: "Build",     Icon: Hammer },
-    { id: "transpile", label: "Transpile",  Icon: Repeat2 },
-    { id: "viz",       label: "Visualize",  Icon: Workflow },
-    { id: "batch",     label: "Batch Viz",  Icon: LayoutGrid },
+    { id: "build",     label: "Build",      Icon: Hammer },
+    { id: "transpile", label: "Transpile",   Icon: Repeat2 },
+    { id: "viz",       label: "Visualize",   Icon: Workflow },
+    { id: "batch",     label: "Batch Viz",   Icon: LayoutGrid },
+    { id: "roomchar",  label: "Rooms/Chars", Icon: MapPin },
   ];
 
   const fileIcons = {

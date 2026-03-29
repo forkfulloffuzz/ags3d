@@ -9,7 +9,7 @@ function local(key, init) {
   return s;
 }
 
-// Active top-level panel: "build" | "viz" | "transpile" | "batch"
+// Active top-level panel: "build" | "viz" | "transpile" | "batch" | "roomchar"
 export const activePanel = writable("build");
 
 // Currently open project

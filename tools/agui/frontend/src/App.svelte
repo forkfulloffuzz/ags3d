@@ -12,6 +12,7 @@
   import VizPanel from "./components/VizPanel.svelte";
   import TranspilePanel from "./components/TranspilePanel.svelte";
   import BatchPanel from "./components/BatchPanel.svelte";
+  import RoomCharPanel from "./components/RoomCharPanel.svelte";
   import LogPanel from "./components/LogPanel.svelte";
   import { Sun, Moon } from "lucide-svelte";
 
@@ -113,6 +114,8 @@
           <TranspilePanel />
         {:else if $activePanel === "batch"}
           <BatchPanel />
+        {:else if $activePanel === "roomchar"}
+          <RoomCharPanel />
         {/if}
       </div>
 

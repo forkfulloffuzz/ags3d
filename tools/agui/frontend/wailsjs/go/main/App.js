@@ -10,6 +10,14 @@ export function Build() {
   return window['go']['main']['App']['Build']();
 }
 
+export function GenerateCharScene(arg1) {
+  return window['go']['main']['App']['GenerateCharScene'](arg1);
+}
+
+export function GenerateRoomScene(arg1) {
+  return window['go']['main']['App']['GenerateRoomScene'](arg1);
+}
+
 export function ListRefFiles(arg1) {
   return window['go']['main']['App']['ListRefFiles'](arg1);
 }
@@ -30,12 +38,24 @@ export function OpenRefFolder() {
   return window['go']['main']['App']['OpenRefFolder']();
 }
 
+export function ParseChar(arg1) {
+  return window['go']['main']['App']['ParseChar'](arg1);
+}
+
+export function ParseRoom(arg1) {
+  return window['go']['main']['App']['ParseRoom'](arg1);
+}
+
 export function ReadFile(arg1) {
   return window['go']['main']['App']['ReadFile'](arg1);
 }
 
 export function TranspileFile(arg1) {
   return window['go']['main']['App']['TranspileFile'](arg1);
+}
+
+export function ValidateProject() {
+  return window['go']['main']['App']['ValidateProject']();
 }
 
 export function VizAST(arg1) {

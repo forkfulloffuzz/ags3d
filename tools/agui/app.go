@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ags3d/ag/api"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -266,6 +267,65 @@ func (a *App) BatchViz(paths []string, stage string) int {
 	}
 	runtime.EventsEmit(a.ctx, "batchviz:done", len(paths))
 	return len(paths)
+}
+
+// -------------------------------------------------------------------
+// Room / Char inspection
+// -------------------------------------------------------------------
+
+// ParsedRoom is the structured result of parsing a .agroom file.
+type ParsedRoom = api.ParsedRoom
+
+// ParsedChar is the structured result of parsing a .agchar file.
+type ParsedChar = api.ParsedChar
+
+// ValidateResult is the output of ValidateProject.
+type ValidateResult = api.ValidateResult
+
+// ParseRoom reads and parses the .agroom at absPath.
+func (a *App) ParseRoom(absPath string) api.ParsedRoom {
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return api.ParsedRoom{Error: err.Error()}
+	}
+	return api.ParseRoom(a.relPath(absPath), string(data))
+}
+
+// ParseChar reads and parses the .agchar at absPath.
+func (a *App) ParseChar(absPath string) api.ParsedChar {
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return api.ParsedChar{Error: err.Error()}
+	}
+	return api.ParseChar(a.relPath(absPath), string(data))
+}
+
+// GenerateRoomScene parses the .agroom at absPath and returns generated .tscn text.
+func (a *App) GenerateRoomScene(absPath string) string {
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return "-- error: " + err.Error()
+	}
+	rel := a.relPath(absPath)
+	scriptRelPath := strings.TrimSuffix(rel, ".agroom") + ".agscript"
+	return api.GenerateRoomScene(rel, string(data), scriptRelPath)
+}
+
+// GenerateCharScene parses the .agchar at absPath and returns generated .tscn text.
+func (a *App) GenerateCharScene(absPath string) string {
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return "-- error: " + err.Error()
+	}
+	return api.GenerateCharScene(a.relPath(absPath), string(data))
+}
+
+// ValidateProject runs ag validate on the open project.
+func (a *App) ValidateProject() api.ValidateResult {
+	if a.projectRoot == "" {
+		return api.ValidateResult{Error: "no project open"}
+	}
+	return api.ValidateProjectDir(a.projectRoot)
 }
 
 // -------------------------------------------------------------------

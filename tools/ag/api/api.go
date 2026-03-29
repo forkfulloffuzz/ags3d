@@ -11,10 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
+	"github.com/ags3d/ag/internal/room"
+	"github.com/ags3d/ag/internal/scene"
 	"github.com/ags3d/ag/internal/scanner"
+	"github.com/ags3d/ag/internal/validate"
 	"github.com/ags3d/ag/internal/viz"
 )
 
@@ -222,6 +226,217 @@ func vizRun(file, src string, fn func(io.Writer, string, string)) string {
 	var buf strings.Builder
 	fn(&buf, file, src)
 	return buf.String()
+}
+
+// -------------------------------------------------------------------
+// Room / Char parsing and scene generation
+// -------------------------------------------------------------------
+
+// Vec3 is an XYZ coordinate.
+type Vec3 struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+	Z float64 `json:"z"`
+}
+
+// Vec2 is an XZ coordinate (horizontal plane).
+type Vec2 struct {
+	X float64 `json:"x"`
+	Z float64 `json:"z"`
+}
+
+// ParsedCamera is one Camera block from a .agroom.
+type ParsedCamera struct {
+	Name     string `json:"name"`
+	Position Vec3   `json:"position"`
+	LookAt   Vec3   `json:"lookAt"`
+}
+
+// ParsedPoint is one Point block.
+type ParsedPoint struct {
+	Name     string `json:"name"`
+	Position Vec3   `json:"position"`
+}
+
+// ParsedWalkable is one WalkableSurface block.
+type ParsedWalkable struct {
+	Name     string `json:"name"`
+	Position Vec3   `json:"position"`
+	Size     Vec2   `json:"size"`
+}
+
+// ParsedBlocker is one BlockerVolume block.
+type ParsedBlocker struct {
+	Name     string `json:"name"`
+	Position Vec3   `json:"position"`
+	Size     Vec3   `json:"size"`
+}
+
+// ParsedSpawnPoint is one SpawnPoint block.
+type ParsedSpawnPoint struct {
+	Name      string `json:"name"`
+	Character string `json:"character,omitempty"`
+	Position  Vec3   `json:"position"`
+}
+
+// ParsedHotspot is one Hotspot block.
+type ParsedHotspot struct {
+	Name     string `json:"name"`
+	Position Vec3   `json:"position"`
+	Size     Vec3   `json:"size"`
+}
+
+// ParsedRoom is the result of parsing a .agroom file.
+type ParsedRoom struct {
+	Name             string             `json:"name"`
+	InitialCamera    string             `json:"initialCamera,omitempty"`
+	Cameras          []ParsedCamera     `json:"cameras,omitempty"`
+	Points           []ParsedPoint      `json:"points,omitempty"`
+	WalkableSurfaces []ParsedWalkable   `json:"walkableSurfaces,omitempty"`
+	BlockerVolumes   []ParsedBlocker    `json:"blockerVolumes,omitempty"`
+	SpawnPoints      []ParsedSpawnPoint `json:"spawnPoints,omitempty"`
+	Hotspots         []ParsedHotspot    `json:"hotspots,omitempty"`
+	Error            string             `json:"error,omitempty"`
+}
+
+// ParseRoom parses .agroom source text and returns the structured result.
+func ParseRoom(filename, src string) ParsedRoom {
+	rd, err := room.ParseRoom(filename, src)
+	if err != nil {
+		return ParsedRoom{Error: err.Error()}
+	}
+	pr := ParsedRoom{
+		Name:          rd.Name,
+		InitialCamera: rd.InitialCamera,
+	}
+	for _, c := range rd.Cameras {
+		pr.Cameras = append(pr.Cameras, ParsedCamera{
+			Name:     c.Name,
+			Position: Vec3{c.Position.X, c.Position.Y, c.Position.Z},
+			LookAt:   Vec3{c.LookAt.X, c.LookAt.Y, c.LookAt.Z},
+		})
+	}
+	for _, p := range rd.Points {
+		pr.Points = append(pr.Points, ParsedPoint{
+			Name:     p.Name,
+			Position: Vec3{p.Position.X, p.Position.Y, p.Position.Z},
+		})
+	}
+	for _, w := range rd.WalkableSurfaces {
+		pr.WalkableSurfaces = append(pr.WalkableSurfaces, ParsedWalkable{
+			Name:     w.Name,
+			Position: Vec3{w.Offset.X, w.Offset.Y, w.Offset.Z},
+			Size:     Vec2{w.Size.X, w.Size.Z},
+		})
+	}
+	for _, b := range rd.BlockerVolumes {
+		pr.BlockerVolumes = append(pr.BlockerVolumes, ParsedBlocker{
+			Name:     b.Name,
+			Position: Vec3{b.Position.X, b.Position.Y, b.Position.Z},
+			Size:     Vec3{b.Size.X, b.Size.Y, b.Size.Z},
+		})
+	}
+	for _, sp := range rd.SpawnPoints {
+		pr.SpawnPoints = append(pr.SpawnPoints, ParsedSpawnPoint{
+			Name:      sp.Name,
+			Character: sp.Character,
+			Position:  Vec3{sp.Position.X, sp.Position.Y, sp.Position.Z},
+		})
+	}
+	for _, h := range rd.Hotspots {
+		pr.Hotspots = append(pr.Hotspots, ParsedHotspot{
+			Name:     h.Name,
+			Position: Vec3{h.Position.X, h.Position.Y, h.Position.Z},
+			Size:     Vec3{h.Size.X, h.Size.Y, h.Size.Z},
+		})
+	}
+	return pr
+}
+
+// GenerateRoomScene parses a .agroom and returns the generated .tscn text.
+// scriptRelPath is the companion .agscript path (may be empty).
+func GenerateRoomScene(filename, src, scriptRelPath string) string {
+	rd, err := room.ParseRoom(filename, src)
+	if err != nil {
+		return "-- parse error: " + err.Error()
+	}
+	return scene.GenerateRoomScene(rd, scriptRelPath)
+}
+
+// ParsedChar is the result of parsing a .agchar file.
+type ParsedChar struct {
+	Name            string            `json:"name"`
+	DisplayName     string            `json:"displayName,omitempty"`
+	Type            string            `json:"type"`
+	Mesh            string            `json:"mesh,omitempty"`
+	Animations      map[string]string `json:"animations,omitempty"`
+	SpriteSheet     string            `json:"spriteSheet,omitempty"`
+	SpriteAngles    int               `json:"spriteAngles,omitempty"`
+	FramesPerAngle  int               `json:"framesPerAngle,omitempty"`
+	FrameSize       [2]int            `json:"frameSize,omitempty"`
+	Error           string            `json:"error,omitempty"`
+}
+
+// ParseChar parses .agchar source text and returns the structured result.
+func ParseChar(filename, src string) ParsedChar {
+	cd, err := char.ParseChar(filename, src)
+	if err != nil {
+		return ParsedChar{Error: err.Error()}
+	}
+	return ParsedChar{
+		Name:           cd.Name,
+		DisplayName:    cd.DisplayName,
+		Type:           cd.Type,
+		Mesh:           cd.Mesh,
+		Animations:     cd.Animations,
+		SpriteSheet:    cd.SpriteSheet,
+		SpriteAngles:   cd.SpriteAngles,
+		FramesPerAngle: cd.FramesPerAngle,
+		FrameSize:      cd.FrameSize,
+	}
+}
+
+// GenerateCharScene parses a .agchar and returns the generated .tscn text.
+func GenerateCharScene(filename, src string) string {
+	cd, err := char.ParseChar(filename, src)
+	if err != nil {
+		return "-- parse error: " + err.Error()
+	}
+	return scene.GenerateCharScene(cd)
+}
+
+// -------------------------------------------------------------------
+// Validate
+// -------------------------------------------------------------------
+
+// ValidateIssue is one finding from ag validate.
+type ValidateIssue struct {
+	File     string `json:"file"`
+	Severity string `json:"severity"`
+	Message  string `json:"message"`
+}
+
+// ValidateResult is the full output of ValidateProject.
+type ValidateResult struct {
+	Issues []ValidateIssue `json:"issues"`
+	Error  string          `json:"error,omitempty"`
+}
+
+// ValidateProjectDir runs all cross-reference checks on the project at root.
+func ValidateProjectDir(root string) ValidateResult {
+	m, err := project.Load(root)
+	if err != nil {
+		return ValidateResult{Error: err.Error()}
+	}
+	issues, err := validate.ValidateProject(root, m)
+	if err != nil {
+		return ValidateResult{Error: err.Error()}
+	}
+	out := ValidateResult{Issues: make([]ValidateIssue, len(issues))}
+	for i, iss := range issues {
+		out.Issues[i] = ValidateIssue{File: iss.File, Severity: iss.Severity, Message: iss.Message}
+	}
+	return out
 }
 
 // -------------------------------------------------------------------
