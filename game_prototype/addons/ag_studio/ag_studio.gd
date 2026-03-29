@@ -18,27 +18,29 @@ var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
 # Placeholder controls — replaced by real panels in T-E08 / T-E09.
 var _project_panel: Control
 var _build_log: Control
-var _room_editor: Control
+# _room_editor is not added until T-E09; not created here.
 
 func _enter_tree() -> void:
-	# --godot-editor: skip all AG Studio setup, leave the standard editor intact.
+	print("[AGS] _enter_tree: godot_editor_mode=%s" % _godot_editor_mode)
 	if _godot_editor_mode:
 		return
 
 	_project_panel = _make_placeholder("Project")
 	_build_log     = _make_placeholder("Build Log")
-	_room_editor   = _make_placeholder("Room Editor")
 
-	# Register custom docks.
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
-	add_control_to_bottom_panel(_build_log, "Build Log")
+	print("[AGS] added Project dock")
 
-	# Hide native Godot docks that AG Studio replaces.
-	# Deferred: editor layout is not fully built during _enter_tree().
+	add_control_to_bottom_panel(_build_log, "Build Log")
+	print("[AGS] added Build Log bottom panel")
+
+	# Defer: editor layout is not fully built during _enter_tree().
 	call_deferred("_hide_native_docks")
+	print("[AGS] _enter_tree done — hide scheduled")
 
 
 func _exit_tree() -> void:
+	print("[AGS] _exit_tree: godot_editor_mode=%s" % _godot_editor_mode)
 	if _godot_editor_mode:
 		return
 
@@ -46,18 +48,14 @@ func _exit_tree() -> void:
 		remove_control_from_docks(_project_panel)
 		_project_panel.queue_free()
 		_project_panel = null
+		print("[AGS] removed Project dock")
 
 	if _build_log:
 		remove_control_from_bottom_panel(_build_log)
 		_build_log.queue_free()
 		_build_log = null
+		print("[AGS] removed Build Log")
 
-	if _room_editor:
-		remove_control_from_container(CustomControlContainer.CONTAINER_TOOLBAR, _room_editor)
-		_room_editor.queue_free()
-		_room_editor = null
-
-	# Restore native docks when plugin is deactivated.
 	_restore_native_docks()
 
 
@@ -66,9 +64,6 @@ func _exit_tree() -> void:
 # ---------------------------------------------------------------------------
 
 func _has_main_screen() -> bool:
-	# AG Studio owns its own main screens (Room editor, Script editor).
-	# Returning true here reserves a slot; the actual screen control is
-	# registered via add_editor_plugin_screen() in T-E09.
 	return false  # placeholder until T-E09
 
 
@@ -77,7 +72,6 @@ func _get_plugin_name() -> String:
 
 
 func _get_plugin_icon() -> Texture2D:
-	# Use a built-in icon until a custom one is provided.
 	return get_editor_interface().get_base_control().get_theme_icon("Node", "EditorIcons")
 
 
@@ -86,17 +80,20 @@ func _get_plugin_icon() -> Texture2D:
 # ---------------------------------------------------------------------------
 
 func _hide_native_docks() -> void:
+	print("[AGS] _hide_native_docks called")
 	var ei := get_editor_interface()
 
-	# FileSystem dock — direct API accessor.
-	ei.get_file_system_dock().hide()
+	var fs_dock := ei.get_file_system_dock()
+	print("[AGS] FileSystem dock visible=%s, hiding" % fs_dock.visible)
+	fs_dock.hide()
 
-	# Scene and Import docks — hidden by searching the dock container by title.
 	for title in ["Scene", "Import"]:
-		_set_dock_visible_by_title(title, false)
+		var found := _set_dock_visible_by_title(title, false)
+		print("[AGS] hide dock '%s': found=%s" % [title, found])
 
 
 func _restore_native_docks() -> void:
+	print("[AGS] _restore_native_docks called")
 	var ei := get_editor_interface()
 	ei.get_file_system_dock().show()
 	for title in ["Scene", "Import"]:
@@ -104,29 +101,31 @@ func _restore_native_docks() -> void:
 
 
 ## Walk the editor tree looking for a dock tab whose text matches [param title]
-## and set its visibility. Godot exposes no direct API for this, so we iterate
-## the dock containers (TabContainer nodes inside the main editor VBoxContainer).
-func _set_dock_visible_by_title(title: String, visible: bool) -> void:
+## and set its visibility.
+func _set_dock_visible_by_title(title: String, visible: bool) -> bool:
 	var base := get_editor_interface().get_base_control()
-	_walk_for_dock_tab(base, title, visible)
+	return _walk_for_dock_tab(base, title, visible, 0)
 
 
-func _walk_for_dock_tab(node: Node, title: String, visible: bool) -> bool:
+func _walk_for_dock_tab(node: Node, title: String, visible: bool, depth: int) -> bool:
 	if node is TabContainer:
-		for i in node.get_tab_count():
-			if node.get_tab_title(i) == title:
-				var child: Control = node.get_tab_control(i)
+		var tc := node as TabContainer
+		for i in tc.get_tab_count():
+			var tab_title := tc.get_tab_title(i)
+			if tab_title == title:
+				var child: Control = tc.get_tab_control(i)
 				if child:
 					child.visible = visible
+					print("[AGS]   found tab '%s' in %s, set visible=%s" % [title, tc.get_path(), visible])
 				return true
 	for child in node.get_children():
-		if _walk_for_dock_tab(child, title, visible):
+		if _walk_for_dock_tab(child, title, visible, depth + 1):
 			return true
 	return false
 
 
 # ---------------------------------------------------------------------------
-# Placeholder factory — returns a minimal labeled panel for scaffolding.
+# Placeholder factory
 # ---------------------------------------------------------------------------
 
 func _make_placeholder(label: String) -> Control:
