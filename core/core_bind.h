@@ -626,6 +626,8 @@ public:
 
 	bool is_embedded_in_editor() const;
 
+	bool is_godot_editor_mode() const; // AGS3D: true when launched with --godot-editor
+
 	// `set_write_movie_path()` is not exposed to the scripting API as changing it at run-time has no effect.
 	String get_write_movie_path() const;
 

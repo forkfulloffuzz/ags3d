@@ -94,6 +94,7 @@ private:
 	bool extension_reloading = false;
 	bool embedded_in_editor = false;
 	bool recovery_mode_hint = false;
+	bool godot_editor_mode = false; // AGS3D: --godot-editor flag
 
 	bool _print_header = true;
 
@@ -179,6 +180,10 @@ public:
 
 	_FORCE_INLINE_ void set_recovery_mode_hint(bool p_enabled) { recovery_mode_hint = p_enabled; }
 	_FORCE_INLINE_ bool is_recovery_mode_hint() const { return recovery_mode_hint; }
+
+	// AGS3D: --godot-editor flag — skip AG Studio plugin, boot standard editor
+	_FORCE_INLINE_ void set_godot_editor_mode(bool p_enabled) { godot_editor_mode = p_enabled; }
+	_FORCE_INLINE_ bool is_godot_editor_mode() const { return godot_editor_mode; }
 #else
 	_FORCE_INLINE_ void set_editor_hint(bool p_enabled) {}
 	_FORCE_INLINE_ bool is_editor_hint() const { return false; }
@@ -191,6 +196,9 @@ public:
 
 	_FORCE_INLINE_ void set_recovery_mode_hint(bool p_enabled) {}
 	_FORCE_INLINE_ bool is_recovery_mode_hint() const { return false; }
+
+	_FORCE_INLINE_ void set_godot_editor_mode(bool p_enabled) {}
+	_FORCE_INLINE_ bool is_godot_editor_mode() const { return false; }
 #endif
 
 	Dictionary get_version_info() const;
