@@ -5,10 +5,10 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M9 — AG Studio Editor (Batch 1)
 
-- [ ] **#84 T-E01** — Go: `.agroom` parser → `RoomData` struct
-- [ ] **#85 T-E02** — Go: `RoomData` → Godot `.tscn` serialiser
-- [ ] **#83 T-E03** — Go: `.agchar` parser + `CharData` → `.tscn`
-- [ ] **#86 T-E04** — Go: wire scene generation into `ag build` pipeline
+- [x] **#84 T-E01** — Go: `.agroom` parser → `RoomData` struct
+- [x] **#85 T-E02** — Go: `RoomData` → Godot `.tscn` serialiser
+- [x] **#83 T-E03** — Go: `.agchar` parser + `CharData` → `.tscn`
+- [x] **#86 T-E04** — Go: wire scene generation into `ag build` pipeline
 - [ ] **#87 T-E05** — Go: `ag validate` cross-reference checks
 - [ ] **#88 T-E06** — C++: `--godot-editor` launch flag
 - [ ] **#91 T-E07** — GDScript: `EditorPlugin` skeleton — hide Godot docks, register custom screens

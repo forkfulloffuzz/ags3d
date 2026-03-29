@@ -24,9 +24,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
+	"github.com/ags3d/ag/internal/room"
+	"github.com/ags3d/ag/internal/scene"
 	"github.com/ags3d/ag/internal/scanner"
 	"github.com/ags3d/ag/internal/viz"
 )
@@ -173,41 +176,52 @@ func build(root string, force bool, trace bool) error {
 	if err != nil {
 		return err
 	}
-	// Only .agscript files are transpiled to GDScript; other types (.agroom,
-	// .agchar, etc.) are data/config files not yet processed by the emitter.
-	var files []project.SourceFile
+
+	var scripts, rooms, chars []project.SourceFile
 	for _, f := range all {
-		if f.Ext == ".agscript" {
-			files = append(files, f)
+		switch f.Ext {
+		case ".agscript":
+			scripts = append(scripts, f)
+		case ".agroom":
+			rooms = append(rooms, f)
+		case ".agchar":
+			chars = append(chars, f)
 		}
 	}
+
 	manifest, err := project.LoadManifest(root)
 	if err != nil {
 		return err
 	}
-	var changed []project.SourceFile
+
+	var changedScripts, changedRooms, changedChars []project.SourceFile
 	if force {
-		changed = files
+		changedScripts, changedRooms, changedChars = scripts, rooms, chars
 	} else {
-		changed = project.Changed(files, manifest)
+		changedScripts = project.Changed(scripts, manifest)
+		changedRooms = project.Changed(rooms, manifest)
+		changedChars = project.Changed(chars, manifest)
 	}
-	if len(changed) == 0 {
+
+	total := len(changedScripts) + len(changedRooms) + len(changedChars)
+	if total == 0 {
 		fmt.Println("ag build: nothing to do (no changed source files)")
 		return nil
 	}
 
-	fmt.Printf("ag build: %d file(s) to process\n", len(changed))
+	fmt.Printf("ag build: %d file(s) to process\n", total)
 
 	generatedDir := filepath.Join(root, ".engine", "generated")
 	if err := os.MkdirAll(generatedDir, 0755); err != nil {
 		return err
 	}
 
-	em := emitter.New()
-	em.Trace = trace
 	var errs []error
 
-	for _, src := range changed {
+	// --- .agscript → .gd (GDScript transpilation) ---
+	em := emitter.New()
+	em.Trace = trace
+	for _, src := range changedScripts {
 		data, err := os.ReadFile(src.Path)
 		if err != nil {
 			errs = append(errs, err)
@@ -229,7 +243,6 @@ func build(root string, force bool, trace bool) error {
 			continue
 		}
 
-		// Write .gd output
 		outPath := filepath.Join(generatedDir, src.Rel+".gd")
 		if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
 			errs = append(errs, err)
@@ -249,6 +262,62 @@ func build(root string, force bool, trace bool) error {
 
 		project.RecordMtimes([]project.SourceFile{src}, manifest)
 		fmt.Printf("  %s → %s\n", src.Rel, filepath.Join(".engine/generated", src.Rel+".gd"))
+	}
+
+	// --- .agroom → .tscn (room scene generation) ---
+	for _, src := range changedRooms {
+		data, err := os.ReadFile(src.Path)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		rd, err := room.ParseRoom(src.Rel, string(data))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			errs = append(errs, err)
+			continue
+		}
+		// Derive companion script path (same name, .agscript extension).
+		scriptRelPath := strings.TrimSuffix(src.Rel, ".agroom") + ".agscript"
+		tscnText := scene.GenerateRoomScene(rd, scriptRelPath)
+
+		// Write .tscn beside the .agroom source file.
+		outPath := strings.TrimSuffix(src.Path, ".agroom") + ".tscn"
+		if err := os.WriteFile(outPath, []byte(tscnText), 0644); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		project.RecordMtimes([]project.SourceFile{src}, manifest)
+		outRel := strings.TrimSuffix(src.Rel, ".agroom") + ".tscn"
+		fmt.Printf("  %s → %s\n", src.Rel, outRel)
+	}
+
+	// --- .agchar → .tscn (character scene generation) ---
+	for _, src := range changedChars {
+		data, err := os.ReadFile(src.Path)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		cd, err := char.ParseChar(src.Rel, string(data))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			errs = append(errs, err)
+			continue
+		}
+		tscnText := scene.GenerateCharScene(cd)
+
+		// Write .tscn beside the .agchar source file.
+		outPath := strings.TrimSuffix(src.Path, ".agchar") + ".tscn"
+		if err := os.WriteFile(outPath, []byte(tscnText), 0644); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		project.RecordMtimes([]project.SourceFile{src}, manifest)
+		outRel := strings.TrimSuffix(src.Rel, ".agchar") + ".tscn"
+		fmt.Printf("  %s → %s\n", src.Rel, outRel)
 	}
 
 	if saveErr := project.SaveManifest(root, manifest); saveErr != nil {

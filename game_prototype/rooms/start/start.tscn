@@ -1,97 +1,55 @@
-[gd_scene format=3 uid="uid://cfjnrrxdvryg3"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://cidyvwrpn0qcc" path="res://rooms/start/start.agscript" id="Script_1"]
-[ext_resource type="Script" path="res://.engine/runtime/ags_character.gd" id="Script_2"]
+[ext_resource type="Script" path="res://.engine/generated/rooms/start/start.agscript.gd" id="RoomScript"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_baxj2"]
+[sub_resource type="StandardMaterial3D" id="WalkMat"]
 transparency = 1
 shading_mode = 0
 albedo_color = Color(0, 0.8, 0.2, 0.35)
 
-[sub_resource type="BoxMesh" id="BoxMesh_1"]
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(10, 0.1, 10)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(10, 0.1, 10)
 
-[sub_resource type="PrismMesh" id="PrismMesh_baxj2"]
-
-[sub_resource type="SphereMesh" id="SphereMesh_abaw8"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_2"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_center_wall"]
 size = Vector3(1, 2, 3)
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
-radius = 0.3
-height = 1.8
-
-[sub_resource type="PrismMesh" id="PrismMesh_abaw8"]
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
-radius = 0.3
-height = 1.8
-
-[node name="StartRoom" type="AGSRoom" unique_id=681283904]
+[node name="Start" type="AGSRoom" unique_id=1073019150]
 room_name = "start"
 initial_camera = "main"
-script = ExtResource("Script_1")
+script = ExtResource("RoomScript")
 
-[node name="Floor" type="AGSWalkableSurface" parent="." unique_id=1459410990]
+[node name="Floor" type="AGSWalkableSurface" parent="." unique_id=3547090084]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1970905290]
-material_overlay = SubResource("StandardMaterial3D_baxj2")
-mesh = SubResource("BoxMesh_1")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=439952635]
+material_overlay = SubResource("WalkMat")
+mesh = SubResource("BoxMesh_floor")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1544359558]
-shape = SubResource("BoxShape3D_1")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1438024428]
+shape = SubResource("BoxShape3D_floor")
 
-[node name="DoorLeft" type="AGSPoint" parent="." unique_id=1561299466]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.121089, 0.17733717, 3.4277897)
+[node name="DoorLeft" type="AGSPoint" parent="." unique_id=1557255123]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.12, 0.18, 3.43)
 point_name = "door_left"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="DoorLeft" unique_id=868025717]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50649977, 0)
-mesh = SubResource("PrismMesh_baxj2")
-
-[node name="Window" type="AGSPoint" parent="." unique_id=579585807]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1477208, 0, -3.5543761)
+[node name="Window" type="AGSPoint" parent="." unique_id=2589259382]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.15, 0, -3.55)
 point_name = "window"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Window" unique_id=1652396993]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7751117, 0)
-mesh = SubResource("SphereMesh_abaw8")
+[node name="CenterWall" type="AGSBlockerVolume" parent="." unique_id=1415591883]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1.15)
 
-[node name="BlockerVolume" type="AGSBlockerVolume" parent="." unique_id=103623192]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1.1451793)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CenterWall" unique_id=2650297879]
+shape = SubResource("BoxShape3D_center_wall")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BlockerVolume" unique_id=662124315]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3700285)
-shape = SubResource("BoxShape3D_2")
-
-[node name="Player" type="AGSCharacter" parent="." unique_id=1173258901]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
-character_name = "player"
-script = ExtResource("Script_2")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Player" unique_id=1824204278]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("CapsuleMesh_1")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Player/MeshInstance3D" unique_id=2079513390]
-transform = Transform3D(1.9106855e-15, -4.371139e-08, 0.28916556, -1, -4.371139e-08, 0, 4.371139e-08, -1, -1.2639828e-08, -0.003563881, 0.10656357, -0.72574306)
-mesh = SubResource("PrismMesh_abaw8")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=638913553]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("CapsuleShape3D_1")
-
-[node name="SpawnPoint" type="AGSSpawnPoint" parent="." unique_id=1830879939]
+[node name="PlayerStart" type="AGSSpawnPoint" parent="." unique_id=2869479137]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 spawn_character = "player"
 
-[node name="Camera" type="AGSCamera" parent="." unique_id=2045123701]
-transform = Transform3D(0.83388525, -0.40905955, 0.37054777, 0, 0.6713578, 0.7411334, -0.5519378, -0.6180202, 0.5598354, 4.7882776, 5.521952, 5.603934)
+[node name="Main" type="AGSCamera" parent="." unique_id=1521792339]
+transform = Transform3D(0.7599267229460512, 0, -0.650008750519926, -0.38969574374603144, 0.8003568968396897, -0.4555941889306422, 0.5202389864847721, 0.5995238424626183, 0.6082125938026562, 4.79, 5.52, 5.6)
 camera_name = "main"
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1145516584]

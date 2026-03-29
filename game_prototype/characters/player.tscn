@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://.engine/runtime/ags_character_3d.gd" id="CharScript"]
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 0.3
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="BodyMesh"]
+radius = 0.3
+height = 1.8
+
+[node name="Player" type="AGSCharacter3D" unique_id=3138639655]
+character_name = "player"
+display_name = "Player"
+script = ExtResource("CharScript")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player" unique_id=4027125421]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("BodyMesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=3176482834]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("BodyShape")
+
