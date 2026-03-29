@@ -26,6 +26,7 @@ loop must already work.
 | **Audio** | Play music and sound effects from AGS-spirit |
 | **Save / Load** | Persist game state to a named slot and restore it |
 | **Cutscenes** | Non-interactive sequences using existing blocking call infrastructure |
+| **2D Billboard Characters** | Sprite-sheet characters rendered as camera-facing quads in the 3D world; direction selection from movement angle |
 
 ---
 
@@ -386,6 +387,94 @@ SetPlayerControl(true);
 
 ---
 
+### S10 — 2D Billboard Characters
+
+**What it does:** Lets a character use a 2D sprite sheet rendered as a
+camera-facing quad (`Sprite3D`) in the 3D world, instead of a 3D mesh.
+This reproduces the classic look of games like Broken Sword or early
+Sierra 3D titles.
+
+#### Visual modes
+
+| Mode | Description |
+|---|---|
+| `mesh` | Default — 3D geometry (capsule or custom `.glb`) |
+| `billboard` | 2D sprite sheet, quad always faces the camera |
+
+#### Sprite angle sets
+
+The sprite sheet is divided into angle sets. The runtime selects the correct
+set based on the character's movement direction relative to the camera's
+forward vector.
+
+| `sprite_angles` | Directions | Horizontal snap |
+|---|---|---|
+| `1` | Single fixed frame — no direction logic | n/a (always same art) |
+| `4` | N / E / S / W | 90° |
+| `8` | N / NE / E / SE / S / SW / W / NW | 45° |
+
+The angle sets are laid out vertically in the sprite sheet (top = first angle;
+order: same as table top-to-bottom). Frames within each angle are laid out
+horizontally (idle cycle left-to-right).
+
+#### `.agchar` additions
+
+```
+Character "player" {
+    display_name     = "Player"
+    visual_mode      = "billboard"
+    sprite_sheet     = "assets/sprites/player.png"
+    sprite_angles    = 4          # 1 | 4 | 8
+    frame_size       = (64, 128)  # pixels (width, height) per frame
+    frames_per_angle = 8          # animation frames per direction
+}
+```
+
+#### Runtime
+
+- `AGSCharacter` C++: add `visual_mode` property (`"mesh"` | `"billboard"`).
+- `ag build` generates the character `.tscn` with a `Sprite3D` root (instead
+  of `MeshInstance3D`) when `visual_mode = "billboard"`:
+  - `billboard = BaseMaterial3D.BILLBOARD_ENABLED`
+  - `texture` set to the sprite sheet asset
+  - `hframes` / `vframes` derived from `frame_size` + sheet dimensions
+- `ags_character.gd` runtime:
+  - Computes the angle between the character's velocity vector and the camera's
+    forward vector projected onto XZ.
+  - Quantizes to the nearest valid direction (4- or 8-way snap).
+  - Sets `Sprite3D.frame` to the correct row offset + current animation frame.
+  - For `sprite_angles = 1`: no direction logic; always row 0.
+
+#### Camera interaction
+
+Billboard sprites are designed to be viewed from a roughly horizontal camera.
+Two constraints arise:
+
+1. **Elevation constraint** — a camera pitched steeply downward shows the top
+   of the billboard quad; there is no "top view" art. Authors should keep
+   camera elevation below ~30° from horizontal when using billboard characters.
+
+2. **Arc constraint** — for `sprite_angles = 1` (single-direction art), the
+   camera must not orbit around the character; it must stay within the facing
+   arc of the sprite. The `.agroom` Camera block accepts `sprite_locked = true`
+   which disables in-game camera orbiting for that camera.
+
+The AG Studio editor enforces these constraints as **warnings** (see F12 in
+the Editor milestone). The game will still run when violated — the visual
+artefact is the author's responsibility to resolve.
+
+#### `.agroom` Camera addition
+
+```
+Camera "main" {
+    position     = (4.79, 3.0, 5.60)
+    look_at      = (0.0, 0.0, 0.0)
+    sprite_locked = true    # optional; disables orbit for single-angle sprites
+}
+```
+
+---
+
 ## Task Breakdown
 
 | Task | Description | Depends on |
@@ -413,6 +502,13 @@ SetPlayerControl(true);
 | T-GS21 | GDScript: AG Studio — room editor extended with `RoomItem` gizmo/placement | T-GS03 |
 | T-GS22 | GDScript: AG Studio — GUI layout editor for `.agui` files | T-GS13 |
 | T-GS23 | GDScript: AG Studio — global variables editor in project settings panel | T-GS07 |
+| T-GS24 | C++: `AGSCharacter` — `visual_mode` property; `ag build` generates `Sprite3D` scene for billboard mode | Editor milestone |
+| T-GS25 | Go: `.agchar` billboard properties (`visual_mode`, `sprite_sheet`, `sprite_angles`, `frame_size`, `frames_per_angle`); scene generator outputs `Sprite3D` node | T-GS24 |
+| T-GS26 | GDScript: billboard direction selection runtime — angle quantization (4/8-way), frame cycling, `sprite_locked` camera support | T-GS24 |
+| T-GS27 | C++: split `AGSCharacter` → `AGSCharacterBase`, `AGSCharacter3D`, `AGSCharacter2D`; preserve existing signal/property interface | Editor milestone |
+| T-GS28 | GDScript: `AGSAnimationPlayerBase` (common API: `play_clip`, `stop`, `set_state`, `on_anim_event`) + `AGSAnimationPlayer3D` wrapping `AnimationPlayer` | T-GS27 |
+| T-GS29 | GDScript: `AGSAnimationPlayer2D` — billboard direction + frame cycling; implements `AGSAnimationPlayerBase` API | T-GS27, T-GS24 |
+| T-GS30 | Go: `ag build` — generate `AGSCharacter3D` or `AGSCharacter2D` `.tscn` based on `type` field in `.agchar` | T-GS27 |
 
 ---
 

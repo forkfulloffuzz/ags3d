@@ -348,6 +348,70 @@ scaffold generation, or writes the files directly.
 
 ---
 
+### F12 — Billboard Camera Warnings
+
+**What it does:** Detects camera configurations in a room that would produce
+visual artefacts for billboard-mode characters, and surfaces them as
+editor warnings — in the room editor gizmo overlay and the Build Log dock.
+
+Two warning classes:
+
+#### W1 — Camera elevation too steep
+
+**Condition:** A camera's elevation angle (the angle between the camera
+position and the `look_at` point, measured from the XZ plane) exceeds **30°**
+AND the room contains at least one character with `visual_mode = "billboard"`.
+
+**Why it matters:** Billboard quads always face the camera horizontally. A
+steep downward angle reveals the top edge of the sprite, which has no art.
+
+**Editor display:**
+- The camera gizmo in the Room editor shows a yellow warning icon.
+- Hovering the icon shows: *"Camera elevation [N°] may clip billboard
+  character sprites. Recommended: keep below 30°."*
+- The Build Log lists it as `WARNING` (not an error — does not block Play).
+
+#### W2 — Single-angle sprite, camera orbit not locked
+
+**Condition:** A character uses `sprite_angles = 1` AND the room's active
+camera does not have `sprite_locked = true`.
+
+**Why it matters:** Single-direction art only looks correct from one angle. If
+the camera can orbit the character freely (default), the sprite will be shown
+from the wrong side.
+
+**Editor display:**
+- Warning on the camera node gizmo: *"Room has single-angle billboard
+  characters but camera is not sprite_locked. Add sprite_locked = true to
+  restrict orbiting."*
+- Also emitted as a `WARNING` line in the Build Log, with a clickable link to
+  the camera node in the Room editor.
+
+#### W3 — Arc coverage too wide for 4-angle sprites
+
+**Condition:** The camera's position spans a horizontal arc greater than **45°**
+relative to the room origin AND the room has characters with
+`sprite_angles = 4`.
+
+**Why it matters:** The gap between 4-way directions is 90°. If gameplay
+allows the camera to rotate more than 45° from a cardinal axis, characters
+will snap direction visibly.
+
+**Editor display:** Same pattern — yellow gizmo icon on the camera + Build Log
+`WARNING`.
+
+#### Implementation
+
+- Warning logic runs as part of `ag validate` (a new `--warn` pass that does
+  not abort the build).
+- In the editor, the Room editor re-evaluates warnings whenever:
+  - A camera node is moved or its `look_at` changes.
+  - A character's `visual_mode` or `sprite_angles` changes.
+- Gizmo warning overlays are drawn by the camera's `EditorNode3DGizmo`
+  subclass (added in T-E10) using `add_unscaled_billboard()` for the icon.
+
+---
+
 ### F11 — Prototype Migration
 
 Delete `game_prototype/rooms/start/start.tscn` (hand-maintained) and verify
@@ -402,6 +466,10 @@ An author with no Godot or coding experience:
 | T-E16 | GDScript: Play button wired to build + `play_main_scene()` (F9) | T-E04, T-E15 |
 | T-E17 | GDScript: Project wizard (F10) | T-E08 |
 | T-E18 | Integration: prototype migration (F11) | T-E04 |
+| T-E19 | GDScript: billboard camera warnings — elevation/arc/lock checks in `ag validate` + gizmo overlays (F12) | T-E10, T-GS24 |
+| T-E20 | GDScript: Character editor — type selector (3D/2D) with type-specific property sections (F4 extension) | T-E13, T-GS27 |
+| T-E21 | GDScript: 3D Animation viewer — embedded `SubViewport`, clip selector, transport controls, frame scrubber | T-E20, T-GS28 |
+| T-E22 | GDScript: 2D Animation viewer — sprite sheet grid, direction thumbnails, animated preview cell | T-E20, T-GS29 |
 
 Critical path to first playable build: T-E01 → T-E02 → T-E03 → T-E04 →
 T-E07 → T-E09 → T-E16.

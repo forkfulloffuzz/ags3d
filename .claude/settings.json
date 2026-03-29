@@ -11,7 +11,8 @@
       "Bash(find /home/sebastian/Projects/ags3d -name *.md -type f)",
       "Bash(ls tools/ag/*.go)",
       "Bash(python3 -c \"import sys,json; [print\\(f\"\"{m[''''number'''']}: {m[''''title'''']} \\({m[''''state'''']}\\)\"\"\\) for m in json.load\\(sys.stdin\\)]\")",
-      "Bash(python3 -c \"import sys,json; m=json.load\\(sys.stdin\\); print\\(m[''''number''''], m[''''title'''']\\)\")"
+      "Bash(python3 -c \"import sys,json; m=json.load\\(sys.stdin\\); print\\(m[''''number''''], m[''''title'''']\\)\")",
+      "Read(//home/sebastian/**)"
     ]
   }
 }
