@@ -96,7 +96,7 @@ func _hide_native_docks() -> void:
 	if fs_parent:
 		fs_parent.hide()
 
-	for title in ["Scene", "Import"]:
+	for title in ["Scene", "Import", "Inspector"]:
 		var found := _set_dock_tab_hidden(title, true)
 		print("[AGS] hide dock '%s': found=%s" % [title, found])
 
@@ -111,7 +111,7 @@ func _restore_native_docks() -> void:
 		fs_parent.show()
 	fs_dock.show()
 
-	for title in ["Scene", "Import"]:
+	for title in ["Scene", "Import", "Inspector"]:
 		_set_dock_tab_hidden(title, false)
 
 
