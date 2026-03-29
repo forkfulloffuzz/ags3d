@@ -34,7 +34,8 @@ func _enter_tree() -> void:
 	add_control_to_bottom_panel(_build_log, "Build Log")
 
 	# Hide native Godot docks that AG Studio replaces.
-	_hide_native_docks()
+	# Deferred: editor layout is not fully built during _enter_tree().
+	call_deferred("_hide_native_docks")
 
 
 func _exit_tree() -> void:
