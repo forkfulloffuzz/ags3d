@@ -85,6 +85,12 @@ func _apply_whitelist() -> void:
 	_hide_node(fs_dock)
 	_hide_node(fs_dock.get_parent())
 
+	# Scene dock (node tree) — no public accessor, find by class.
+	var scene_dock := _find_by_class(base, "SceneTreeDock")
+	if scene_dock:
+		_hide_node(scene_dock)
+		_hide_node(scene_dock.get_parent())
+
 	# Walk the main editor tree — skip Window subclasses (dialogs/popups).
 	_walk(base)
 
@@ -96,6 +102,9 @@ func _apply_whitelist() -> void:
 
 	# Play/stop toolbar and renderer selector.
 	_apply_play_toolbar_whitelist(base)
+
+	# Log any TabContainer tabs still visible (helps catch stragglers).
+	_log_visible_tabs(base)
 
 
 ## Recursively walk [param node], skipping Window subclasses and their subtrees.
@@ -182,6 +191,20 @@ func _apply_play_toolbar_whitelist(base: Control) -> void:
 			for child in title_bar.get_children():
 				if child != run_bar and (child is HBoxContainer or child is VBoxContainer):
 					_hide_node(child)
+
+
+func _log_visible_tabs(node: Node) -> void:
+	if node is Window:
+		return
+	if node is TabContainer:
+		var tc := node as TabContainer
+		if tc.visible:
+			for i in tc.get_tab_count():
+				if not tc.is_tab_hidden(i):
+					print("[AGS] VISIBLE tab '%s' in %s" % [tc.get_tab_title(i), tc.name])
+		return
+	for child in node.get_children():
+		_log_visible_tabs(child)
 
 
 func _find_by_class(node: Node, cls: String) -> Node:
