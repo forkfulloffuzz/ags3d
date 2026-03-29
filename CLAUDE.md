@@ -19,8 +19,10 @@ When **all tasks in `TODO.md` are completed**:
 
 ### Commits
 
-- Do not commit unless the user explicitly asks.
-- When asked, follow the standard git commit protocol (status → diff → log → commit).
+- Commit after **every completed task** so each task has its own reviewable commit.
+- Commit only the files changed by that task — no bundling unrelated changes.
+- Follow the standard git commit protocol (status → diff → log → commit).
+- Do not commit docs or unrelated files alongside task work.
 
 ### File references
 
