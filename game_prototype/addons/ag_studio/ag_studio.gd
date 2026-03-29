@@ -113,10 +113,8 @@ func _walk_for_dock_tab(node: Node, title: String, visible: bool, depth: int) ->
 		for i in tc.get_tab_count():
 			var tab_title := tc.get_tab_title(i)
 			if tab_title == title:
-				var child: Control = tc.get_tab_control(i)
-				if child:
-					child.visible = visible
-					print("[AGS]   found tab '%s' in %s, set visible=%s" % [title, tc.get_path(), visible])
+				tc.set_tab_hidden(i, !visible)
+				print("[AGS]   found tab '%s' in %s, set_tab_hidden=%s" % [title, tc.get_path(), !visible])
 				return true
 	for child in node.get_children():
 		if _walk_for_dock_tab(child, title, visible, depth + 1):
