@@ -29,7 +29,7 @@ func TestChar3DDefaultCapsule(t *testing.T) {
 	out := genChar(t, `Character "player" { display_name = "Player" }`)
 
 	assertContains(t, out, "[gd_scene format=3]")
-	assertContains(t, out, `type="Script" path="res://.engine/runtime/ags_character_3d.gd"`)
+	assertContains(t, out, `type="Script" path="res://.engine/runtime/ags_character.gd"`)
 	assertContains(t, out, `[sub_resource type="CapsuleShape3D" id="BodyShape"]`)
 	assertContains(t, out, `[sub_resource type="CapsuleMesh" id="BodyMesh"]`)
 
@@ -92,7 +92,7 @@ func TestChar2DFull(t *testing.T) {
 	}`
 	out := genChar(t, src)
 
-	assertContains(t, out, `type="Script" path="res://.engine/runtime/ags_character_2d.gd"`)
+	assertContains(t, out, `type="Script" path="res://.engine/runtime/ags_character.gd"`)
 	assertContains(t, out, `type="Texture2D" path="res://assets/sprites/guard.png"`)
 	assertContains(t, out, `[sub_resource type="CapsuleShape3D" id="BodyShape"]`)
 

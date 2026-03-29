@@ -32,7 +32,7 @@ func generate3DCharScene(cd *char.CharData) string {
 
 	fmt.Fprintln(&out, "[gd_scene format=3]")
 	fmt.Fprintln(&out)
-	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_character_3d.gd" id="CharScript"]`)
+	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_character.gd" id="CharScript"]`)
 
 	hasMesh := cd.Mesh != ""
 
@@ -100,7 +100,7 @@ func generate2DCharScene(cd *char.CharData) string {
 
 	fmt.Fprintln(&out, "[gd_scene format=3]")
 	fmt.Fprintln(&out)
-	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_character_2d.gd" id="CharScript"]`)
+	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_character.gd" id="CharScript"]`)
 
 	if cd.SpriteSheet != "" {
 		fmt.Fprintf(&out, "[ext_resource type=\"Texture2D\" path=%q id=\"SpriteSheet\"]\n", "res://"+cd.SpriteSheet)
