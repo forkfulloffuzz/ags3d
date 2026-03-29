@@ -31,6 +31,7 @@ import (
 	"github.com/ags3d/ag/internal/room"
 	"github.com/ags3d/ag/internal/scene"
 	"github.com/ags3d/ag/internal/scanner"
+	"github.com/ags3d/ag/internal/validate"
 	"github.com/ags3d/ag/internal/viz"
 )
 
@@ -388,8 +389,25 @@ func findGodot() (string, error) {
 // -------------------------------------------------------------------
 
 func cmdValidate(_ []string) error {
-	// TODO(T12): run analysis.Analyze over all parsed files, print diagnostics.
-	fmt.Println("ag validate: static analysis not yet implemented (T12+)")
+	root, manifest := requireProject()
+	issues, err := validate.ValidateProject(root, manifest)
+	if err != nil {
+		return err
+	}
+	if len(issues) == 0 {
+		fmt.Println("ag validate: no issues found")
+		return nil
+	}
+	errorCount := 0
+	for _, issue := range issues {
+		fmt.Fprintln(os.Stderr, issue)
+		if issue.Severity == "error" {
+			errorCount++
+		}
+	}
+	if errorCount > 0 {
+		return fmt.Errorf("%d error(s)", errorCount)
+	}
 	return nil
 }
 
