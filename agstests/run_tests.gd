@@ -32,12 +32,14 @@ const SUITES: Array[String] = [
 	"m6_integration/test_script_wiring.gd",
 	"m6_integration/test_runtime_api.gd",
 	"m6_integration/test_event_routing.gd",
+	"m10_game_systems/test_load_room.gd",  # T-GS10
 ]
 
 ## Async test suites — each test_* method is awaited so coroutine-based tests
 ## (multi-frame physics simulations) run to completion before the next test starts.
 const ASYNC_SUITES: Array[String] = [
 	"m6_integration/test_end_to_end.gd",
+	"m10_game_systems/test_say.gd",  # T-GS01: say() / think() use SceneTree timers
 ]
 
 func _init() -> void:

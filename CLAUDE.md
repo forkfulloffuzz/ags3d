@@ -38,6 +38,8 @@ Keep `.dev/ag.sh` in sync whenever a new `ag` command or visualisation stage is 
 
 Run `.dev/test.sh` or `.dev/test-all.sh` to verify changes. Do not skip hooks.
 
+When a task adds new C++ types, signals, properties, or GDScript runtime methods that can be exercised headlessly, add automated tests in `agstests/` and register them in `agstests/run_tests.gd`. Editor-only tasks (UI panels, docks, gizmos) go in `TODO_TESTS.md` as manual tests only.
+
 ## Project layout
 
 ```
