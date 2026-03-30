@@ -38,6 +38,16 @@ const _GIZMO_SCRIPTS := [
 
 
 func _enter_tree() -> void:
+	# Gizmo plugins are always registered — they are useful in both AG Studio
+	# mode and standard --godot-editor mode.
+	var ur := get_undo_redo()
+	for path: String in _GIZMO_SCRIPTS:
+		var plugin: EditorNode3DGizmoPlugin = load(path).new()
+		if plugin.has_method("setup"):
+			plugin.setup(ur)
+		add_node_3d_gizmo_plugin(plugin)
+		_gizmo_plugins.append(plugin)
+
 	if _godot_editor_mode:
 		return
 
@@ -57,15 +67,6 @@ func _enter_tree() -> void:
 	get_editor_interface().get_editor_main_screen().add_child(_room_editor)
 	_room_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	# Gizmo plugins
-	var ur := get_undo_redo()
-	for path: String in _GIZMO_SCRIPTS:
-		var plugin: EditorNode3DGizmoPlugin = load(path).new()
-		if plugin.has_method("setup"):
-			plugin.setup(ur)
-		add_node_3d_gizmo_plugin(plugin)
-		_gizmo_plugins.append(plugin)
-
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
 	add_control_to_bottom_panel(_build_log, "Build Log")
 
@@ -73,6 +74,10 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
+	for plugin: EditorNode3DGizmoPlugin in _gizmo_plugins:
+		remove_node_3d_gizmo_plugin(plugin)
+	_gizmo_plugins.clear()
+
 	if _godot_editor_mode:
 		return
 
@@ -89,10 +94,6 @@ func _exit_tree() -> void:
 	if _room_editor:
 		_room_editor.queue_free()
 		_room_editor = null
-
-	for plugin: EditorNode3DGizmoPlugin in _gizmo_plugins:
-		remove_node_3d_gizmo_plugin(plugin)
-	_gizmo_plugins.clear()
 
 	_restore_all()
 
