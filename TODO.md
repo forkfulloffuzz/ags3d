@@ -7,7 +7,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 - [x] **#94 T-E11** — GDScript: AGS Inspector plugin — property forms for all AGS node types
 - [x] **#95 T-E15** — GDScript: Build Log dock — RichTextLabel + clickable error links
-- [ ] **#96 T-E16** — GDScript: Play button wired to `ag build` + `play_main_scene()` *(needs T-E15)*
+- [x] **#96 T-E16** — GDScript: Play button wired to `ag build` + `play_main_scene()` *(needs T-E15)*
 - [ ] **#97 T-E13** — GDScript: Character editor main screen — property form for `.agchar`
 - [ ] **#98 T-E14** — GDScript: Script editor main screen — CodeEdit + AGS syntax highlighting
 - [ ] **#99 T-E12** — GDScript: `.agroom` ↔ `.tscn` sync (gizmo edits → write back to `.agroom`) *(needs T-E11)*

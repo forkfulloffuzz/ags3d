@@ -23,6 +23,7 @@ var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
 var _project_panel: Control
 var _build_log: Control
 var _room_editor: Control
+var _play_btn: Button
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
 var _inspector_plugin: EditorInspectorPlugin
@@ -76,6 +77,13 @@ func _enter_tree() -> void:
 	get_editor_interface().get_editor_main_screen().add_child(_room_editor)
 	_room_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	# Play button in the top toolbar
+	_play_btn = Button.new()
+	_play_btn.text = "▶ Play"
+	_play_btn.tooltip_text = "Build project then play main scene (F5)"
+	_play_btn.pressed.connect(_on_play_pressed)
+	add_control_to_container(CONTAINER_TOOLBAR, _play_btn)
+
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
 	add_control_to_bottom_panel(_build_log, "Build Log")
 
@@ -98,6 +106,11 @@ func _exit_tree() -> void:
 		remove_control_from_docks(_project_panel)
 		_project_panel.queue_free()
 		_project_panel = null
+
+	if _play_btn:
+		remove_control_from_container(CONTAINER_TOOLBAR, _play_btn)
+		_play_btn.queue_free()
+		_play_btn = null
 
 	if _build_log:
 		remove_control_from_bottom_panel(_build_log)
@@ -323,6 +336,22 @@ func _restore_menus(node: Node) -> void:
 # ---------------------------------------------------------------------------
 # File activation routing
 # ---------------------------------------------------------------------------
+
+func _on_play_pressed() -> void:
+	# Show and focus the Build Log before building.
+	if _build_log:
+		make_bottom_panel_item_visible(_build_log)
+		_play_btn.disabled = true
+		var bl := _build_log as Node
+		bl.connect("build_finished", _on_build_finished_play, CONNECT_ONE_SHOT)
+		bl.call("run_build")
+
+
+func _on_build_finished_play(success: bool) -> void:
+	_play_btn.disabled = false
+	if success:
+		get_editor_interface().play_main_scene()
+
 
 func _on_file_activated(abs_path: String) -> void:
 	if not abs_path.ends_with(".agroom"):
