@@ -14,8 +14,13 @@ void AGSCharacter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_move_speed"), &AGSCharacter::get_move_speed);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "move_speed"), "set_move_speed", "get_move_speed");
 
+	ClassDB::bind_method(D_METHOD("set_say_text", "text"), &AGSCharacter::set_say_text);
+	ClassDB::bind_method(D_METHOD("get_say_text"), &AGSCharacter::get_say_text);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "say_text"), "set_say_text", "get_say_text");
+
 	ADD_SIGNAL(MethodInfo("walk_completed"));
 	ADD_SIGNAL(MethodInfo("face_completed"));
+	ADD_SIGNAL(MethodInfo("say_completed"));
 }
 
 void AGSCharacter::_notification(int p_what) {
@@ -67,4 +72,12 @@ void AGSCharacter::set_move_speed(float p_speed) {
 
 float AGSCharacter::get_move_speed() const {
 	return move_speed;
+}
+
+void AGSCharacter::set_say_text(const String &p_text) {
+	say_text = p_text;
+}
+
+String AGSCharacter::get_say_text() const {
+	return say_text;
 }

@@ -46,6 +46,18 @@ func face_to(point_name: String) -> void:
 		await tween.finished
 	emit_signal("face_completed")
 
+## Display [param text] as dialogue above the character for [param duration] seconds,
+## then emit say_completed. Awaiting this method blocks until the line finishes.
+func say(text: String, duration: float = 2.0) -> void:
+	say_text = text
+	await get_tree().create_timer(duration).timeout
+	say_text = ""
+	emit_signal("say_completed")
+
+## Display [param text] as a thought (same mechanic as say, different visual intent).
+func think(text: String, duration: float = 2.0) -> void:
+	await say(text, duration)
+
 func _on_navigation_finished() -> void:
 	_navigating = false
 	velocity = Vector3.ZERO
