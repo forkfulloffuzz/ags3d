@@ -102,11 +102,10 @@ func _exit_tree() -> void:
 # ---------------------------------------------------------------------------
 
 func _has_main_screen() -> bool:
-	return true
+	return false
 
-func _make_visible(visible: bool) -> void:
-	if _room_editor:
-		_room_editor.visible = visible
+func _make_visible(_visible: bool) -> void:
+	pass
 
 func _get_plugin_name() -> String:
 	return PLUGIN_NAME
@@ -314,12 +313,12 @@ func _restore_menus(node: Node) -> void:
 func _on_file_activated(abs_path: String) -> void:
 	if not abs_path.ends_with(".agroom"):
 		return
-	# .agroom is not a Godot resource — load the generated .tscn instead.
+	# .agroom is not a Godot resource — open the generated .tscn in Godot's
+	# own editor (re-uses Godot's existing 3D viewport per spec).
 	var tscn_abs: String = abs_path.get_basename() + ".tscn"
 	var tscn_res: String = ProjectSettings.localize_path(tscn_abs)
-	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)
-	if _room_editor:
-		(_room_editor as Node).call("load_room", tscn_res)
+	get_editor_interface().open_scene_from_path(tscn_res)
+	get_editor_interface().set_main_screen_editor("3D")
 
 
 # ---------------------------------------------------------------------------
