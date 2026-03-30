@@ -15,7 +15,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **#91 T-E07** — GDScript: `EditorPlugin` skeleton — hide Godot docks, register custom screens
 - [x] **#90 T-E08** — GDScript: Project panel dock
 - [x] **#89 T-E09** — GDScript: Room editor main screen + 3D viewport embed
-- [ ] **#93 T-E10** — GDScript: AGS gizmo plugins for all node types
+- [x] **#93 T-E10** — GDScript: AGS gizmo plugins for all node types
 
 ## Notes
 

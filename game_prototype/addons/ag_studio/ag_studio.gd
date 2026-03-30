@@ -24,6 +24,17 @@ var _project_panel: Control
 var _build_log: Control
 var _room_editor: Control
 var _hidden_nodes: Array[Node] = []
+var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
+
+const _GIZMO_SCRIPTS := [
+	"res://addons/ag_studio/gizmos/ags_walkable_gizmo.gd",
+	"res://addons/ag_studio/gizmos/ags_blocker_gizmo.gd",
+	"res://addons/ag_studio/gizmos/ags_hotspot_gizmo.gd",
+	"res://addons/ag_studio/gizmos/ags_trigger_gizmo.gd",
+	"res://addons/ag_studio/gizmos/ags_point_gizmo.gd",
+	"res://addons/ag_studio/gizmos/ags_spawn_gizmo.gd",
+	"res://addons/ag_studio/gizmos/ags_camera_gizmo.gd",
+]
 
 
 func _enter_tree() -> void:
@@ -45,6 +56,15 @@ func _enter_tree() -> void:
 	_room_editor = re
 	get_editor_interface().get_editor_main_screen().add_child(_room_editor)
 	_room_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	# Gizmo plugins
+	var ur := get_undo_redo()
+	for path: String in _GIZMO_SCRIPTS:
+		var plugin: EditorNode3DGizmoPlugin = load(path).new()
+		if plugin.has_method("setup"):
+			plugin.setup(ur)
+		add_node_3d_gizmo_plugin(plugin)
+		_gizmo_plugins.append(plugin)
 
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, _project_panel)
 	add_control_to_bottom_panel(_build_log, "Build Log")
@@ -69,6 +89,10 @@ func _exit_tree() -> void:
 	if _room_editor:
 		_room_editor.queue_free()
 		_room_editor = null
+
+	for plugin: EditorNode3DGizmoPlugin in _gizmo_plugins:
+		remove_node_3d_gizmo_plugin(plugin)
+	_gizmo_plugins.clear()
 
 	_restore_all()
 
