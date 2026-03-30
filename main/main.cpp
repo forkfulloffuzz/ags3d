@@ -1568,6 +1568,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 			editor = true;
 			Engine::get_singleton()->set_godot_editor_mode(true);
+			main_args.push_back(arg); // expose to OS.get_cmdline_args() in GDScript
 		} else if (arg == "-p" || arg == "--project-manager") { // starts project manager
 			project_manager = true;
 		} else if (arg == "--recovery-mode") { // Enables recovery mode.
