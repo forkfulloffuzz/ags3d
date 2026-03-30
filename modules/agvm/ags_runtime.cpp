@@ -43,9 +43,13 @@ void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_source_map", "gd_path", "agmap"), &AGSRuntime::register_source_map);
 	ClassDB::bind_method(D_METHOD("translate_script_error", "gd_path", "gd_line"), &AGSRuntime::translate_script_error);
 
+	ClassDB::bind_method(D_METHOD("load_room", "room_name"), &AGSRuntime::load_room);
+
 	ClassDB::bind_method(D_METHOD("set_trace_enabled", "enabled"), &AGSRuntime::set_trace_enabled);
 	ClassDB::bind_method(D_METHOD("get_trace_enabled"), &AGSRuntime::get_trace_enabled);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "trace_enabled"), "set_trace_enabled", "get_trace_enabled");
+
+	ADD_SIGNAL(MethodInfo("room_change_requested", PropertyInfo(Variant::STRING, "room_name")));
 }
 
 void AGSRuntime::register_camera(AGSCamera *p_camera) {
@@ -111,6 +115,11 @@ AGSRoom *AGSRuntime::get_room(const String &p_name) const {
 		return nullptr;
 	}
 	return const_cast<AGSRoom *>(*found);
+}
+
+void AGSRuntime::load_room(const String &p_room_name) {
+	AGS_TRACE("AGSRuntime", "load_room", vformat("room_name=%s", p_room_name))
+	emit_signal("room_change_requested", p_room_name);
 }
 
 Vector3 AGSRuntime::get_point(const String &p_room_name, const String &p_point_name) const {

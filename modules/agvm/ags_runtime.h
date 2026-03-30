@@ -71,6 +71,10 @@ public:
 	// Cross-room point lookup — delegates to AGSRoom::get_point().
 	Vector3 get_point(const String &p_room_name, const String &p_point_name) const;
 
+	// Room transition — emits room_change_requested(room_name) for the game
+	// scene manager to handle (load the new room scene and free the old one).
+	void load_room(const String &p_room_name);
+
 	// Source map registry — called by AGSScript loader after transpilation.
 	// p_agmap is the parsed JSON: [[gd_line, "rel/path.agscript", agscript_line], ...].
 	void register_source_map(const String &p_gd_path, const Array &p_agmap);
