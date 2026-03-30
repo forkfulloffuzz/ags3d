@@ -252,7 +252,7 @@ func _add_vec3_field(c: VBoxContainer, label: String, obj: Object, _prop: String
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var current: Vector3 = obj.get(_prop)
 	for i in 3:
-		var axis := ["x", "y", "z"][i]
+		var axis: String = ["x", "y", "z"][i]
 		var spin := SpinBox.new()
 		spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		spin.step = 0.01
@@ -276,7 +276,7 @@ func _add_vec2_field(c: VBoxContainer, label: String, obj: Object, _prop: String
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var current: Vector3 = obj.get(_prop)
 	for i in [0, 2]:  # X and Z only
-		var axis := ["x", "z"][i / 2]
+		var axis: String = ["x", "z"][i / 2]
 		var spin := SpinBox.new()
 		spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		spin.step = 0.01
