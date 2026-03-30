@@ -314,10 +314,12 @@ func _restore_menus(node: Node) -> void:
 func _on_file_activated(abs_path: String) -> void:
 	if not abs_path.ends_with(".agroom"):
 		return
-	var res_path: String = ProjectSettings.localize_path(abs_path)
+	# .agroom is not a Godot resource — load the generated .tscn instead.
+	var tscn_abs: String = abs_path.get_basename() + ".tscn"
+	var tscn_res: String = ProjectSettings.localize_path(tscn_abs)
 	get_editor_interface().set_main_screen_editor(PLUGIN_NAME)
 	if _room_editor:
-		(_room_editor as Node).call("load_room", res_path)
+		(_room_editor as Node).call("load_room", tscn_res)
 
 
 # ---------------------------------------------------------------------------

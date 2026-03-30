@@ -167,10 +167,7 @@ func _on_item_activated() -> void:
 		return
 	file_activated.emit(path)
 	if path.ends_with(".agscript"):
-		var res_path: String = ProjectSettings.localize_path(path)
-		var scr = load(res_path)
-		if scr:
-			_plugin.get_editor_interface().edit_script(scr)
+		OS.shell_open(path)  # T-E14 will replace this with the custom script editor
 	elif path.ends_with(".agroom"):
 		pass  # routed to Room editor by ag_studio._on_file_activated
 	else:
