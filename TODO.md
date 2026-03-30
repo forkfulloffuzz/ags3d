@@ -12,7 +12,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **#98 T-E14** — GDScript: Script editor main screen — CodeEdit + AGS syntax highlighting
 - [x] **#99 T-E12** — GDScript: `.agroom` ↔ `.tscn` sync (gizmo edits → write back to `.agroom`) *(needs T-E11)*
 - [x] **#100 T-E17** — GDScript: Project wizard — new project scaffold via AG Studio menu
-- [ ] **#101 T-E18** — Integration: prototype migration — delete hand-maintained `.tscn`, verify `ag build` regenerates it
+- [x] **#101 T-E18** — Integration: prototype migration — delete hand-maintained `.tscn`, verify `ag build` regenerates it
 - [ ] **#111 T-GS10** — GDScript: `AGSRuntime.load_room()` + `room_change_requested` signal
 - [ ] **#103 T-GS01** — C++: `AGSCharacter` `say_completed` signal + `say()` / `think()` in runtime script
 
