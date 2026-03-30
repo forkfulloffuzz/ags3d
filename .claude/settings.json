@@ -19,7 +19,16 @@
       "Bash(find /home/sebastian/Projects/ags3d -path */addons/ag_studio* -o -path *ag_studio*plugin*)",
       "Bash(find /home/sebastian/Projects/ags3d/game_prototype -name *.gd -o -name plugin.cfg)",
       "Bash(grep -rn \"get_file_system_dock\\\\|_hide_dock\\\\|DOCK_SLOT\\\\|add_control_to_dock\\\\|_has_main_screen\\\\|_get_plugin_name\\\\|_get_plugin_icon\" /home/sebastian/Projects/ags3d/editor/ --include=*.h)",
-      "Bash(find /home/sebastian/Projects/ags3d/game_prototype -name *.agroom -o -name *.agchar -o -name *.agscript)"
+      "Bash(find /home/sebastian/Projects/ags3d/game_prototype -name *.agroom -o -name *.agchar -o -name *.agscript)",
+      "Bash(../tools/ag/ag build:*)",
+      "Bash(for f:*)",
+      "Bash(__NEW_LINE_8f98d095755fd3c4__ grep:*)",
+      "Bash(__NEW_LINE_8f98d095755fd3c4__ done:*)",
+      "Bash(__NEW_LINE_d95f1b09666b8ac7__ grep:*)",
+      "Bash(__NEW_LINE_d95f1b09666b8ac7__ done:*)"
+    ],
+    "additionalDirectories": [
+      "/home/sebastian/Projects/ags3d/game_prototype/addons/ag_studio"
     ]
   }
 }
