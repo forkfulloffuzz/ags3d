@@ -5,7 +5,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M9 — AG Studio Editor (Batch 2)
 
-- [ ] **#94 T-E11** — GDScript: AGS Inspector plugin — property forms for all AGS node types
+- [x] **#94 T-E11** — GDScript: AGS Inspector plugin — property forms for all AGS node types
 - [ ] **#95 T-E15** — GDScript: Build Log dock — RichTextLabel + clickable error links
 - [ ] **#96 T-E16** — GDScript: Play button wired to `ag build` + `play_main_scene()` *(needs T-E15)*
 - [ ] **#97 T-E13** — GDScript: Character editor main screen — property form for `.agchar`

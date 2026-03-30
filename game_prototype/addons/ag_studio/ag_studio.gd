@@ -25,6 +25,7 @@ var _build_log: Control
 var _room_editor: Control
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
+var _inspector_plugin: EditorInspectorPlugin
 
 const _GIZMO_SCRIPTS := [
 	"res://addons/ag_studio/gizmos/ags_walkable_gizmo.gd",
@@ -47,6 +48,12 @@ func _enter_tree() -> void:
 			plugin.setup(ur)
 		add_node_3d_gizmo_plugin(plugin)
 		_gizmo_plugins.append(plugin)
+
+	# Inspector plugin is active in both modes.
+	var ip: EditorInspectorPlugin = preload("res://addons/ag_studio/ags_inspector_plugin.gd").new()
+	ip.setup(self)
+	_inspector_plugin = ip
+	add_inspector_plugin(_inspector_plugin)
 
 	if _godot_editor_mode:
 		return
@@ -77,6 +84,10 @@ func _exit_tree() -> void:
 	for plugin: EditorNode3DGizmoPlugin in _gizmo_plugins:
 		remove_node_3d_gizmo_plugin(plugin)
 	_gizmo_plugins.clear()
+
+	if _inspector_plugin:
+		remove_inspector_plugin(_inspector_plugin)
+		_inspector_plugin = null
 
 	if _godot_editor_mode:
 		return
