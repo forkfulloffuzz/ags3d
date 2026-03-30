@@ -167,6 +167,20 @@ func _get_plugin_icon() -> Texture2D:
 	return get_editor_interface().get_base_control().get_theme_icon("Node", "EditorIcons")
 
 
+func _scene_saved(filepath: String) -> void:
+	# After Godot saves a room .tscn, write the state back to the .agroom source.
+	if not filepath.ends_with(".tscn"):
+		return
+	var scene_root: Node = get_editor_interface().get_edited_scene_root()
+	if not scene_root or scene_root.get_class() != "AGSRoom":
+		return
+	var sync_script := load("res://addons/ag_studio/room_sync.gd")
+	if sync_script:
+		var err: int = sync_script.write_agroom(scene_root)
+		if err != OK:
+			push_warning("[AGS] RoomSync: write_agroom returned error %d for %s" % [err, filepath])
+
+
 # ---------------------------------------------------------------------------
 # Whitelist application
 # ---------------------------------------------------------------------------

@@ -10,7 +10,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **#96 T-E16** — GDScript: Play button wired to `ag build` + `play_main_scene()` *(needs T-E15)*
 - [x] **#97 T-E13** — GDScript: Character editor main screen — property form for `.agchar`
 - [x] **#98 T-E14** — GDScript: Script editor main screen — CodeEdit + AGS syntax highlighting
-- [ ] **#99 T-E12** — GDScript: `.agroom` ↔ `.tscn` sync (gizmo edits → write back to `.agroom`) *(needs T-E11)*
+- [x] **#99 T-E12** — GDScript: `.agroom` ↔ `.tscn` sync (gizmo edits → write back to `.agroom`) *(needs T-E11)*
 - [ ] **#100 T-E17** — GDScript: Project wizard — new project scaffold via AG Studio menu
 - [ ] **#101 T-E18** — Integration: prototype migration — delete hand-maintained `.tscn`, verify `ag build` regenerates it
 - [ ] **#111 T-GS10** — GDScript: `AGSRuntime.load_room()` + `room_change_requested` signal
