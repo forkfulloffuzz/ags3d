@@ -2,9 +2,10 @@
 # Open the AGS3D prototype project in the Godot editor.
 #
 # Usage:
-#   .dev/prototype.sh          # open in editor
-#   .dev/prototype.sh --play   # run the game with display (no editor UI)
-#   .dev/prototype.sh --run    # run the project headless (no display, for CI)
+#   .dev/prototype.sh                # open in AG Studio editor (plugin active)
+#   .dev/prototype.sh --godot-editor # open in standard Godot editor (plugin bypassed)
+#   .dev/prototype.sh --play         # run the game with display (no editor UI)
+#   .dev/prototype.sh --run          # run the project headless (no display, for CI)
 
 set -euo pipefail
 
@@ -27,12 +28,16 @@ case "${1:-}" in
     echo "→ Running prototype project (headless)…"
     exec "$GODOT" --path "$PROTOTYPE_DIR" --headless
     ;;
+  --godot-editor)
+    echo "→ Opening prototype in standard Godot editor (AG Studio plugin bypassed)…"
+    exec "$GODOT" --editor --path "$PROTOTYPE_DIR" --godot-editor
+    ;;
   "")
     echo "→ Opening prototype project in Godot editor…"
     exec "$GODOT" --editor --path "$PROTOTYPE_DIR"
     ;;
   *)
-    echo "Usage: .dev/prototype.sh [--play|--run]" >&2
+    echo "Usage: .dev/prototype.sh [--godot-editor|--play|--run]" >&2
     exit 1
     ;;
 esac
