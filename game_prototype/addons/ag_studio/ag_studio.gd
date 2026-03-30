@@ -24,6 +24,7 @@ var _project_panel: Control
 var _build_log: Control
 var _room_editor: Control
 var _char_editor: Control
+var _script_editor: Control
 var _play_btn: Button
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
@@ -86,6 +87,14 @@ func _enter_tree() -> void:
 	get_editor_interface().get_editor_main_screen().add_child(_char_editor)
 	_char_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	# Script editor main screen
+	var se: Control = preload("res://addons/ag_studio/script_editor.gd").new()
+	se.set_plugin(self)
+	se.visible = false
+	_script_editor = se
+	get_editor_interface().get_editor_main_screen().add_child(_script_editor)
+	_script_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
 	# Play button in the top toolbar
 	_play_btn = Button.new()
 	_play_btn.text = "▶ Play"
@@ -133,6 +142,10 @@ func _exit_tree() -> void:
 	if _char_editor:
 		_char_editor.queue_free()
 		_char_editor = null
+
+	if _script_editor:
+		_script_editor.queue_free()
+		_script_editor = null
 
 	_restore_all()
 
@@ -376,16 +389,26 @@ func _on_file_activated(abs_path: String) -> void:
 		get_editor_interface().set_main_screen_editor("3D")
 
 	elif abs_path.ends_with(".agchar"):
+		_show_editor(_char_editor)
 		if _char_editor:
-			_char_editor.visible = true
-			if _room_editor:
-				_room_editor.visible = false
 			(_char_editor as Node).call("load_char", abs_path)
+
+	elif abs_path.ends_with(".agscript"):
+		_show_editor(_script_editor)
+		if _script_editor:
+			(_script_editor as Node).call("load_script", abs_path)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+## Show [param editor] and hide all other custom main screen panels.
+func _show_editor(editor: Control) -> void:
+	for panel in [_room_editor, _char_editor, _script_editor]:
+		if panel and is_instance_valid(panel):
+			panel.visible = (panel == editor)
+
 
 func _hide_node(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
