@@ -25,7 +25,19 @@
       "Bash(__NEW_LINE_8f98d095755fd3c4__ grep:*)",
       "Bash(__NEW_LINE_8f98d095755fd3c4__ done:*)",
       "Bash(__NEW_LINE_d95f1b09666b8ac7__ grep:*)",
-      "Bash(__NEW_LINE_d95f1b09666b8ac7__ done:*)"
+      "Bash(__NEW_LINE_d95f1b09666b8ac7__ done:*)",
+      "Bash(.dev/test-ag.sh)",
+      "Bash(cp rooms/start/start.tscn /tmp/start_reference.tscn)",
+      "Bash(rm rooms/start/start.tscn)",
+      "Bash(git -C /home/sebastian/Projects/ags3d add game_prototype/rooms/start/start.tscn TODO.md)",
+      "Bash(git -C /home/sebastian/Projects/ags3d status)",
+      "Bash(git -C /home/sebastian/Projects/ags3d diff game_prototype/rooms/start/start.tscn)",
+      "Bash(git -C /home/sebastian/Projects/ags3d add game_prototype/rooms/library/library.agscript.uid TODO.md)",
+      "Bash(git -C:*)",
+      "Bash(.dev/test-all.sh --no-godot)",
+      "Bash(./bin/godot.linuxbsd.editor.x86_64 --headless --path game_prototype --script test_plugin.gd)",
+      "Bash(grep -v -E \"Godot Engine|godotengine|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^\\\\s+at:|GDScript backtrace|^\\\\s+\\\\[|^\\\\t|\\\\[AGS/|AGSSpawnPoint.*not found|Source geometry|visual meshes|For runtime|RID alloc|ObjectDB|resources still|^$\")",
+      "Bash(grep -r \"GDCLASS\\\\|ClassDB::register_class\" /home/sebastian/Projects/ags3d/modules/agvm/*.cpp /home/sebastian/Projects/ags3d/modules/agvm/*.h)"
     ],
     "additionalDirectories": [
       "/home/sebastian/Projects/ags3d/game_prototype/addons/ag_studio"
