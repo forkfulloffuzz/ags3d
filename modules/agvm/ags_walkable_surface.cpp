@@ -1,7 +1,6 @@
 #include "ags_walkable_surface.h"
 
 #include "core/config/engine.h"
-#include "scene/resources/material.h"
 #include "scene/resources/navigation_mesh.h"
 
 void AGSWalkableSurface::_bind_methods() {}
@@ -17,19 +16,12 @@ void AGSWalkableSurface::_notification(int p_what) {
 }
 
 void AGSWalkableSurface::_apply_editor_overlay() {
-	// Apply a semi-transparent green material to all MeshInstance3D children
-	// so the walkable area is visible in the editor.
-	Ref<StandardMaterial3D> mat;
-	mat.instantiate();
-	mat->set_albedo(Color(0.0f, 0.8f, 0.2f, 0.35f));
-	mat->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
-	mat->set_shading_mode(BaseMaterial3D::SHADING_MODE_UNSHADED);
-	mat->set_flag(BaseMaterial3D::FLAG_DISABLE_DEPTH_TEST, false);
-
+	// Hide visual mesh in the editor — the AGSWalkableSurface gizmo plugin
+	// draws the green wireframe box instead.
 	for (int i = 0; i < get_child_count(); i++) {
 		MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(get_child(i));
 		if (mi) {
-			mi->set_material_overlay(mat);
+			mi->set_visible(false);
 		}
 	}
 }
