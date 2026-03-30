@@ -64,7 +64,9 @@ func _enter_tree() -> void:
 	_project_panel = pp
 	_project_panel.file_activated.connect(_on_file_activated)
 
-	_build_log = _make_placeholder("Build Log")
+	var bl: VBoxContainer = preload("res://addons/ag_studio/build_log.gd").new()
+	bl.set_plugin(self)
+	_build_log = bl
 
 	# Room editor main screen
 	var re: Control = preload("res://addons/ag_studio/room_editor.gd").new()
