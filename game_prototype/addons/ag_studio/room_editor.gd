@@ -170,6 +170,7 @@ func _setup_viewport_scene() -> void:
 ## Load a room .tscn (res:// path) into the viewport.
 func load_room(res_path: String) -> void:
 	if _room_root and is_instance_valid(_room_root):
+		_viewport.remove_child(_room_root)
 		_room_root.queue_free()
 		_room_root = null
 
