@@ -48,3 +48,9 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	# Vertical line downward to approximate floor.
 	var drop := PackedVector3Array([Vector3.ZERO, Vector3(0, -FLOOR_LINE_LEN, 0)])
 	gizmo.add_lines(drop, lmat)
+
+	# Small sphere collision mesh so the point is click-selectable in the viewport.
+	var sphere := SphereMesh.new()
+	sphere.radius = DIAMOND_RADIUS
+	sphere.height = DIAMOND_RADIUS * 2.0
+	gizmo.add_collision_triangles(sphere.generate_triangle_mesh())

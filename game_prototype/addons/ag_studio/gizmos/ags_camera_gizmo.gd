@@ -38,3 +38,9 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	lines.append(tip); lines.append(tip + Vector3(0, -t, t))
 
 	gizmo.add_lines(lines, mat)
+
+	# Small sphere at origin so the camera node is click-selectable.
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.15
+	sphere.height = 0.3
+	gizmo.add_collision_triangles(sphere.generate_triangle_mesh())

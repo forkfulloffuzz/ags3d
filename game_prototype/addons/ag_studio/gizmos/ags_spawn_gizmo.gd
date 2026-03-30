@@ -51,3 +51,10 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	lines.append(Vector3(0, 0, 0));  lines.append(Vector3( SHLDR_W * 0.5, -LEG_H, 0))
 
 	gizmo.add_lines(lines, mat)
+
+	# Small capsule collision mesh covers the silhouette so the spawn point
+	# is click-selectable anywhere within the figure bounds.
+	var capsule := CapsuleMesh.new()
+	capsule.radius = SHLDR_W
+	capsule.height = BODY_H + HEAD_R * 2.0 + LEG_H
+	gizmo.add_collision_triangles(capsule.generate_triangle_mesh())

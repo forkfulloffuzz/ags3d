@@ -132,6 +132,12 @@ func _draw_box(gizmo: EditorNode3DGizmo, size: Vector3) -> void:
 		lines.append(v[i]);         lines.append(v[i + 4])
 	gizmo.add_lines(lines, mat)
 
+	# Collision triangles — makes the box face-clickable in the editor viewport.
+	# Without this only the tiny transform-origin arrows are click targets.
+	var box_mesh := BoxMesh.new()
+	box_mesh.size = size
+	gizmo.add_collision_triangles(box_mesh.generate_triangle_mesh())
+
 	# Handles
 	var hmat := get_material("handle", gizmo)
 	var map := HANDLE_AXIS_SIGN_XZ if _xz_only else HANDLE_AXIS_SIGN

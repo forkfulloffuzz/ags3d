@@ -13,7 +13,7 @@ extends EditorPlugin
 
 const PLUGIN_NAME := "AG Studio"
 
-const KEEP_DOCK_TABS:    Array[String] = ["Project"]
+const KEEP_DOCK_TABS:    Array[String] = ["Project", "Inspector", "Node"]
 const KEEP_BOTTOM_TABS:  Array[String] = ["Build Log", "Output"]
 const KEEP_MAIN_SCREENS: Array[String] = []
 const KEEP_MENUS:        Array[String] = []
