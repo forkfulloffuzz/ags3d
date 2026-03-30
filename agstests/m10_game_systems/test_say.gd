@@ -9,12 +9,17 @@
 ## (a verbatim copy of game_prototype/.engine/runtime/ags_character.gd).
 ##
 ## All async tests use a short duration (0.05 s) so they complete quickly.
+##
+## NOTE: lambdas capture primitives (bool, int) by value in GDScript 4.
+## All captured signal flags must use Array wrappers — same pattern as
+## test_end_to_end.gd's `var fired := [false]`.
 extends "res://utils/test_base.gd"
 
 const CHAR_SCRIPT := "res://m10_game_systems/runtime/ags_character.gd"
-## How long to wait for an async say() to complete (real seconds via SceneTree timer).
+## How long say() runs in these tests.
 const SAY_DURATION  := 0.05
-const SAY_WAIT      := 0.3   # generous headroom
+## How long to wait before asserting — generous headroom over SAY_DURATION.
+const SAY_WAIT      := 0.3
 
 func suite_name() -> String:
 	return "M10: Say"
@@ -41,7 +46,7 @@ func test_11_say_completed_signal_exists() -> void:
 # ── Async GDScript runtime tests ──────────────────────────────────────────────
 
 ## Create an AGSCharacter with the runtime script attached and add it to the tree.
-## Caller must free() the returned node.
+## Caller must free the returned node's parent (get_parent().free()).
 func _make_runtime_char(char_name: String) -> AGSCharacter:
 	var root := Node.new()
 	add_to_tree(root)
@@ -57,15 +62,15 @@ func _make_runtime_char(char_name: String) -> AGSCharacter:
 func test_12_say_sets_clears_text_and_emits_signal() -> void:
 	var ch := _make_runtime_char("say_char_12")
 
-	var completed := false
-	ch.say_completed.connect(func() -> void: completed = true, CONNECT_ONE_SHOT)
+	var completed := [false]
+	ch.say_completed.connect(func() -> void: completed[0] = true, CONNECT_ONE_SHOT)
 
 	ch.say("Hello world", SAY_DURATION)  # fire-and-forget coroutine
 	assert_eq(ch.say_text, "Hello world", "say_text not set immediately after say() call")
 
 	await _tree.create_timer(SAY_WAIT).timeout
 
-	assert_true(completed, "say_completed did not fire within %.1f s" % SAY_WAIT)
+	assert_true(completed[0], "say_completed did not fire within %.1f s" % SAY_WAIT)
 	assert_eq(ch.say_text, "", "say_text was not cleared after say() completed")
 
 	ch.get_parent().free()
@@ -75,13 +80,13 @@ func test_12_say_sets_clears_text_and_emits_signal() -> void:
 func test_13_think_emits_say_completed() -> void:
 	var ch := _make_runtime_char("say_char_13")
 
-	var completed := false
-	ch.say_completed.connect(func() -> void: completed = true, CONNECT_ONE_SHOT)
+	var completed := [false]
+	ch.say_completed.connect(func() -> void: completed[0] = true, CONNECT_ONE_SHOT)
 
 	ch.think("Hmm…", SAY_DURATION)
 	await _tree.create_timer(SAY_WAIT).timeout
 
-	assert_true(completed, "say_completed did not fire after think()")
+	assert_true(completed[0], "say_completed did not fire after think()")
 
 	ch.get_parent().free()
 
@@ -90,12 +95,12 @@ func test_13_think_emits_say_completed() -> void:
 func test_14_say_completed_fires_once() -> void:
 	var ch := _make_runtime_char("say_char_14")
 
-	var count := 0
-	ch.say_completed.connect(func() -> void: count += 1)
+	var count := [0]
+	ch.say_completed.connect(func() -> void: count[0] += 1)
 
 	ch.say("Once", SAY_DURATION)
 	await _tree.create_timer(SAY_WAIT).timeout
 
-	assert_eq(count, 1, "say_completed should fire exactly once, fired %d times" % count)
+	assert_eq(count[0], 1, "say_completed should fire exactly once, fired %d times" % count[0])
 
 	ch.get_parent().free()  # frees ch and cleans up signal connections
