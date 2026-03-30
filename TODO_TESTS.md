@@ -1,0 +1,144 @@
+# AGS3D — Manual Tests
+
+One test section per TODO task. Update this file immediately after marking a task complete in `TODO.md`.
+
+---
+
+## M9 — AG Studio Editor (Batch 2)
+
+### #94 T-E11 — AGS Inspector plugin
+
+**Setup:** Launch AG Studio (`prototype.sh`). Open a room scene (double-click a `.agroom` in the project panel). Select an AGS node in the 3D viewport or scene tree.
+
+- [ ] Select an `AGSWalkableSurface` node → Inspector shows `box_size` and `box_offset` fields (no other Godot noise)
+- [ ] Select an `AGSBlocker` node → Inspector shows `box_size` and `box_offset`
+- [ ] Select an `AGSHotspot` node → Inspector shows `hotspot_name`, `box_size`, `box_offset`
+- [ ] Select an `AGSTrigger` node → Inspector shows `trigger_name`, `box_size`, `box_offset`
+- [ ] Select an `AGSPoint` node → Inspector shows `point_name`
+- [ ] Select an `AGSSpawnPoint` node → Inspector shows `character_name` (dropdown populated from `.agchar` files)
+- [ ] Select an `AGSCamera` node → Inspector shows `camera_name`, `look_at_target`
+- [ ] Select an `AGSCharacter` node → Inspector shows `character_name`, `move_speed`, `say_text`
+- [ ] Changing a field value in the custom form does NOT also show a duplicate entry in the default Godot inspector section
+
+---
+
+### #95 T-E15 — Build Log dock
+
+**Setup:** Launch AG Studio. Ensure AG Studio menu → Build Log bottom panel is visible.
+
+- [ ] AG Studio menu → Build → Build Log panel becomes visible and a build starts
+- [ ] Build output lines appear in the RichTextLabel as the build runs
+- [ ] A successful build shows a green "Build succeeded" summary line
+- [ ] Introduce a syntax error in a `.agscript`, re-run build → error line appears in red
+- [ ] Clicking an error link in the Build Log opens the relevant `.agscript` file (or shows the path) — error is navigable
+- [ ] The Build Log clears between runs (no stale output from previous build)
+
+---
+
+### #96 T-E16 — Play button
+
+**Setup:** Launch AG Studio. Locate the `▶ Play` button in the top toolbar.
+
+- [ ] `▶ Play` button is visible in the top toolbar
+- [ ] Clicking `▶ Play` opens the Build Log panel and starts a build
+- [ ] The button is disabled (greyed out) while the build runs
+- [ ] After a successful build, the game scene launches (Godot play mode starts)
+- [ ] After a failed build, the game does NOT launch; button re-enables
+- [ ] Button re-enables after build completes regardless of success/failure
+
+---
+
+### #97 T-E13 — Character editor main screen
+
+**Setup:** Launch AG Studio. Double-click a `.agchar` file in the project panel.
+
+- [ ] The character editor main screen opens (replaces any other custom panel)
+- [ ] Character name, sprite sheet path, animation rows, move speed fields are populated from the `.agchar` file
+- [ ] Editing a field and pressing Save writes the changes back to the `.agchar` file
+- [ ] Re-opening the same `.agchar` shows the saved values
+- [ ] Opening a second `.agchar` replaces the first in the editor (no stacking)
+- [ ] Double-clicking a non-char file (e.g. `.agscript`) switches away from the char editor
+
+---
+
+### #98 T-E14 — Script editor main screen
+
+**Setup:** Launch AG Studio. Double-click a `.agscript` file in the project panel.
+
+- [ ] The script editor main screen opens with the file loaded in a CodeEdit tab
+- [ ] AGS keywords (`room_Enter`, `room_Leave`, `WalkTo`, `FaceTo`, etc.) are syntax-highlighted in a distinct colour
+- [ ] String literals (`"text"`) are highlighted
+- [ ] Comments (`//`) are highlighted
+- [ ] Blocking calls (`say`, `WalkTo`, etc.) show a clock icon in the gutter
+- [ ] Opening a second `.agscript` opens a new tab rather than replacing the first
+- [ ] Ctrl+S saves the current file; modified indicator (asterisk) clears after save
+- [ ] Closing a tab removes it; switching tabs restores the correct file
+
+---
+
+### #99 T-E12 — `.agroom` ↔ `.tscn` sync
+
+**Setup:** Launch AG Studio with `--godot-editor` flag (`prototype.sh --godot-editor`). Open a room `.tscn`.
+
+- [ ] Select an `AGSHotspot` gizmo handle and drag it → box resizes in the 3D viewport
+- [ ] Press Ctrl+S to save the scene → no error in Output
+- [ ] Open the corresponding `.agroom` file in a text editor → the hotspot's `size` values match the dragged position
+- [ ] Repeat with `AGSBlocker`, `AGSWalkableSurface`, `AGSPoint` — all write back correctly
+- [ ] Saving a non-room `.tscn` does NOT trigger any `.agroom` write
+
+---
+
+### #100 T-E17 — Project wizard
+
+**Setup:** Launch AG Studio. Open AG Studio menu → New Project…
+
+- [ ] "New Project…" dialog opens with fields: project folder, project name, starting room name
+- [ ] Clicking OK with valid inputs writes scaffold files:
+  - `game.agp`
+  - `rooms/<room_name>/<room_name>.agroom`
+  - `rooms/<room_name>/<room_name>.agscript`
+  - `characters/player.agchar`
+- [ ] `ag build` runs automatically after scaffold is written
+- [ ] Generated `.tscn` appears in the project panel after build
+- [ ] Clicking OK with an empty project name shows a validation error and does not proceed
+- [ ] Clicking Cancel dismisses without writing any files
+
+---
+
+### #101 T-E18 — Prototype migration (ag build regenerates .tscn)
+
+**Setup:** From repo root, run `rm game_prototype/rooms/start/start.tscn` then `.dev/ag.sh build`.
+
+- [ ] `ag build` completes without errors
+- [ ] `game_prototype/rooms/start/start.tscn` is recreated
+- [ ] The regenerated `.tscn` is byte-identical (or functionally equivalent) to the deleted hand-authored file
+- [ ] Repeat for `library.tscn` if present
+- [ ] Launch the prototype via `prototype.sh` — the game runs and both rooms load correctly
+
+---
+
+### #111 T-GS10 — `AGSRuntime.load_room()` + `room_change_requested`
+
+**Setup:** Launch the prototype game (not editor). Add a trigger or script call that calls `AGSRuntime.load_room("library")` after a few seconds.
+
+- [ ] `AGSRuntime.load_room("library")` emits `room_change_requested` (verify via print in `ags_room_manager.gd`)
+- [ ] The room manager receives the signal and loads `rooms/library/library.tscn`
+- [ ] The old room scene is removed from the tree before the new one is added (no double-room overlap)
+- [ ] The player character (AutoLoad) persists across the room change — it is not freed
+- [ ] Calling `load_room` with an unknown room name prints an error and does not crash
+- [ ] `AGSRuntime.load_room("start")` switches back to the start room
+
+---
+
+### #103 T-GS01 — `AGSCharacter` `say_completed` + `say()` / `think()`
+
+**Setup:** In a room script, call `player.say("Hello world")` inside `room_Enter`. Build and play the prototype.
+
+- [ ] `say("Hello world")` sets `player.say_text = "Hello world"` (visible in remote inspector during play)
+- [ ] After ~2 seconds `say_text` clears back to `""`
+- [ ] `say_completed` signal fires after the duration (add a print in the room script to verify)
+- [ ] `await player.say("Hello")` blocks the room script until say finishes, then the next line runs
+- [ ] `player.think("Hmm…")` behaves identically to `say()` (same timing, same signal)
+- [ ] Calling `say()` with a custom `duration` argument (e.g. `say("Long line", 4.0)`) waits the correct amount
+- [ ] `say_text` property is visible in the Godot Inspector on an `AGSCharacter` node (requires Godot rebuild with new C++ changes)
+- [ ] `say_completed` signal appears in the Node panel's Signals tab (requires Godot rebuild)

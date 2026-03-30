@@ -8,6 +8,7 @@ Development tasks are tracked in `TODO.md` at the project root.
 
 - Work through tasks **in order** unless a task is explicitly blocked.
 - Mark a task complete (`[x]`) in `TODO.md` **immediately** after finishing it.
+- After marking a task complete, add a manual-test checklist for that task to `TODO_TESTS.md` (next to `TODO.md`). Each checklist must be concrete and runnable by a human — specific UI actions, expected outputs, error cases.
 - Work **one task at a time**: finish and mark complete before starting the next.
 - Do exactly what the task asks — no scope creep, no pre-emptive refactoring.
 
