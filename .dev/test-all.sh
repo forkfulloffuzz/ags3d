@@ -81,7 +81,52 @@ else
   fi
 fi
 
-# ── 3. GDScript tests (Godot headless) ────────────────────────────────────────
+# ── 3. AG Studio plugin tests (Godot headless, game_prototype project) ────────
+
+section "GDScript — AG Studio plugin (compile + logic)"
+
+GODOT="$REPO_ROOT/bin/godot.linuxbsd.editor.x86_64"
+
+if [[ $NO_GODOT -eq 1 ]]; then
+  echo "  (skipped via --no-godot)"
+elif [[ ! -x "$GODOT" ]]; then
+  echo "  ⚠ Godot binary not found — skipping plugin tests"
+else
+  PLUGIN_NOISE="Godot Engine|godotengine\.org|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^$"
+  PLUGIN_NOISE+="|^\s+at:|GDScript backtrace|^\s+\[|^\t|\[AGS/"
+  PLUGIN_NOISE+="|AGSSpawnPoint.*not found in AGSRuntime"
+  PLUGIN_NOISE+="|Source geometry parsing.*navigation mesh|visual meshes store geometry|For runtime.*baking navigation"
+  PLUGIN_NOISE+="|RID allocations.*were leaked|ObjectDB instances were leaked|resources still in use"
+  # Suppress editor-plugin context warnings that fire in headless (no EditorInterface)
+  PLUGIN_NOISE+="|EditorPlugin|Invalid get index|Cannot call|method.*EditorInterface"
+  # Expected push_error() calls from RoomSync guard tests
+  PLUGIN_NOISE+="|RoomSync: root is not AGSRoom|RoomSync: scene has no file path"
+  # player.tscn node path warning — tscn was generated without NavigationAgent3D child
+  PLUGIN_NOISE+="|Parent path.*Player.*has vanished"
+
+  rm -rf "$REPO_ROOT/game_prototype/.godot"
+  TMPOUT="$(mktemp)"
+  PLX=0
+  if [[ $VERBOSE -eq 1 ]]; then
+    "$GODOT" --headless --path "$REPO_ROOT/game_prototype" --script test_plugin.gd || PLX=$?
+  else
+    "$GODOT" --headless --path "$REPO_ROOT/game_prototype" --script test_plugin.gd >"$TMPOUT" 2>&1 || PLX=$?
+    if [[ -n "$FILTER" ]]; then
+      grep -v -E "$PLUGIN_NOISE" "$TMPOUT" | grep -i "$FILTER" || true
+    else
+      grep -v -E "$PLUGIN_NOISE" "$TMPOUT" || true
+    fi
+  fi
+  rm -f "$TMPOUT"
+
+  if [[ $PLX -eq 0 ]]; then
+    ok "plugin tests (GDScript)"
+  else
+    fail "plugin tests (GDScript)"
+  fi
+fi
+
+# ── 4. GDScript tests (Godot headless) ────────────────────────────────────────
 
 section "GDScript — agstests (Godot headless)"
 
