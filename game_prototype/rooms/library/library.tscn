@@ -1,0 +1,64 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://.engine/generated/rooms/library/library.agscript.gd" id="RoomScript"]
+
+[sub_resource type="StandardMaterial3D" id="WalkMat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0.8, 0.2, 0.35)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(14, 0.1, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(14, 0.1, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bookshelf_left"]
+size = Vector3(0.5, 2.5, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bookshelf_right"]
+size = Vector3(0.5, 2.5, 4)
+
+[node name="Library" type="AGSRoom" unique_id=2424919153]
+room_name = "library"
+initial_camera = "main"
+script = ExtResource("RoomScript")
+
+[node name="Floor" type="AGSWalkableSurface" parent="." unique_id=3547090084]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=439952635]
+material_overlay = SubResource("WalkMat")
+mesh = SubResource("BoxMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1438024428]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Desk" type="AGSPoint" parent="." unique_id=414340483]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+point_name = "desk"
+
+[node name="Exit" type="AGSPoint" parent="." unique_id=3443760594]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.5)
+point_name = "exit"
+
+[node name="BookshelfLeft" type="AGSBlockerVolume" parent="." unique_id=3044761644]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 1.25, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BookshelfLeft" unique_id=1810938956]
+shape = SubResource("BoxShape3D_bookshelf_left")
+
+[node name="BookshelfRight" type="AGSBlockerVolume" parent="." unique_id=107138105]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1.25, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BookshelfRight" unique_id=3344292265]
+shape = SubResource("BoxShape3D_bookshelf_right")
+
+[node name="PlayerStart" type="AGSSpawnPoint" parent="." unique_id=2869479137]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.5)
+spawn_character = "player"
+
+[node name="Main" type="AGSCamera" parent="." unique_id=1521792339]
+transform = Transform3D(0.7071067811865476, 0, -0.7071067811865476, -0.44997704257325755, 0.77138921583987, -0.44997704257325755, 0.5454545454545454, 0.6363636363636364, 0.5454545454545454, 6, 7, 6)
+camera_name = "main"
+

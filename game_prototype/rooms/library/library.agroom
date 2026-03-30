@@ -1,0 +1,36 @@
+Room "library" {
+    initial_camera = "main"
+
+    Camera "main" {
+        position = (6.0, 7.0, 6.0)
+        look_at  = (0.0, 0.0, 0.0)
+    }
+
+    WalkableSurface "floor" {
+        size   = (14.0, 8.0)
+        offset = (0.0, -0.05, 0.0)
+    }
+
+    BlockerVolume "bookshelf_left" {
+        size     = (0.5, 2.5, 4.0)
+        position = (-6.5, 1.25, 0.0)
+    }
+
+    BlockerVolume "bookshelf_right" {
+        size     = (0.5, 2.5, 4.0)
+        position = (6.5, 1.25, 0.0)
+    }
+
+    Point "desk" {
+        position = (0.0, 0.0, -2.0)
+    }
+
+    Point "exit" {
+        position = (0.0, 0.0, 3.5)
+    }
+
+    SpawnPoint "player_start" {
+        character = "player"
+        position  = (0.0, 0.0, 2.5)
+    }
+}

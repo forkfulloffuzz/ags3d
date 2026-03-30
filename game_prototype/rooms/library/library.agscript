@@ -1,0 +1,5 @@
+// library.agscript — room script for 'library'
+
+function room_Enter() {
+    player.FaceTo("desk");
+}
