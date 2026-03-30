@@ -23,6 +23,7 @@ var _godot_editor_mode: bool = OS.get_cmdline_args().has("--godot-editor")
 var _project_panel: Control
 var _build_log: Control
 var _room_editor: Control
+var _char_editor: Control
 var _play_btn: Button
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
@@ -77,6 +78,14 @@ func _enter_tree() -> void:
 	get_editor_interface().get_editor_main_screen().add_child(_room_editor)
 	_room_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	# Character editor main screen
+	var ce: Control = preload("res://addons/ag_studio/char_editor.gd").new()
+	ce.set_plugin(self)
+	ce.visible = false
+	_char_editor = ce
+	get_editor_interface().get_editor_main_screen().add_child(_char_editor)
+	_char_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
 	# Play button in the top toolbar
 	_play_btn = Button.new()
 	_play_btn.text = "▶ Play"
@@ -120,6 +129,10 @@ func _exit_tree() -> void:
 	if _room_editor:
 		_room_editor.queue_free()
 		_room_editor = null
+
+	if _char_editor:
+		_char_editor.queue_free()
+		_char_editor = null
 
 	_restore_all()
 
@@ -354,14 +367,20 @@ func _on_build_finished_play(success: bool) -> void:
 
 
 func _on_file_activated(abs_path: String) -> void:
-	if not abs_path.ends_with(".agroom"):
-		return
-	# .agroom is not a Godot resource — open the generated .tscn in Godot's
-	# own editor (re-uses Godot's existing 3D viewport per spec).
-	var tscn_abs: String = abs_path.get_basename() + ".tscn"
-	var tscn_res: String = ProjectSettings.localize_path(tscn_abs)
-	get_editor_interface().open_scene_from_path(tscn_res)
-	get_editor_interface().set_main_screen_editor("3D")
+	if abs_path.ends_with(".agroom"):
+		# .agroom is not a Godot resource — open the generated .tscn in Godot's
+		# own editor (re-uses Godot's existing 3D viewport per spec).
+		var tscn_abs: String = abs_path.get_basename() + ".tscn"
+		var tscn_res: String = ProjectSettings.localize_path(tscn_abs)
+		get_editor_interface().open_scene_from_path(tscn_res)
+		get_editor_interface().set_main_screen_editor("3D")
+
+	elif abs_path.ends_with(".agchar"):
+		if _char_editor:
+			_char_editor.visible = true
+			if _room_editor:
+				_room_editor.visible = false
+			(_char_editor as Node).call("load_char", abs_path)
 
 
 # ---------------------------------------------------------------------------

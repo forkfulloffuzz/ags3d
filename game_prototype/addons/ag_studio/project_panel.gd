@@ -170,6 +170,8 @@ func _on_item_activated() -> void:
 		OS.shell_open(path)  # T-E14 will replace this with the custom script editor
 	elif path.ends_with(".agroom"):
 		pass  # routed to Room editor by ag_studio._on_file_activated
+	elif path.ends_with(".agchar"):
+		pass  # routed to Character editor by ag_studio._on_file_activated
 	else:
 		OS.shell_open(path)
 
