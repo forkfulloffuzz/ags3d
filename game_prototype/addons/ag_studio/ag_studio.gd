@@ -26,6 +26,7 @@ var _room_editor: Control
 var _char_editor: Control
 var _script_editor: Control
 var _play_btn: Button
+var _wizard: ConfirmationDialog
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
 var _inspector_plugin: EditorInspectorPlugin
@@ -95,6 +96,14 @@ func _enter_tree() -> void:
 	get_editor_interface().get_editor_main_screen().add_child(_script_editor)
 	_script_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	# AG Studio menu
+	var menu := PopupMenu.new()
+	menu.add_item("New Project…", 0)
+	menu.add_separator()
+	menu.add_item("Build", 1)
+	menu.id_pressed.connect(_on_menu_item)
+	add_tool_submenu_item("AG Studio", menu)
+
 	# Play button in the top toolbar
 	_play_btn = Button.new()
 	_play_btn.text = "▶ Play"
@@ -124,6 +133,12 @@ func _exit_tree() -> void:
 		remove_control_from_docks(_project_panel)
 		_project_panel.queue_free()
 		_project_panel = null
+
+	remove_tool_menu_item("AG Studio")
+
+	if _wizard:
+		_wizard.queue_free()
+		_wizard = null
 
 	if _play_btn:
 		remove_control_from_container(CONTAINER_TOOLBAR, _play_btn)
@@ -376,6 +391,21 @@ func _restore_menus(node: Node) -> void:
 # ---------------------------------------------------------------------------
 # File activation routing
 # ---------------------------------------------------------------------------
+
+func _on_menu_item(id: int) -> void:
+	match id:
+		0:  # New Project
+			if not _wizard or not is_instance_valid(_wizard):
+				var wz: ConfirmationDialog = preload("res://addons/ag_studio/project_wizard.gd").new()
+				wz.setup(self)
+				get_editor_interface().get_base_control().add_child(wz)
+				_wizard = wz
+			_wizard.popup_centered()
+		1:  # Build
+			if _build_log:
+				make_bottom_panel_item_visible(_build_log)
+				(_build_log as Node).call("run_build")
+
 
 func _on_play_pressed() -> void:
 	# Show and focus the Build Log before building.
