@@ -59,6 +59,11 @@ func _enter_tree() -> void:
 	_inspector_plugin = ip
 	add_inspector_plugin(_inspector_plugin)
 
+	# Hide the class-hierarchy category bars (AGSPoint / Node3D / Node) that
+	# EditorInspector adds through a separate code path bypassing _parse_property.
+	get_editor_interface().get_inspector().connect(
+		"edited_object_changed", _on_inspector_changed)
+
 	if _godot_editor_mode:
 		return
 
@@ -125,6 +130,10 @@ func _exit_tree() -> void:
 	if _inspector_plugin:
 		remove_inspector_plugin(_inspector_plugin)
 		_inspector_plugin = null
+
+	var _insp := get_editor_interface().get_inspector()
+	if _insp.is_connected("edited_object_changed", _on_inspector_changed):
+		_insp.disconnect("edited_object_changed", _on_inspector_changed)
 
 	if _godot_editor_mode:
 		return
@@ -452,6 +461,31 @@ func _show_editor(editor: Control) -> void:
 	for panel in [_room_editor, _char_editor, _script_editor]:
 		if panel and is_instance_valid(panel):
 			panel.visible = (panel == editor)
+
+
+func _on_inspector_changed() -> void:
+	call_deferred("_clean_inspector_categories")
+
+
+## Walk the EditorInspector and hide EditorInspectorCategory bars for any
+## AGS node that our plugin handles. Category bars are created by EditorInspector
+## outside of the _parse_property path, so they cannot be suppressed via the
+## EditorInspectorPlugin API — we must hide them in the UI tree instead.
+func _clean_inspector_categories() -> void:
+	var sel := get_editor_interface().get_selection().get_selected_nodes()
+	if sel.is_empty():
+		return
+	if not _inspector_plugin or not _inspector_plugin._can_handle(sel[0]):
+		return
+	_walk_hide_categories(get_editor_interface().get_inspector())
+
+
+func _walk_hide_categories(node: Node) -> void:
+	for child in node.get_children():
+		if child.get_class() == "EditorInspectorCategory":
+			child.visible = false
+		else:
+			_walk_hide_categories(child)
 
 
 func _hide_node(node: Node) -> void:
