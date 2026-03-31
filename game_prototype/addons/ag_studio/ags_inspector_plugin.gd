@@ -31,6 +31,13 @@ func _can_handle(object: Object) -> bool:
 	return object.get_class() in AGS_CLASSES
 
 
+func _parse_property(object: Object, type: int, name: String, hint_type: int,
+		hint_string: String, usage_flags: int, wide: bool) -> bool:
+	# Suppress all default Godot property rows — our _parse_begin form
+	# already exposes everything the author needs for AGS nodes.
+	return true
+
+
 func _parse_begin(object: Object) -> void:
 	var cls: String = object.get_class()
 	var node := object as Node3D
