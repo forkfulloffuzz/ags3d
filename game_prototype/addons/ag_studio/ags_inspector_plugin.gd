@@ -18,6 +18,7 @@ const AGS_CLASSES := [
 	"AGSSpawnPoint",
 	"AGSHotspot",
 	"AGSTriggerRegion",
+	"AGSCharacter",
 ]
 
 var _plugin: EditorPlugin
@@ -56,6 +57,7 @@ func _parse_begin(object: Object) -> void:
 		"AGSSpawnPoint": _build_spawn(container, node)
 		"AGSHotspot":    _build_hotspot(container, node)
 		"AGSTriggerRegion":   _build_trigger(container, node)
+		"AGSCharacter":  _build_character(container, node)
 
 	add_custom_control(container)
 
@@ -181,6 +183,17 @@ func _build_hotspot(c: VBoxContainer, node: Node3D) -> void:
 	else:
 		_add_no_shape_hint(c)
 	_add_position_field(c, node)
+
+
+func _build_character(c: VBoxContainer, node: Node3D) -> void:
+	_add_text_field(c, node, "Character name", "character_name")
+	_add_float_field(c, "Move speed", node, "move_speed",
+		func() -> float: return node.get("move_speed"),
+		func(v: float) -> void:
+			node.set("move_speed", v)
+			_mark_scene_changed()
+	)
+	_add_text_field(c, node, "Say text", "say_text")
 
 
 func _build_trigger(c: VBoxContainer, node: Node3D) -> void:

@@ -8,17 +8,20 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ### #94 T-E11 — AGS Inspector plugin
 
-**Setup:** Launch AG Studio (`prototype.sh`). Open a room scene (double-click a `.agroom` in the project panel). Select an AGS node in the 3D viewport or scene tree.
+**Setup:** Launch AG Studio (`prototype.sh`). Open a room scene (double-click a `.agroom` in the project panel). Select an AGS node in the 3D viewport or scene tree. The Inspector should show **only** the AGS-specific form — no Godot category bars, no section groups (Transform, Collision, etc.).
 
-- [ ] Select an `AGSWalkableSurface` node → Inspector shows `box_size` and `box_offset` fields (no other Godot noise)
-- [ ] Select an `AGSBlocker` node → Inspector shows `box_size` and `box_offset`
-- [ ] Select an `AGSHotspot` node → Inspector shows `hotspot_name`, `box_size`, `box_offset`
-- [ ] Select an `AGSTrigger` node → Inspector shows `trigger_name`, `box_size`, `box_offset`
-- [ ] Select an `AGSPoint` node → Inspector shows `point_name`
-- [ ] Select an `AGSSpawnPoint` node → Inspector shows `character_name` (dropdown populated from `.agchar` files)
-- [ ] Select an `AGSCamera` node → Inspector shows `camera_name`, `look_at_target`
-- [ ] Select an `AGSCharacter` node → Inspector shows `character_name`, `move_speed`, `say_text`
-- [ ] Changing a field value in the custom form does NOT also show a duplicate entry in the default Godot inspector section
+- [ ] Select an `AGSWalkableSurface` node → Inspector shows label **"AGSWalkableSurface"**, then **Size (X / Z)** (two spinboxes: x, z), **Offset Y** (one spinbox), **Position** (three spinboxes: x, y, z). Nothing else.
+- [ ] Select an `AGSBlockerVolume` node → Inspector shows **"AGSBlockerVolume"**, **Size** (three spinboxes: x, y, z), **Position** (x, y, z). Nothing else.
+- [ ] Select an `AGSHotspot` node → Inspector shows **"AGSHotspot"**, **Hotspot name** (text field), **Size** (x, y, z), **Position** (x, y, z). Nothing else.
+- [ ] Select an `AGSTriggerRegion` node → Inspector shows **"AGSTriggerRegion"**, **Region name** (text field), **Size** (x, y, z), **Position** (x, y, z). Nothing else.
+- [ ] Select an `AGSPoint` node → Inspector shows **"AGSPoint"**, **Point name** (text field), **Position** (x, y, z). Nothing else.
+- [ ] Select an `AGSSpawnPoint` node → Inspector shows **"AGSSpawnPoint"**, **Character** (dropdown populated from `.agchar` files in the project), **Position** (x, y, z). Nothing else.
+- [ ] Select an `AGSCamera` node → Inspector shows **"AGSCamera"**, **Camera name** (text field), **Position** (x, y, z), a read-only hint "Look-at: edit via gizmo in 3D viewport". Nothing else.
+- [ ] Select an `AGSRoom` node → Inspector shows **"AGSRoom"**, **Room name** (text field), **Initial camera** (dropdown of AGSCamera child names). Nothing else.
+- [ ] Select an `AGSCharacter` node → Inspector shows **"AGSCharacter"**, **Character name** (text field), **Move speed** (spinbox), **Say text** (text field). Nothing else.
+- [ ] Select a non-AGS node (e.g. `MeshInstance3D`) → Inspector shows the normal Godot inspector (not the AGS form).
+- [ ] Edit a field (e.g. change Position X on an `AGSPoint`) → value persists when you deselect and reselect the node.
+- [ ] No Godot section headers ("Transform", "Collision", "Axis Lock", "Visibility", etc.) are visible for any AGS node.
 
 ---
 
