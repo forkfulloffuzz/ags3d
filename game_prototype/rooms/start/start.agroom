@@ -24,6 +24,11 @@ Room "start" {
         position = (0.0, 1.0, 1.15)
     }
 
+    Hotspot "bookshelf" {
+        size     = (1.5, 2.0, 0.3)
+        position = (4.0, 1.0, -4.5)
+    }
+
     SpawnPoint "player_start" {
         character = "player"
         position  = (-4.0, 0.0, -3.0)
