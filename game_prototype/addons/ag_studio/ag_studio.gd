@@ -482,7 +482,8 @@ func _clean_inspector_categories() -> void:
 
 func _walk_hide_categories(node: Node) -> void:
 	for child in node.get_children():
-		if child.get_class() == "EditorInspectorCategory":
+		var cls := child.get_class()
+		if cls == "EditorInspectorCategory" or cls == "EditorInspectorSection":
 			child.visible = false
 		else:
 			_walk_hide_categories(child)
