@@ -48,6 +48,7 @@ func _build_ui() -> void:
 	_code_edit = CodeEdit.new()
 	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_code_edit.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	_code_edit.gutters_draw_line_numbers = true
 	_code_edit.gutters_zero_pad_line_numbers = true
 	_code_edit.gutters_draw_fold_gutter = false
@@ -97,7 +98,7 @@ func load_script(abs_path: String) -> void:
 			_tab_bar.current_tab = idx
 		return
 
-	var text := FileAccess.get_file_as_string(abs_path)
+	var text := _read_file(abs_path)
 	_open_files[abs_path] = { "text": text, "modified": false }
 	_file_order.append(abs_path)
 
@@ -163,6 +164,16 @@ func _on_text_changed() -> void:
 # ---------------------------------------------------------------------------
 # Save
 # ---------------------------------------------------------------------------
+
+func _read_file(abs_path: String) -> String:
+	var fa := FileAccess.open(abs_path, FileAccess.READ)
+	if fa == null:
+		push_error("[AGS] ScriptEditor: cannot open '%s' (error %d)" % [abs_path, FileAccess.get_open_error()])
+		return ""
+	var text := fa.get_as_text()
+	fa.close()
+	return text
+
 
 func _save_current() -> void:
 	if _abs_path.is_empty():
