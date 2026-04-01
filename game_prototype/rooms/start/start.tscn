@@ -19,6 +19,9 @@ size = Vector3(1, 2, 3)
 [sub_resource type="BoxShape3D" id="BoxShape3D_hs_bookshelf"]
 size = Vector3(1.5, 2, 0.3)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_tr_exit_to_library"]
+size = Vector3(3, 2, 0.5)
+
 [node name="Start" type="AGSRoom" unique_id=1073019150]
 room_name = "start"
 initial_camera = "main"
@@ -62,6 +65,13 @@ hotspot_name = "bookshelf"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Bookshelf" unique_id=1771463499]
 shape = SubResource("BoxShape3D_hs_bookshelf")
+
+[node name="ExitToLibrary" type="AGSTriggerRegion" parent="." unique_id=4054287114]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4.7)
+region_name = "exit_to_library"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ExitToLibrary" unique_id=3387051578]
+shape = SubResource("BoxShape3D_tr_exit_to_library")
 
 [node name="Main" type="AGSCamera" parent="." unique_id=1521792339]
 transform = Transform3D(1, 0, 0, 0, 0.566529, 0.824042, 0, -0.824042, 0.566529, 0, 8, 5.5)

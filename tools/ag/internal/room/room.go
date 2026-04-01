@@ -67,6 +67,14 @@ type RoomData struct {
 	BlockerVolumes   []BlockerVolumeData
 	SpawnPoints      []SpawnPointData
 	Hotspots         []HotspotData
+	TriggerRegions   []TriggerRegionData
+}
+
+// TriggerRegionData holds the parsed data for a TriggerRegion block.
+type TriggerRegionData struct {
+	Name     string
+	Size     Vec3
+	Position Vec3
 }
 
 // CameraData holds the parsed data for a Camera block.
@@ -430,6 +438,12 @@ func (p *agparser) parseRoom() (*RoomData, error) {
 					return nil, err
 				}
 				rd.Hotspots = append(rd.Hotspots, hd)
+			case "TriggerRegion":
+				td, err := p.parseTriggerRegion(blockName)
+				if err != nil {
+					return nil, err
+				}
+				rd.TriggerRegions = append(rd.TriggerRegions, td)
 			default:
 				return nil, p.errorf("unknown block type %q", tok)
 			}
@@ -647,6 +661,48 @@ func (p *agparser) parseSpawnPoint(name string) (SpawnPointData, error) {
 		}
 	}
 	return sd, nil
+}
+
+func (p *agparser) parseTriggerRegion(name string) (TriggerRegionData, error) {
+	td := TriggerRegionData{Name: name}
+	for {
+		p.skipWS()
+		if p.eof() {
+			return td, p.errorf("unterminated TriggerRegion %q block", name)
+		}
+		if p.peek() == '}' {
+			p.advance()
+			break
+		}
+		key, err := p.ident()
+		if err != nil {
+			return td, err
+		}
+		if err := p.expect('='); err != nil {
+			return td, err
+		}
+		switch key {
+		case "size":
+			fs, err := p.tuple()
+			if err != nil {
+				return td, err
+			}
+			if td.Size, err = asVec3(fs, "size"); err != nil {
+				return td, p.errorf("%v", err)
+			}
+		case "position":
+			fs, err := p.tuple()
+			if err != nil {
+				return td, err
+			}
+			if td.Position, err = asVec3(fs, "position"); err != nil {
+				return td, p.errorf("%v", err)
+			}
+		default:
+			return td, p.errorf("unknown TriggerRegion property %q", key)
+		}
+	}
+	return td, nil
 }
 
 func (p *agparser) parseHotspot(name string) (HotspotData, error) {

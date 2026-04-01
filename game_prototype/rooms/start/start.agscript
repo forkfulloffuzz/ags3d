@@ -5,3 +5,7 @@ function room_Enter() {
 	player.WalkTo("door_left");
 	player.FaceTo("window");
 }
+
+function region_exit_to_library_entered() {
+	GoToRoom("library");
+}

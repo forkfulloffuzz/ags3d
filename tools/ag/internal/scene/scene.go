@@ -92,6 +92,15 @@ func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
 		})
 	}
 
+	// TriggerRegion sub-resources (one shape per trigger).
+	for _, tr := range rd.TriggerRegions {
+		slug := slugify(tr.Name)
+		shapeID := "BoxShape3D_tr_" + slug
+		g.subResource("BoxShape3D", shapeID, func() {
+			g.prop("size", vec3Str(tr.Size.X, tr.Size.Y, tr.Size.Z))
+		})
+	}
+
 	// --- Nodes ---
 
 	// Root: AGSRoom
@@ -167,6 +176,22 @@ func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
 				g.prop("transform", identTransformAt(hs.Position.X, hs.Position.Y, hs.Position.Z))
 			}
 			g.prop("hotspot_name", strLit(hs.Name))
+		})
+		g.node("CollisionShape3D", "CollisionShape3D", nodeName, func() {
+			g.prop("shape", subResRef(shapeID))
+		})
+	}
+
+	// TriggerRegions
+	for _, tr := range rd.TriggerRegions {
+		slug := slugify(tr.Name)
+		nodeName := toPascalCase(tr.Name)
+		shapeID := "BoxShape3D_tr_" + slug
+		g.node(nodeName, "AGSTriggerRegion", ".", func() {
+			if tr.Position != (room.Vec3{}) {
+				g.prop("transform", identTransformAt(tr.Position.X, tr.Position.Y, tr.Position.Z))
+			}
+			g.prop("region_name", strLit(tr.Name))
 		})
 		g.node("CollisionShape3D", "CollisionShape3D", nodeName, func() {
 			g.prop("shape", subResRef(shapeID))

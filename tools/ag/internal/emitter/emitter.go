@@ -126,6 +126,55 @@ func (p *printer) emitFile(f *parser.File) {
 	if len(f.Decls) > 0 {
 		p.blank()
 	}
+	// For room scripts: synthesise a region_walked_into dispatcher if any
+	// region_<name>_entered functions are defined. The C++ AGSRoom calls
+	// region_walked_into(region_name) on the script when a body enters a
+	// trigger region.
+	if base == "AGSRoom" {
+		p.emitRegionDispatcher(f)
+	}
+}
+
+// emitRegionDispatcher scans f for functions named region_<name>_entered and,
+// if any are found, emits:
+//
+//	func region_walked_into(region_name: String) -> void:
+//	    match region_name:
+//	        "name": region_name_entered()
+//	        ...
+func (p *printer) emitRegionDispatcher(f *parser.File) {
+	type entry struct{ region, fn string }
+	var entries []entry
+	for _, d := range f.Decls {
+		fd, ok := d.(*parser.FunctionDecl)
+		if !ok {
+			continue
+		}
+		snake := toSnakeCase(fd.Name)
+		// matches region_<something>_entered
+		if strings.HasPrefix(snake, "region_") && strings.HasSuffix(snake, "_entered") {
+			inner := snake[len("region_") : len(snake)-len("_entered")]
+			if inner != "" {
+				entries = append(entries, entry{region: inner, fn: snake})
+			}
+		}
+	}
+	if len(entries) == 0 {
+		return
+	}
+	p.line("func region_walked_into(region_name: String) -> void:")
+	p.push()
+	p.line("match region_name:")
+	p.push()
+	for _, e := range entries {
+		p.linef("%q:", e.region)
+		p.push()
+		p.linef("%s()", e.fn)
+		p.pop()
+	}
+	p.pop()
+	p.pop()
+	p.blank()
 }
 
 // baseClass returns the GDScript base class for a source file based on its
@@ -625,6 +674,7 @@ func (p *printer) emitExprStmtTrace(call *parser.CallExpr) {
 //   SetCamera("overview") → AGSRuntime.set_camera("overview")
 var builtinGlobalFunctions = map[string]string{
 	"SetCamera": "AGSRuntime.set_camera",
+	"GoToRoom":  "AGSRuntime.load_room",
 }
 
 // builtinCharacterMethods maps AGS-spirit PascalCase character method names
