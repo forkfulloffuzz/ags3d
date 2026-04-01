@@ -289,7 +289,10 @@ func _is_bottom_panel(tc: TabContainer) -> bool:
 
 
 func _apply_main_screen_whitelist(base: Control) -> void:
-	var known := ["2D", "3D", "Script", "Game", "AssetLib", PLUGIN_NAME]
+	# Do not include PLUGIN_NAME here — _has_main_screen() returns false so
+	# Godot never creates an "AG Studio" screen button, but our toolbar
+	# MenuButton has that text and would be caught by this filter.
+	var known := ["2D", "3D", "Script", "Game", "AssetLib"]
 	_walk_for_buttons(base, known, KEEP_MAIN_SCREENS)
 
 
