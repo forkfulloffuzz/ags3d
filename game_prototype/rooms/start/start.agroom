@@ -31,4 +31,9 @@ Room "start" {
         character = "player"
         position  = (-4.0, 0.0, -3.0)
     }
+
+    SpawnPoint "guard_start" {
+        character = "guard"
+        position  = (1.5, 0.0, 0.5)
+    }
 }

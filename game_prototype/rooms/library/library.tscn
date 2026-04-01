@@ -58,6 +58,10 @@ shape = SubResource("BoxShape3D_bookshelf_right")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.5)
 spawn_character = "player"
 
+[node name="LibrarianStart" type="AGSSpawnPoint" parent="." unique_id=3258289326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.5)
+spawn_character = "librarian"
+
 [node name="Main" type="AGSCamera" parent="." unique_id=1521792339]
 transform = Transform3D(1, 0, 0, 0, 0.566529, 0.824042, 0, -0.824042, 0.566529, 0, 11.2, 7.7)
 camera_name = "main"

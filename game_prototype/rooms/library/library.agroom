@@ -31,4 +31,9 @@ Room "library" {
         character = "player"
         position  = (0.0, 0.0, 2.5)
     }
+
+    SpawnPoint "librarian_start" {
+        character = "librarian"
+        position  = (0.0, 0.0, -1.5)
+    }
 }

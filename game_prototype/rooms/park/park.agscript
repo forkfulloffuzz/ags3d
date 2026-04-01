@@ -1,0 +1,5 @@
+// park.agscript — room script for 'park'
+
+function room_Enter() {
+    player.FaceTo("fountain_edge");
+}

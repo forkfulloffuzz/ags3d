@@ -309,8 +309,7 @@ func _make_highlighter() -> CodeHighlighter:
 	h.symbol_color = Color(0.85, 0.85, 0.85)
 
 	# Function calls and definitions — default is black
-	h.function_color            = Color(0.70, 0.80, 0.95)  # soft blue for calls
-	h.function_definition_color = Color(0.56, 0.80, 0.98)  # bright blue for definitions
+	h.function_color = Color(0.70, 0.80, 0.95) # soft blue for calls
 
 	# Member variable after dot
 	h.member_variable_color = Color(0.90, 0.90, 0.90)

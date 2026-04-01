@@ -52,6 +52,10 @@ shape = SubResource("BoxShape3D_center_wall")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
 spawn_character = "player"
 
+[node name="GuardStart" type="AGSSpawnPoint" parent="." unique_id=960565217]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0.5)
+spawn_character = "guard"
+
 [node name="Bookshelf" type="AGSHotspot" parent="." unique_id=2153513857]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, -4.5)
 hotspot_name = "bookshelf"

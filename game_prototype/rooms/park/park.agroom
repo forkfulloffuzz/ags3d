@@ -1,0 +1,85 @@
+Room "park" {
+    initial_camera = "main"
+
+    Camera "main" {
+    }
+
+    // Lower park level — large open area
+    WalkableSurface "lower_path" {
+        size   = (20.0, 10.0)
+        offset = (0.0, -0.05, 2.5)
+    }
+
+    // Ramp connecting lower to upper terrace
+    WalkableSurface "ramp" {
+        size   = (4.0, 3.0)
+        offset = (0.0, 0.70, -1.0)
+    }
+
+    // Upper terrace — raised garden area
+    WalkableSurface "upper_terrace" {
+        size   = (14.0, 7.0)
+        offset = (0.0, 1.5, -5.5)
+    }
+
+    BlockerVolume "left_fence" {
+        size     = (0.2, 1.5, 24.0)
+        position = (-10.5, 0.75, 0.0)
+    }
+
+    BlockerVolume "right_fence" {
+        size     = (0.2, 1.5, 24.0)
+        position = (10.5, 0.75, 0.0)
+    }
+
+    BlockerVolume "bench" {
+        size     = (1.5, 0.5, 0.6)
+        position = (-4.0, 0.25, 3.5)
+    }
+
+    BlockerVolume "fountain" {
+        size     = (2.0, 1.0, 2.0)
+        position = (3.5, 0.5, 3.0)
+    }
+
+    BlockerVolume "terrace_wall" {
+        size     = (14.0, 0.6, 0.3)
+        position = (0.0, 1.8, -2.3)
+    }
+
+    BlockerVolume "statue" {
+        size     = (0.6, 1.8, 0.6)
+        position = (0.0, 2.4, -6.5)
+    }
+
+    Point "gate_entrance" {
+        position = (0.0, 0.0, 6.5)
+    }
+
+    Point "bench_seat" {
+        position = (-4.0, 0.0, 3.5)
+    }
+
+    Point "fountain_edge" {
+        position = (3.5, 0.0, 1.5)
+    }
+
+    Point "statue_base" {
+        position = (0.0, 1.5, -6.5)
+    }
+
+    Hotspot "info_board" {
+        size     = (0.8, 1.2, 0.1)
+        position = (9.0, 0.6, 2.0)
+    }
+
+    SpawnPoint "player_start" {
+        character = "player"
+        position  = (0.0, 0.0, 4.5)
+    }
+
+    SpawnPoint "visitor_start" {
+        character = "visitor"
+        position  = (-2.0, 1.5, -5.5)
+    }
+}

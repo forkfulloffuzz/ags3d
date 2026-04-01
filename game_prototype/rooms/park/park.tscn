@@ -1,0 +1,154 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://.engine/generated/rooms/park/park.agscript.gd" id="RoomScript"]
+
+[sub_resource type="StandardMaterial3D" id="WalkMat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0.8, 0.2, 0.35)
+
+[sub_resource type="BoxMesh" id="BoxMesh_lower_path"]
+size = Vector3(20, 0.1, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lower_path"]
+size = Vector3(20, 0.1, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ramp"]
+size = Vector3(4, 0.1, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ramp"]
+size = Vector3(4, 0.1, 3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_upper_terrace"]
+size = Vector3(14, 0.1, 7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_upper_terrace"]
+size = Vector3(14, 0.1, 7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_left_fence"]
+size = Vector3(0.2, 1.5, 24)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_right_fence"]
+size = Vector3(0.2, 1.5, 24)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bench"]
+size = Vector3(1.5, 0.5, 0.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fountain"]
+size = Vector3(2, 1, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_terrace_wall"]
+size = Vector3(14, 0.6, 0.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_statue"]
+size = Vector3(0.6, 1.8, 0.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hs_info_board"]
+size = Vector3(0.8, 1.2, 0.1)
+
+[node name="Park" type="AGSRoom" unique_id=3552835478]
+room_name = "park"
+initial_camera = "main"
+script = ExtResource("RoomScript")
+
+[node name="LowerPath" type="AGSWalkableSurface" parent="." unique_id=962369568]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 2.5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LowerPath" unique_id=2560781663]
+material_overlay = SubResource("WalkMat")
+mesh = SubResource("BoxMesh_lower_path")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LowerPath" unique_id=1451673536]
+shape = SubResource("BoxShape3D_lower_path")
+
+[node name="Ramp" type="AGSWalkableSurface" parent="." unique_id=2712421878]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, -1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ramp" unique_id=350970815]
+material_overlay = SubResource("WalkMat")
+mesh = SubResource("BoxMesh_ramp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ramp" unique_id=3468818720]
+shape = SubResource("BoxShape3D_ramp")
+
+[node name="UpperTerrace" type="AGSWalkableSurface" parent="." unique_id=934728348]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -5.5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="UpperTerrace" unique_id=3916922613]
+material_overlay = SubResource("WalkMat")
+mesh = SubResource("BoxMesh_upper_terrace")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="UpperTerrace" unique_id=51916138]
+shape = SubResource("BoxShape3D_upper_terrace")
+
+[node name="GateEntrance" type="AGSPoint" parent="." unique_id=1407214083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6.5)
+point_name = "gate_entrance"
+
+[node name="BenchSeat" type="AGSPoint" parent="." unique_id=4016509041]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 3.5)
+point_name = "bench_seat"
+
+[node name="FountainEdge" type="AGSPoint" parent="." unique_id=3049431959]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, 1.5)
+point_name = "fountain_edge"
+
+[node name="StatueBase" type="AGSPoint" parent="." unique_id=3502723507]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -6.5)
+point_name = "statue_base"
+
+[node name="LeftFence" type="AGSBlockerVolume" parent="." unique_id=16334416]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, 0.75, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LeftFence" unique_id=2619824352]
+shape = SubResource("BoxShape3D_left_fence")
+
+[node name="RightFence" type="AGSBlockerVolume" parent="." unique_id=1534916833]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0.75, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RightFence" unique_id=1754592905]
+shape = SubResource("BoxShape3D_right_fence")
+
+[node name="Bench" type="AGSBlockerVolume" parent="." unique_id=1900225408]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.25, 3.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Bench" unique_id=403293136]
+shape = SubResource("BoxShape3D_bench")
+
+[node name="Fountain" type="AGSBlockerVolume" parent="." unique_id=722217374]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 3)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Fountain" unique_id=2503574756]
+shape = SubResource("BoxShape3D_fountain")
+
+[node name="TerraceWall" type="AGSBlockerVolume" parent="." unique_id=335768932]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, -2.3)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TerraceWall" unique_id=3614904036]
+shape = SubResource("BoxShape3D_terrace_wall")
+
+[node name="Statue" type="AGSBlockerVolume" parent="." unique_id=928421902]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, -6.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Statue" unique_id=801971440]
+shape = SubResource("BoxShape3D_statue")
+
+[node name="PlayerStart" type="AGSSpawnPoint" parent="." unique_id=2869479137]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4.5)
+spawn_character = "player"
+
+[node name="VisitorStart" type="AGSSpawnPoint" parent="." unique_id=956955780]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.5, -5.5)
+spawn_character = "visitor"
+
+[node name="InfoBoard" type="AGSHotspot" parent="." unique_id=3454063714]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.6, 2)
+hotspot_name = "info_board"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InfoBoard" unique_id=412732718]
+shape = SubResource("BoxShape3D_hs_info_board")
+
+[node name="Main" type="AGSCamera" parent="." unique_id=1521792339]
+transform = Transform3D(1, 0, 0, 0, 0.566529, 0.824042, 0, -0.824042, 0.566529, 0, 16, 13.5)
+camera_name = "main"
+

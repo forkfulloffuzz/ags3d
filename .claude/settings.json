@@ -37,7 +37,12 @@
       "Bash(.dev/test-all.sh --no-godot)",
       "Bash(./bin/godot.linuxbsd.editor.x86_64 --headless --path game_prototype --script test_plugin.gd)",
       "Bash(grep -v -E \"Godot Engine|godotengine|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^\\\\s+at:|GDScript backtrace|^\\\\s+\\\\[|^\\\\t|\\\\[AGS/|AGSSpawnPoint.*not found|Source geometry|visual meshes|For runtime|RID alloc|ObjectDB|resources still|^$\")",
-      "Bash(grep -r \"GDCLASS\\\\|ClassDB::register_class\" /home/sebastian/Projects/ags3d/modules/agvm/*.cpp /home/sebastian/Projects/ags3d/modules/agvm/*.h)"
+      "Bash(grep -r \"GDCLASS\\\\|ClassDB::register_class\" /home/sebastian/Projects/ags3d/modules/agvm/*.cpp /home/sebastian/Projects/ags3d/modules/agvm/*.h)",
+      "Bash(grep -r \"Trigger\\\\|trigger\" /home/sebastian/Projects/ags3d/tools/ag/internal/room/*.go /home/sebastian/Projects/ags3d/tools/ag/internal/scene/*.go)",
+      "Bash(.dev/ag.sh build:*)",
+      "Bash(.dev/build-ag.sh ag:*)",
+      "Bash(../bin/ag build:*)",
+      "Bash(grep -rn void.*make_visible /home/sebastian/Projects/ags3d/editor/plugins/node_3d_editor_plugin.cpp /home/sebastian/Projects/ags3d/editor/plugins/node_3d_editor_plugin.h)"
     ],
     "additionalDirectories": [
       "/home/sebastian/Projects/ags3d/game_prototype/addons/ag_studio"
