@@ -145,12 +145,14 @@ func _on_tab_close(idx: int) -> void:
 func _load_into_editor(abs_path: String) -> void:
 	var entry: Dictionary = _open_files.get(abs_path, {})
 	var text: String = entry.get("text", "")
-	print("[AGS/ScriptEditor] _load_into_editor: path=%s text_len=%d code_edit_null=%s" % [
-		abs_path, text.length(), str(_code_edit == null)])
+	print("[AGS/ScriptEditor] _load_into_editor: text_len=%d code_edit.size=%s panel.size=%s visible=%s" % [
+		text.length(), str(_code_edit.size), str(size), str(_code_edit.visible)])
 	_abs_path = abs_path
 	_code_edit.text = text
-	print("[AGS/ScriptEditor] _load_into_editor: code_edit.text length after set = %d" % _code_edit.text.length())
+	print("[AGS/ScriptEditor] after set: code_edit.text.length=%d line_count=%d" % [
+		_code_edit.text.length(), _code_edit.get_line_count()])
 	_code_edit.scroll_vertical = 0
+	_code_edit.queue_redraw()
 	_status_label.text = abs_path
 	_annotate_blocking_calls()
 
