@@ -42,7 +42,6 @@ func _build_ui() -> void:
 	_code_edit = CodeEdit.new()
 	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_code_edit.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	_code_edit.gutters_draw_line_numbers = true
 	_code_edit.gutters_zero_pad_line_numbers = true
 	_code_edit.gutters_draw_fold_gutter = false
