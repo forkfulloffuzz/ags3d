@@ -21,9 +21,12 @@ var _current_room: Node = null
 
 func _ready() -> void:
 	var runtime := Engine.get_singleton("AGSRuntime")
+	print("[AGS/RoomManager] _ready: runtime found=", runtime != null)
 	if runtime:
 		runtime.connect("room_change_requested", _on_room_change_requested)
+		print("[AGS/RoomManager] connected to room_change_requested")
 	_scan_rooms()
+	print("[AGS/RoomManager] known rooms: ", _room_paths.keys())
 
 
 ## Register a known room manually (useful for tests or non-standard paths).
@@ -33,10 +36,11 @@ func register_room_path(room_name: String, res_path: String) -> void:
 
 ## Change to [param room_name], freeing the current room scene.
 func _on_room_change_requested(room_name: String) -> void:
+	print("[AGS/RoomManager] room_change_requested: room_name=", room_name)
 	var path: String = _room_paths.get(room_name, "")
 	if path.is_empty():
-		# Fallback convention
 		path = "res://rooms/%s/%s.tscn" % [room_name, room_name]
+	print("[AGS/RoomManager] resolved path=", path, " exists=", ResourceLoader.exists(path))
 
 	if not ResourceLoader.exists(path):
 		push_error("[AGS] RoomManager: scene not found for room '%s' at '%s'" % [room_name, path])
@@ -47,13 +51,14 @@ func _on_room_change_requested(room_name: String) -> void:
 		push_error("[AGS] RoomManager: failed to load '%s'" % path)
 		return
 
-	# Remove the old room from the tree first (prevents both rooms being live).
 	if _current_room and is_instance_valid(_current_room):
+		print("[AGS/RoomManager] freeing current room: ", _current_room.name)
 		_current_room.get_parent().remove_child(_current_room)
 		_current_room.queue_free()
 		_current_room = null
 
 	var new_room: Node = packed.instantiate()
+	print("[AGS/RoomManager] adding new room: ", new_room.name)
 	get_parent().add_child(new_room)
 	_current_room = new_room
 

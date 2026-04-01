@@ -162,13 +162,29 @@ func (p *printer) emitRegionDispatcher(f *parser.File) {
 	if len(entries) == 0 {
 		return
 	}
+	// Emit a _ready override that logs trigger region nodes found in the scene.
+	p.line("func _ready() -> void:")
+	p.push()
+	p.line(`print("[AGS/RoomScript] _ready: has region_walked_into=", has_method("region_walked_into"))`)
+	p.line(`for child in get_children():`)
+	p.push()
+	p.line(`if child.get_class() == "AGSTriggerRegion":`)
+	p.push()
+	p.linef(`print("[AGS/RoomScript] trigger region found: ", child.name, " region_name=", child.get("region_name"))`)
+	p.pop()
+	p.pop()
+	p.line("super._ready()")
+	p.pop()
+	p.blank()
 	p.line("func region_walked_into(region_name: String) -> void:")
 	p.push()
+	p.linef(`print("[AGS/RoomScript] region_walked_into called: region_name=", region_name)`)
 	p.line("match region_name:")
 	p.push()
 	for _, e := range entries {
 		p.linef("%q:", e.region)
 		p.push()
+		p.linef(`print("[AGS/RoomScript] dispatching to %s")`, e.fn)
 		p.linef("%s()", e.fn)
 		p.pop()
 	}
