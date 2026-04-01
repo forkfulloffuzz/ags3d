@@ -3,9 +3,8 @@
 [ext_resource type="Script" path="res://.engine/generated/rooms/park/park.agscript.gd" id="RoomScript"]
 
 [sub_resource type="StandardMaterial3D" id="WalkMat"]
-transparency = 1
 shading_mode = 0
-albedo_color = Color(0, 0.8, 0.2, 0.35)
+albedo_color = Color(0.2, 0.6, 0.2, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_lower_path"]
 size = Vector3(20, 0.1, 10)
@@ -55,8 +54,8 @@ script = ExtResource("RoomScript")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 2.5)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="LowerPath" unique_id=2560781663]
-material_overlay = SubResource("WalkMat")
 mesh = SubResource("BoxMesh_lower_path")
+surface_material_override/0 = SubResource("WalkMat")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="LowerPath" unique_id=1451673536]
 shape = SubResource("BoxShape3D_lower_path")
@@ -65,8 +64,8 @@ shape = SubResource("BoxShape3D_lower_path")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, -1)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ramp" unique_id=350970815]
-material_overlay = SubResource("WalkMat")
 mesh = SubResource("BoxMesh_ramp")
+surface_material_override/0 = SubResource("WalkMat")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Ramp" unique_id=3468818720]
 shape = SubResource("BoxShape3D_ramp")
@@ -75,8 +74,8 @@ shape = SubResource("BoxShape3D_ramp")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -5.5)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="UpperTerrace" unique_id=3916922613]
-material_overlay = SubResource("WalkMat")
 mesh = SubResource("BoxMesh_upper_terrace")
+surface_material_override/0 = SubResource("WalkMat")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="UpperTerrace" unique_id=51916138]
 shape = SubResource("BoxShape3D_upper_terrace")

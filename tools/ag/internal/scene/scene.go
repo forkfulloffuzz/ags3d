@@ -57,9 +57,8 @@ func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
 	hasWalkable := len(rd.WalkableSurfaces) > 0
 	if hasWalkable {
 		g.subResource("StandardMaterial3D", "WalkMat", func() {
-			g.prop("transparency", "1")
 			g.prop("shading_mode", "0")
-			g.prop("albedo_color", "Color(0, 0.8, 0.2, 0.35)")
+			g.prop("albedo_color", "Color(0.2, 0.6, 0.2, 1)")
 		})
 	}
 	for _, ws := range rd.WalkableSurfaces {
@@ -125,8 +124,8 @@ func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
 		meshID := "BoxMesh_" + slug
 		shapeID := "BoxShape3D_" + slug
 		g.node("MeshInstance3D", "MeshInstance3D", nodeName, func() {
-			g.prop("material_overlay", subResRef("WalkMat"))
 			g.prop("mesh", subResRef(meshID))
+			g.prop("surface_material_override/0", subResRef("WalkMat"))
 		})
 		g.node("CollisionShape3D", "CollisionShape3D", nodeName, func() {
 			g.prop("shape", subResRef(shapeID))

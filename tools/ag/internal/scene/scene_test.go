@@ -87,8 +87,8 @@ func TestWalkableSurface(t *testing.T) {
 
 	// Children
 	assertContains(t, out, `[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"`)
-	assertContains(t, out, `material_overlay = SubResource("WalkMat")`)
 	assertContains(t, out, `mesh = SubResource("BoxMesh_floor")`)
+	assertContains(t, out, `surface_material_override/0 = SubResource("WalkMat")`)
 	assertContains(t, out, `[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"`)
 	assertContains(t, out, `shape = SubResource("BoxShape3D_floor")`)
 }
