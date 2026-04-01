@@ -484,6 +484,11 @@ func _show_editor(editor: Control) -> void:
 		if panel and is_instance_valid(panel):
 			panel.visible = (panel == editor)
 
+	# Force layout recalculation after visibility change so SIZE_EXPAND_FILL
+	# children (e.g. the script editor CodeEdit) get their correct size.
+	if editor and is_instance_valid(editor):
+		editor.queue_sort()
+
 
 func _on_inspector_changed() -> void:
 	call_deferred("_clean_inspector_categories")
