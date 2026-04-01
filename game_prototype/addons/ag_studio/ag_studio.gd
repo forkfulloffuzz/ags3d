@@ -328,13 +328,23 @@ func _apply_play_toolbar_whitelist(base: Control) -> void:
 		_hide_node(run_bar)
 
 	# The renderer OptionButton lives in a sibling HBoxContainer of EditorRunBar
-	# inside EditorTitleBar. Hide the whole sibling container.
+	# inside EditorTitleBar. Hide sibling containers, but skip the one that
+	# holds our own toolbar controls (MenuButton + Play button).
 	if run_bar:
 		var title_bar := run_bar.get_parent()
 		if title_bar:
 			for child in title_bar.get_children():
 				if child != run_bar and (child is HBoxContainer or child is VBoxContainer):
+					if _container_has_our_controls(child):
+						continue
 					_hide_node(child)
+
+
+func _container_has_our_controls(container: Node) -> bool:
+	for ctrl: Node in [_play_btn, _menu_btn]:
+		if ctrl and is_instance_valid(ctrl) and container.is_ancestor_of(ctrl):
+			return true
+	return false
 
 
 func _log_visible_tabs(node: Node) -> void:
