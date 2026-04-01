@@ -136,7 +136,7 @@ func _on_confirmed() -> void:
 	if idx < 0 or idx >= _room_options.size():
 		return
 
-	var chosen := _room_options[idx]
+	var chosen := _room_options[idx]  # e.g. "rooms/park/park.agroom"
 	if not _agp_data.has("project"):
 		_agp_data["project"] = {}
 	_agp_data["project"]["start_room"] = chosen
@@ -145,6 +145,41 @@ func _on_confirmed() -> void:
 	if err != OK:
 		_status_label.text = "Error saving game.agp (code %d)." % err
 		show()
+		return
+
+	# Derive the .tscn path and update project.godot run/main_scene.
+	var tscn_rel: String = chosen.get_basename() + ".tscn"  # rooms/park/park.tscn
+	var tscn_res: String = "res://" + tscn_rel
+	_update_godot_main_scene(tscn_res)
+
+	# Notify the editor so F5 picks up the change immediately.
+	ProjectSettings.set_setting("application/run/main_scene", tscn_res)
+	ProjectSettings.save()
+
+
+func _update_godot_main_scene(tscn_res: String) -> void:
+	var root := ProjectSettings.globalize_path("res://")
+	var path := root.path_join("project.godot")
+	var fa := FileAccess.open(path, FileAccess.READ)
+	if not fa:
+		push_warning("[AGS] Settings: cannot read project.godot")
+		return
+	var lines := fa.get_as_text().split("\n")
+	fa.close()
+
+	var out := PackedStringArray()
+	for line: String in lines:
+		if line.begins_with("run/main_scene="):
+			out.append('run/main_scene="%s"' % tscn_res)
+		else:
+			out.append(line)
+
+	var fw := FileAccess.open(path, FileAccess.WRITE)
+	if not fw:
+		push_warning("[AGS] Settings: cannot write project.godot")
+		return
+	fw.store_string("\n".join(out))
+	fw.close()
 
 
 # ---------------------------------------------------------------------------
