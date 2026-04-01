@@ -30,6 +30,7 @@ var _wizard: ConfirmationDialog
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
 var _inspector_plugin: EditorInspectorPlugin
+var _active_builtin: Node = null  # built-in main screen child hidden while an AGS panel is shown
 
 const _GIZMO_SCRIPTS := [
 	"res://addons/ag_studio/gizmos/ags_walkable_gizmo.gd",
@@ -436,10 +437,10 @@ func _on_file_activated(abs_path: String) -> void:
 	if abs_path.ends_with(".agroom"):
 		# .agroom is not a Godot resource — open the generated .tscn in Godot's
 		# own editor (re-uses Godot's existing 3D viewport per spec).
+		_show_editor(null)  # restore built-in 3D editor if an AGS panel was active
 		var tscn_abs: String = abs_path.get_basename() + ".tscn"
 		var tscn_res: String = ProjectSettings.localize_path(tscn_abs)
 		get_editor_interface().open_scene_from_path(tscn_res)
-		get_editor_interface().set_main_screen_editor("3D")
 
 	elif abs_path.ends_with(".agchar"):
 		_show_editor(_char_editor)
@@ -457,8 +458,29 @@ func _on_file_activated(abs_path: String) -> void:
 # ---------------------------------------------------------------------------
 
 ## Show [param editor] and hide all other custom main screen panels.
+## Pass null to restore the previously visible built-in main screen child.
 func _show_editor(editor: Control) -> void:
-	for panel in [_room_editor, _char_editor, _script_editor]:
+	var main_screen := get_editor_interface().get_editor_main_screen()
+	var ours: Array = [_room_editor, _char_editor, _script_editor]
+
+	if editor != null:
+		# Hide any visible built-in main screen child (e.g. the 3D editor).
+		for child: Node in main_screen.get_children():
+			if child in ours:
+				continue
+			if child is CanvasItem:
+				var ci := child as CanvasItem
+				if ci.visible:
+					if _active_builtin == null:
+						_active_builtin = child
+					ci.visible = false
+	else:
+		# Restore the previously hidden built-in child.
+		if _active_builtin and is_instance_valid(_active_builtin):
+			(_active_builtin as CanvasItem).visible = true
+		_active_builtin = null
+
+	for panel in ours:
 		if panel and is_instance_valid(panel):
 			panel.visible = (panel == editor)
 
