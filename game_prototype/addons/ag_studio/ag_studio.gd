@@ -82,25 +82,28 @@ func _enter_tree() -> void:
 	var re: Control = preload("res://addons/ag_studio/room_editor.gd").new()
 	re.set_plugin(self)
 	re.visible = false
+	re.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	re.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	_room_editor = re
 	get_editor_interface().get_editor_main_screen().add_child(_room_editor)
-	_room_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# Character editor main screen
 	var ce: Control = preload("res://addons/ag_studio/char_editor.gd").new()
 	ce.set_plugin(self)
 	ce.visible = false
+	ce.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ce.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	_char_editor = ce
 	get_editor_interface().get_editor_main_screen().add_child(_char_editor)
-	_char_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# Script editor main screen
 	var se: Control = preload("res://addons/ag_studio/script_editor.gd").new()
 	se.set_plugin(self)
 	se.visible = false
+	se.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	se.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	_script_editor = se
 	get_editor_interface().get_editor_main_screen().add_child(_script_editor)
-	_script_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# AG Studio menu
 	var menu := PopupMenu.new()
@@ -484,12 +487,8 @@ func _show_editor(editor: Control) -> void:
 		if panel and is_instance_valid(panel):
 			panel.visible = (panel == editor)
 
-	# Force layout recalculation after visibility change so SIZE_EXPAND_FILL
-	# children (e.g. the script editor CodeEdit) get their correct size.
-	# The panel may never have been laid out (added as visible=false), so we
-	# explicitly give it the main screen's current size before sorting.
+	# Trigger a layout pass so SIZE_EXPAND_FILL children get their correct size.
 	if editor and is_instance_valid(editor):
-		editor.set_size(get_editor_interface().get_editor_main_screen().get_size())
 		editor.queue_sort()
 
 

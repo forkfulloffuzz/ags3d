@@ -29,8 +29,6 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
 	# ---- Tab bar ----
 	_tab_bar = TabBar.new()
 	_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
