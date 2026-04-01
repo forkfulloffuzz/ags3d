@@ -144,12 +144,19 @@ func _load_into_editor(abs_path: String) -> void:
 	print("[AGS/ScriptEditor] _load_into_editor: text_len=%d code_edit.size=%s panel.size=%s visible=%s" % [
 		text.length(), str(_code_edit.size), str(size), str(_code_edit.visible)])
 	_abs_path = abs_path
-	_code_edit.text = text
-	print("[AGS/ScriptEditor] after set: code_edit.text.length=%d line_count=%d" % [
-		_code_edit.text.length(), _code_edit.get_line_count()])
-	_code_edit.scroll_vertical = 0
-	_code_edit.queue_redraw()
 	_status_label.text = abs_path
+	# Defer text assignment so it runs after the VBoxContainer sort pass
+	# has given the CodeEdit its correct height.
+	call_deferred("_apply_text_deferred", abs_path, text)
+
+
+func _apply_text_deferred(abs_path: String, text: String) -> void:
+	if _abs_path != abs_path:
+		return  # tab was switched again before we ran
+	print("[AGS/ScriptEditor] _apply_text_deferred: code_edit.size=%s panel.size=%s" % [
+		str(_code_edit.size), str(size)])
+	_code_edit.text = text
+	_code_edit.scroll_vertical = 0
 	_annotate_blocking_calls()
 
 

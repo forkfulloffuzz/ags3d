@@ -486,7 +486,10 @@ func _show_editor(editor: Control) -> void:
 
 	# Force layout recalculation after visibility change so SIZE_EXPAND_FILL
 	# children (e.g. the script editor CodeEdit) get their correct size.
+	# The panel may never have been laid out (added as visible=false), so we
+	# explicitly give it the main screen's current size before sorting.
 	if editor and is_instance_valid(editor):
+		editor.set_size(get_editor_interface().get_editor_main_screen().get_size())
 		editor.queue_sort()
 
 
