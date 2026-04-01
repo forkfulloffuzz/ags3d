@@ -91,20 +91,24 @@ func _input(event: InputEvent) -> void:
 # ---------------------------------------------------------------------------
 
 func load_script(abs_path: String) -> void:
+	print("[AGS/ScriptEditor] load_script called: ", abs_path)
 	if abs_path in _open_files:
-		# Switch to existing tab
+		print("[AGS/ScriptEditor] already open, switching tab")
 		var idx := _file_order.find(abs_path)
 		if idx >= 0:
 			_tab_bar.current_tab = idx
 		return
 
 	var text := _read_file(abs_path)
+	print("[AGS/ScriptEditor] read %d chars" % text.length())
 	_open_files[abs_path] = { "text": text, "modified": false }
 	_file_order.append(abs_path)
 
 	var tab_idx := _tab_bar.get_tab_count()
+	print("[AGS/ScriptEditor] adding tab at idx %d" % tab_idx)
 	_tab_bar.add_tab(abs_path.get_file())
 	_tab_bar.current_tab = tab_idx
+	print("[AGS/ScriptEditor] current_tab set to %d" % tab_idx)
 
 	_load_into_editor(abs_path)
 
@@ -114,7 +118,9 @@ func load_script(abs_path: String) -> void:
 # ---------------------------------------------------------------------------
 
 func _on_tab_changed(idx: int) -> void:
+	print("[AGS/ScriptEditor] _on_tab_changed: idx=%d file_order.size=%d" % [idx, _file_order.size()])
 	if idx < 0 or idx >= _file_order.size():
+		print("[AGS/ScriptEditor] _on_tab_changed: idx out of range, returning")
 		return
 	_save_current_to_cache()
 	_load_into_editor(_file_order[idx])
@@ -137,9 +143,13 @@ func _on_tab_close(idx: int) -> void:
 
 
 func _load_into_editor(abs_path: String) -> void:
-	_abs_path = abs_path
 	var entry: Dictionary = _open_files.get(abs_path, {})
-	_code_edit.text = entry.get("text", "")
+	var text: String = entry.get("text", "")
+	print("[AGS/ScriptEditor] _load_into_editor: path=%s text_len=%d code_edit_null=%s" % [
+		abs_path, text.length(), str(_code_edit == null)])
+	_abs_path = abs_path
+	_code_edit.text = text
+	print("[AGS/ScriptEditor] _load_into_editor: code_edit.text length after set = %d" % _code_edit.text.length())
 	_code_edit.scroll_vertical = 0
 	_status_label.text = abs_path
 	_annotate_blocking_calls()
@@ -166,12 +176,17 @@ func _on_text_changed() -> void:
 # ---------------------------------------------------------------------------
 
 func _read_file(abs_path: String) -> String:
+	print("[AGS/ScriptEditor] _read_file: ", abs_path)
+	print("[AGS/ScriptEditor] file_exists: ", FileAccess.file_exists(abs_path))
 	var fa := FileAccess.open(abs_path, FileAccess.READ)
 	if fa == null:
-		push_error("[AGS] ScriptEditor: cannot open '%s' (error %d)" % [abs_path, FileAccess.get_open_error()])
+		var err := FileAccess.get_open_error()
+		push_error("[AGS] ScriptEditor: cannot open '%s' (error %d)" % [abs_path, err])
+		print("[AGS/ScriptEditor] open FAILED, error: ", err)
 		return ""
 	var text := fa.get_as_text()
 	fa.close()
+	print("[AGS/ScriptEditor] read OK, length: ", text.length())
 	return text
 
 
