@@ -1,5 +1,5 @@
 @tool
-extends Control
+extends VBoxContainer
 
 ## AG Studio Script Editor — main screen panel (T-E14)
 ##
@@ -31,18 +31,14 @@ func _ready() -> void:
 func _build_ui() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	var vbox := VBoxContainer.new()
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(vbox)
-
 	# ---- Tab bar ----
 	_tab_bar = TabBar.new()
 	_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
 	_tab_bar.tab_changed.connect(_on_tab_changed)
 	_tab_bar.tab_close_pressed.connect(_on_tab_close)
-	vbox.add_child(_tab_bar)
+	add_child(_tab_bar)
 
-	vbox.add_child(HSeparator.new())
+	add_child(HSeparator.new())
 
 	# ---- CodeEdit ----
 	_code_edit = CodeEdit.new()
@@ -64,12 +60,12 @@ func _build_ui() -> void:
 	var shortcut := Shortcut.new()
 	shortcut.events = [save_action]
 	_code_edit.set_meta("_save_shortcut", shortcut)
-	vbox.add_child(_code_edit)
+	add_child(_code_edit)
 
 	# ---- Status bar ----
 	_status_label = Label.new()
 	_status_label.text = "No file open. Double-click a script in the Project panel."
-	vbox.add_child(_status_label)
+	add_child(_status_label)
 
 	# Add clock gutter for blocking calls
 	_code_edit.add_gutter(0)
