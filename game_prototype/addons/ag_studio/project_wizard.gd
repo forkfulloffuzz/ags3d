@@ -112,9 +112,27 @@ func _write_scaffold(folder: String, proj_name: String, room_name: String) -> Er
 	# Ensure directory exists
 	DirAccess.make_dir_recursive_absolute(folder)
 
+	# project.godot — minimal Godot project file
+	var godot_proj := (
+		"config_version=5\n\n" +
+		"[application]\n\n" +
+		"config/name=%s\n" +
+		"config/features=PackedStringArray(\"4.4\", \"Forward Plus\")\n" +
+		"config/icon=\"res://icon.svg\"\n"
+	) % proj_name.json_escape().replace('"', '"')
+	# Use a simple ini-style name (no quotes needed for plain names)
+	godot_proj = (
+		"config_version=5\n\n" +
+		"[application]\n\n" +
+		"config/name=\"%s\"\n" +
+		"config/features=PackedStringArray(\"4.4\", \"Forward Plus\")\n"
+	) % proj_name.replace('"', "'")
+	var err := _write(folder.path_join("project.godot"), godot_proj)
+	if err != OK: return err
+
 	# game.agp
 	var agp := 'Project "%s" {\n    start_room = "%s"\n}\n' % [proj_name, room_name]
-	var err := _write(folder.path_join("game.agp"), agp)
+	err = _write(folder.path_join("game.agp"), agp)
 	if err != OK: return err
 
 	# rooms/<room>/<room>.agroom
@@ -124,8 +142,6 @@ func _write_scaffold(folder: String, proj_name: String, room_name: String) -> Er
 		'Room "%s" {\n' +
 		'    initial_camera = "main"\n\n' +
 		'    Camera "main" {\n' +
-		'        position = (4.79, 5.52, 5.60)\n' +
-		'        look_at  = (0.0, 0.0, 0.0)\n' +
 		'    }\n\n' +
 		'    WalkableSurface "floor" {\n' +
 		'        size   = (10.0, 10.0)\n' +
@@ -152,12 +168,19 @@ func _write_scaffold(folder: String, proj_name: String, room_name: String) -> Er
 	err = _write(char_dir.path_join("player.agchar"), agchar)
 	if err != OK: return err
 
-	# Run ag build in the new project directory
+	# Run ag build inside the new project directory via a shell so the cwd is correct.
 	_status_label.text = "Running ag build…"
 	var ag_bin := _find_ag_binary()
-	if not ag_bin.is_empty():
+	if ag_bin.is_empty():
+		push_warning("[AGS] project_wizard: ag binary not found, skipping build")
+	else:
 		var output: Array = []
-		OS.execute(ag_bin, ["build"], output, true)
+		var exit_code := OS.execute("bash", ["-c", "cd '%s' && '%s' build --force" % [folder, ag_bin]], output, true)
+		if exit_code != 0:
+			push_warning("[AGS] project_wizard: ag build exited %d\n%s" % [exit_code, "\n".join(output)])
+
+	# Open the new project in a fresh Godot editor instance.
+	OS.create_process(OS.get_executable_path(), ["--editor", "--path", folder])
 
 	return OK
 
