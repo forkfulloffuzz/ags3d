@@ -56,7 +56,7 @@ func TestCamera(t *testing.T) {
 	src := `Room "r" {
 		Camera "main" {
 			position = (4.79, 5.52, 5.60)
-			look_at  = (0.0, 0.0, 0.0)
+			look_at  = (1.0, 2.0, 3.0)
 		}
 	}`
 	rd := mustParse(t, src)
@@ -70,8 +70,39 @@ func TestCamera(t *testing.T) {
 	if c.Position.X != 4.79 || c.Position.Y != 5.52 || c.Position.Z != 5.60 {
 		t.Errorf("Camera.Position = %+v", c.Position)
 	}
-	if c.LookAt != (room.Vec3{}) {
-		t.Errorf("Camera.LookAt = %+v, want zero", c.LookAt)
+	if c.LookAt.X != 1.0 || c.LookAt.Y != 2.0 || c.LookAt.Z != 3.0 {
+		t.Errorf("Camera.LookAt = %+v, want (1,2,3)", c.LookAt)
+	}
+	if !c.HasLookAt {
+		t.Error("Camera.HasLookAt = false, want true when look_at is specified")
+	}
+}
+
+func TestCameraNoLookAt(t *testing.T) {
+	src := `Room "r" {
+		Camera "main" {
+			position = (4.0, 5.0, 6.0)
+		}
+	}`
+	rd := mustParse(t, src)
+	c := rd.Cameras[0]
+	if !c.HasPosition {
+		t.Error("Camera.HasPosition = false, want true when position is specified")
+	}
+	if c.HasLookAt {
+		t.Error("Camera.HasLookAt = true, want false when look_at is omitted")
+	}
+}
+
+func TestCameraEmpty(t *testing.T) {
+	src := `Room "r" { Camera "main" {} }`
+	rd := mustParse(t, src)
+	c := rd.Cameras[0]
+	if c.HasPosition {
+		t.Error("Camera.HasPosition = true, want false for empty Camera block")
+	}
+	if c.HasLookAt {
+		t.Error("Camera.HasLookAt = true, want false for empty Camera block")
 	}
 }
 

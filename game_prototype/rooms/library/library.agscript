@@ -2,4 +2,5 @@
 
 function room_Enter() {
     player.FaceTo("desk");
+    player.WalkTo("door_left");
 }

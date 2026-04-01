@@ -19,11 +19,6 @@ size = Vector3(1, 2, 3)
 [sub_resource type="BoxShape3D" id="BoxShape3D_hs_bookshelf"]
 size = Vector3(1.5, 2, 0.3)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_trigger_exit"]
-size = Vector3(2, 2, 1)
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player_npc"]
-
 [node name="Start" type="AGSRoom" unique_id=1073019150]
 room_name = "start"
 initial_camera = "main"
@@ -64,22 +59,7 @@ hotspot_name = "bookshelf"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Bookshelf" unique_id=1771463499]
 shape = SubResource("BoxShape3D_hs_bookshelf")
 
-[node name="ExitZone" type="AGSTriggerRegion" parent="." unique_id=3721849012]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
-region_name = "exit_zone"
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ExitZone" unique_id=2918374650]
-shape = SubResource("BoxShape3D_trigger_exit")
-
-[node name="PlayerNpc" type="AGSCharacter" parent="." unique_id=4012938471]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
-character_name = "player_npc"
-move_speed = 3.0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="PlayerNpc" unique_id=3845612907]
-shape = SubResource("CapsuleShape3D_player_npc")
-
 [node name="Main" type="AGSCamera" parent="." unique_id=1521792339]
-transform = Transform3D(0.7599267229460512, 0, -0.650008750519926, -0.38969574374603144, 0.8003568968396897, -0.4555941889306422, 0.5202389864847721, 0.5995238424626183, 0.6082125938026562, 4.79, 5.52, 5.6)
+transform = Transform3D(1, 0, 0, 0, 0.566529, 0.824042, 0, -0.824042, 0.566529, 0, 8, 5.5)
 camera_name = "main"
 

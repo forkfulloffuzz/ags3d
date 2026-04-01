@@ -64,9 +64,14 @@ func _on_navigation_finished() -> void:
 	emit_signal("walk_completed")
 
 func _find_parent_room() -> AGSRoom:
+	# Walk parent chain — works when character is a child of an AGSRoom.
 	var parent := get_parent()
 	while parent:
 		if parent is AGSRoom:
 			return parent as AGSRoom
 		parent = parent.get_parent()
+	# Fallback for AutoLoad characters: rooms are direct children of root.
+	for child in get_tree().get_root().get_children():
+		if child is AGSRoom:
+			return child as AGSRoom
 	return null

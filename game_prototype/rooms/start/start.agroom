@@ -2,8 +2,6 @@ Room "start" {
     initial_camera = "main"
 
     Camera "main" {
-        position = (4.79, 5.52, 5.60)
-        look_at  = (0.0, 0.0, 0.0)
     }
 
     Point "door_left" {

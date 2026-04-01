@@ -207,7 +207,74 @@ func TestCamera(t *testing.T) {
 	assertContains(t, out, `[node name="Main" type="AGSCamera" parent="."`)
 	assertContains(t, out, `camera_name = "main"`)
 	// Camera at (0,0,5) looking at origin: right=(1,0,0), up=(0,1,0), back=(0,0,1)
+	// Row-major format: (right.x,up.x,back.x, right.y,up.y,back.y, right.z,up.z,back.z, ox,oy,oz)
+	// = (1,0,0, 0,1,0, 0,0,1, 0,0,5) — identity basis so rows equal columns here.
 	assertContains(t, out, `Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)`)
+}
+
+func TestCameraRowMajorNonTrivial(t *testing.T) {
+	// Camera at (0,8,5.5) looking at origin.
+	// back = (0,8,5.5) normalised ≈ (0, 0.8240, 0.5665)
+	// right = cross(up,back) normalised = (1, 0, 0)
+	// up    = cross(back,right) = (0, 0.5665, -0.8240)
+	//
+	// Row-major output (what Godot expects):
+	//   row0 = (right.x, up.x, back.x) = (1,        0,       0      )
+	//   row1 = (right.y, up.y, back.y) = (0,        0.5665,  0.8240 )
+	//   row2 = (right.z, up.z, back.z) = (0,       -0.8240,  0.5665 )
+	//
+	// Basis.z col = (row0[2],row1[2],row2[2]) = (0, 0.8240, 0.5665) = back → camera looks down ✓
+	// Column-major (WRONG) would give back.y and back.z swapped sign.
+	src := `Room "r" {
+		WalkableSurface "floor" { size = (10.0, 10.0) }
+		Camera "main" { position = (0.0, 8.0, 5.5)  look_at = (0.0, 0.0, 0.0) }
+	}`
+	out := generate(t, src)
+	// Row-major correct:   row1 = (right.y, up.y, back.y) = (0, 0.5665,  0.8240) → "0.566529, 0.824042"
+	// Column-major wrong:  row1 would be (right.y, right.z, ...)-equivalent → "0.566529, -0.824042"
+	// The 5th and 6th args are row1[1]=up.y and row1[2]=back.y — both must be positive.
+	assertContains(t, out, "0.566529, 0.824042")
+	assertNotContains(t, out, "0.566529, -0.824042")
+}
+
+func TestCameraAutoPosition(t *testing.T) {
+	// Camera with no position: auto-computed from 10x10 floor.
+	// pos = (0, 10*0.8, 0+10*0.55) = (0, 8, 5.5)
+	src := `Room "r" {
+		WalkableSurface "floor" { size = (10.0, 10.0) }
+		Camera "main" {}
+	}`
+	out := generate(t, src)
+	assertContains(t, out, `[node name="Main" type="AGSCamera"`)
+	// Position (0, 8, 5.5) must appear in the transform.
+	assertContains(t, out, "0, 8, 5.5)")
+}
+
+func TestCameraExplicitPositionOverridesAuto(t *testing.T) {
+	// Explicit position must be used as-is.
+	src := `Room "r" {
+		WalkableSurface "floor" { size = (10.0, 10.0) }
+		Camera "main" { position = (1.0, 2.0, 3.0) }
+	}`
+	out := generate(t, src)
+	assertContains(t, out, "1, 2, 3)")
+}
+
+func TestCameraAutoLookAtUsesFloorCenter(t *testing.T) {
+	// When look_at is omitted the camera looks at the floor center (Y=0).
+	// Camera at explicit (0,10,0) with no look_at: back vector should point
+	// straight down, same as explicit look_at=(0,0,0).
+	src := `Room "r" {
+		WalkableSurface "floor" { size = (10.0, 10.0) }
+		Camera "main" { position = (0.0, 10.0, 0.0) }
+	}`
+	srcExplicit := `Room "r" {
+		WalkableSurface "floor" { size = (10.0, 10.0) }
+		Camera "main" { position = (0.0, 10.0, 0.0)  look_at = (0.0, 0.0, 0.0) }
+	}`
+	if generate(t, src) != generate(t, srcExplicit) {
+		t.Error("auto look_at with floor center should match explicit look_at=(0,0,0)")
+	}
 }
 
 func TestCameraLookAtNonTrivial(t *testing.T) {

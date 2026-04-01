@@ -121,9 +121,11 @@ func run_build() -> void:
 # ---------------------------------------------------------------------------
 
 func _find_ag_binary() -> String:
-	# Look for ag binary relative to the repo root (two levels above res://)
+	# res:// resolves to e.g. "/…/game_prototype/" — get_base_dir() strips the
+	# trailing slash giving "/…/game_prototype", so we need a second get_base_dir()
+	# call to ascend to the actual repo root.
 	var res_path: String = ProjectSettings.globalize_path("res://")
-	var repo_root: String = res_path.get_base_dir()
+	var repo_root: String = res_path.get_base_dir().get_base_dir()
 	var candidates := [
 		repo_root.path_join("bin/ag"),
 		repo_root.path_join("tools/ag/ag"),

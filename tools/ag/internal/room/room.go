@@ -71,9 +71,11 @@ type RoomData struct {
 
 // CameraData holds the parsed data for a Camera block.
 type CameraData struct {
-	Name     string
-	Position Vec3
-	LookAt   Vec3
+	Name        string
+	Position    Vec3 // explicit position; only valid when HasPosition is true
+	LookAt      Vec3 // explicit look_at; only valid when HasLookAt is true
+	HasPosition bool // true when position was specified in the .agroom file
+	HasLookAt   bool // true when look_at was specified in the .agroom file
 }
 
 // PointData holds the parsed data for a Point (named waypoint) block.
@@ -472,6 +474,7 @@ func (p *agparser) parseCamera(name string) (CameraData, error) {
 			if cd.Position, err = asVec3(fs, "position"); err != nil {
 				return cd, p.errorf("%v", err)
 			}
+			cd.HasPosition = true
 		case "look_at":
 			fs, err := p.tuple()
 			if err != nil {
@@ -480,6 +483,7 @@ func (p *agparser) parseCamera(name string) (CameraData, error) {
 			if cd.LookAt, err = asVec3(fs, "look_at"); err != nil {
 				return cd, p.errorf("%v", err)
 			}
+			cd.HasLookAt = true
 		default:
 			return cd, p.errorf("unknown Camera property %q", key)
 		}

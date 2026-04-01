@@ -2,8 +2,6 @@ Room "library" {
     initial_camera = "main"
 
     Camera "main" {
-        position = (6.0, 7.0, 6.0)
-        look_at  = (0.0, 0.0, 0.0)
     }
 
     WalkableSurface "floor" {

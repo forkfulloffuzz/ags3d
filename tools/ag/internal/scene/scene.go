@@ -174,9 +174,18 @@ func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
 	}
 
 	// Cameras (last, after gameplay nodes)
+	autoPos, autoLookAt := autoCamera(rd)
 	for _, cam := range rd.Cameras {
 		nodeName := toPascalCase(cam.Name)
-		tf := lookAtTransform(cam.Position, cam.LookAt)
+		pos := cam.Position
+		if !cam.HasPosition {
+			pos = room.Vec3{X: autoPos.x, Y: autoPos.y, Z: autoPos.z}
+		}
+		lookAt := cam.LookAt
+		if !cam.HasLookAt {
+			lookAt = room.Vec3{X: autoLookAt.x, Y: autoLookAt.y, Z: autoLookAt.z}
+		}
+		tf := lookAtTransform(pos, lookAt)
 		g.node(nodeName, "AGSCamera", ".", func() {
 			g.prop("transform", tf)
 			g.prop("camera_name", strLit(cam.Name))
@@ -273,7 +282,10 @@ func subResRef(id string) string {
 }
 
 // fmtF formats a float for .tscn output: integers as integers, others as %g.
+// Rounds to 6 decimal places first to eliminate floating-point noise from
+// computed values (e.g. 11.200000000000001 → 11.2).
 func fmtF(f float64) string {
+	f = math.Round(f*1e6) / 1e6
 	if f == math.Trunc(f) && math.Abs(f) < 1e15 {
 		return fmt.Sprintf("%d", int64(f))
 	}
@@ -314,6 +326,32 @@ func cross(a, b vec3) vec3 {
 	}
 }
 
+// autoCamera derives a sensible default camera position and look-at from the
+// room's walkable floor. The camera is placed above and slightly in front of
+// the floor center so the whole floor is visible at a gentle downward angle.
+//
+//	position  = floor_center + (0, maxSize*0.8, maxSize*0.55)
+//	look_at   = floor_center (at Y=0)
+//
+// Falls back to a 10-unit default when no WalkableSurface is defined.
+func autoCamera(rd *room.RoomData) (pos vec3, lookAt vec3) {
+	var cx, cz float64
+	maxSize := 10.0
+	if len(rd.WalkableSurfaces) > 0 {
+		ws := rd.WalkableSurfaces[0]
+		cx = ws.Offset.X
+		cz = ws.Offset.Z
+		if ws.Size.X > ws.Size.Z {
+			maxSize = ws.Size.X
+		} else {
+			maxSize = ws.Size.Z
+		}
+	}
+	lookAt = vec3{cx, 0, cz}
+	pos = vec3{cx, maxSize * 0.8, cz + maxSize*0.55}
+	return
+}
+
 // lookAtTransform returns a Transform3D string for a camera at eye looking at target.
 // The camera's -Z axis points toward target; world up is (0, 1, 0).
 func lookAtTransform(pos, target room.Vec3) string {
@@ -332,12 +370,15 @@ func lookAtTransform(pos, target room.Vec3) string {
 	right := cross(worldUp, back).normalize()
 	up := cross(back, right)
 
-	// Godot Transform3D: (basis_col0.xyz, basis_col1.xyz, basis_col2.xyz, origin.xyz)
+	// Godot Transform3D text format stores the basis ROW by ROW:
+	//   Basis(xx,xy,xz, yx,yy,yz, zx,zy,zz) → rows[0]=(xx,xy,xz), rows[1]=(yx,...), rows[2]=(zx,...)
+	// Each column of the stored matrix is an axis vector:
 	//   col0 = right (X), col1 = up (Y), col2 = back (Z)
+	// So the 9 values are written as (right.x, up.x, back.x,  right.y, up.y, back.y,  right.z, up.z, back.z).
 	return fmt.Sprintf("Transform3D(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-		fmtF(right.x), fmtF(right.y), fmtF(right.z),
-		fmtF(up.x), fmtF(up.y), fmtF(up.z),
-		fmtF(back.x), fmtF(back.y), fmtF(back.z),
+		fmtF(right.x), fmtF(up.x), fmtF(back.x),
+		fmtF(right.y), fmtF(up.y), fmtF(back.y),
+		fmtF(right.z), fmtF(up.z), fmtF(back.z),
 		fmtF(pos.X), fmtF(pos.Y), fmtF(pos.Z),
 	)
 }
