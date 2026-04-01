@@ -26,6 +26,7 @@ var _room_editor: Control
 var _char_editor: Control
 var _script_editor: Control
 var _play_btn: Button
+var _menu_btn: MenuButton
 var _wizard: ConfirmationDialog
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
@@ -105,13 +106,17 @@ func _enter_tree() -> void:
 	_script_editor = se
 	get_editor_interface().get_editor_main_screen().add_child(_script_editor)
 
-	# AG Studio menu
-	var menu := PopupMenu.new()
+	# AG Studio menu button — placed in toolbar so it stays visible even when
+	# the native MenuBar is hidden by the whitelist.
+	_menu_btn = MenuButton.new()
+	_menu_btn.text = "AG Studio"
+	_menu_btn.flat = false
+	var menu := _menu_btn.get_popup()
 	menu.add_item("New Project…", 0)
 	menu.add_separator()
 	menu.add_item("Build", 1)
 	menu.id_pressed.connect(_on_menu_item)
-	add_tool_submenu_item("AG Studio", menu)
+	add_control_to_container(CONTAINER_TOOLBAR, _menu_btn)
 
 	# Play button in the top toolbar
 	_play_btn = Button.new()
@@ -147,7 +152,10 @@ func _exit_tree() -> void:
 		_project_panel.queue_free()
 		_project_panel = null
 
-	remove_tool_menu_item("AG Studio")
+	if _menu_btn:
+		remove_control_from_container(CONTAINER_TOOLBAR, _menu_btn)
+		_menu_btn.queue_free()
+		_menu_btn = null
 
 	if _wizard:
 		_wizard.queue_free()
