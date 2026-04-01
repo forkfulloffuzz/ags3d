@@ -27,6 +27,7 @@ var _char_editor: Control
 var _script_editor: Control
 var _play_btn: Button
 var _menu_btn: MenuButton
+var _settings_dialog: ConfirmationDialog
 var _wizard: ConfirmationDialog
 var _hidden_nodes: Array[Node] = []
 var _gizmo_plugins: Array[EditorNode3DGizmoPlugin] = []
@@ -115,6 +116,8 @@ func _enter_tree() -> void:
 	menu.add_item("New Project…", 0)
 	menu.add_separator()
 	menu.add_item("Build", 1)
+	menu.add_separator()
+	menu.add_item("Settings…", 2)
 	menu.id_pressed.connect(_on_menu_item)
 	add_control_to_container(CONTAINER_TOOLBAR, _menu_btn)
 
@@ -160,6 +163,10 @@ func _exit_tree() -> void:
 	if _wizard:
 		_wizard.queue_free()
 		_wizard = null
+
+	if _settings_dialog:
+		_settings_dialog.queue_free()
+		_settings_dialog = null
 
 	if _play_btn:
 		remove_control_from_container(CONTAINER_TOOLBAR, _play_btn)
@@ -449,6 +456,14 @@ func _on_menu_item(id: int) -> void:
 			if _build_log:
 				make_bottom_panel_item_visible(_build_log)
 				(_build_log as Node).call("run_build")
+		2:  # Settings
+			if not _settings_dialog or not is_instance_valid(_settings_dialog):
+				var sd: ConfirmationDialog = preload("res://addons/ag_studio/project_settings_dialog.gd").new()
+				sd.setup(self)
+				get_editor_interface().get_base_control().add_child(sd)
+				_settings_dialog = sd
+			(_settings_dialog as Node).call("load_settings")
+			_settings_dialog.popup_centered()
 
 
 func _on_play_pressed() -> void:
