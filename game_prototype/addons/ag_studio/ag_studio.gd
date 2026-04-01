@@ -322,20 +322,25 @@ func _walk_for_menus(node: Node) -> void:
 
 
 func _apply_play_toolbar_whitelist(base: Control) -> void:
-	# EditorRunBar is the play/stop/remote bar — find by class name.
 	var run_bar := _find_by_class(base, "EditorRunBar")
+	print("[AGS/toolbar] run_bar found: ", run_bar != null)
 	if run_bar:
 		_hide_node(run_bar)
 
-	# The renderer OptionButton lives in a sibling HBoxContainer of EditorRunBar
-	# inside EditorTitleBar. Hide sibling containers, but skip the one that
-	# holds our own toolbar controls (MenuButton + Play button).
 	if run_bar:
 		var title_bar := run_bar.get_parent()
+		print("[AGS/toolbar] title_bar: ", title_bar)
+		print("[AGS/toolbar] _play_btn parent: ", _play_btn.get_parent() if _play_btn else "null")
+		print("[AGS/toolbar] _menu_btn parent: ", _menu_btn.get_parent() if _menu_btn else "null")
 		if title_bar:
 			for child in title_bar.get_children():
-				if child != run_bar and (child is HBoxContainer or child is VBoxContainer):
-					if _container_has_our_controls(child):
+				var is_box := child is HBoxContainer or child is VBoxContainer
+				var has_ours := _container_has_our_controls(child)
+				print("[AGS/toolbar]   child=%s class=%s is_box=%s has_ours=%s" % [
+					child.name, child.get_class(), str(is_box), str(has_ours)])
+				if child != run_bar and is_box:
+					if has_ours:
+						print("[AGS/toolbar]   → skipping (has our controls)")
 						continue
 					_hide_node(child)
 
