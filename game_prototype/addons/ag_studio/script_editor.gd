@@ -94,7 +94,7 @@ func load_script(abs_path: String) -> void:
 
 	var text := _read_file(abs_path)
 	print("[AGS/ScriptEditor] read %d chars" % text.length())
-	_open_files[abs_path] = { "text": text, "modified": false }
+	_open_files[abs_path] = {"text": text, "modified": false}
 	_file_order.append(abs_path)
 
 	var tab_idx := _tab_bar.get_tab_count()
@@ -149,7 +149,7 @@ func _load_into_editor(abs_path: String) -> void:
 
 func _apply_text_deferred(abs_path: String, text: String) -> void:
 	if _abs_path != abs_path:
-		return  # tab was switched again before we ran
+		return # tab was switched again before we ran
 	print("[AGS/ScriptEditor] _apply_text_deferred: code_edit.size=%s panel.size=%s" % [
 		str(_code_edit.size), str(size)])
 	_code_edit.text = text
@@ -268,7 +268,7 @@ func _make_highlighter() -> CodeHighlighter:
 	var h := CodeHighlighter.new()
 
 	# Keywords
-	var kw_color := Color(0.56, 0.80, 0.98)  # blue
+	var kw_color := Color(0.56, 0.80, 0.98) # blue
 	for kw in ["function", "if", "else", "while", "for", "do", "return",
 			"switch", "case", "default", "break", "continue",
 			"int", "float", "bool", "String", "void", "var",
@@ -276,7 +276,7 @@ func _make_highlighter() -> CodeHighlighter:
 		h.add_keyword_color(kw, kw_color)
 
 	# Built-in functions (non-blocking)
-	var builtin_color := Color(0.80, 0.63, 0.98)  # purple
+	var builtin_color := Color(0.80, 0.63, 0.98) # purple
 	for fn in ["AddInventory", "LoseInventory", "HasInventory", "InventoryCount",
 			"GoToRoom", "SetPlayerControl", "HideRoomItem", "ShowRoomItem",
 			"PlayMusic", "StopMusic", "PlaySound", "SetStatusText",
@@ -289,7 +289,7 @@ func _make_highlighter() -> CodeHighlighter:
 		h.add_keyword_color(fn, blocking_color)
 
 	# Common objects
-	var obj_color := Color(0.60, 0.95, 0.70)  # green
+	var obj_color := Color(0.60, 0.95, 0.70) # green
 	for obj in ["player", "game", "global"]:
 		h.add_keyword_color(obj, obj_color)
 
@@ -309,8 +309,8 @@ func _make_highlighter() -> CodeHighlighter:
 	h.symbol_color = Color(0.85, 0.85, 0.85)
 
 	# Function calls and definitions — default is black
-	h.function_color            = Color(0.85, 0.85, 0.70)  # warm white
-	h.function_definition_color = Color(0.56, 0.80, 0.98)  # blue, same as keywords
+	h.function_color            = Color(0.70, 0.80, 0.95)  # soft blue for calls
+	h.function_definition_color = Color(0.56, 0.80, 0.98)  # bright blue for definitions
 
 	# Member variable after dot
 	h.member_variable_color = Color(0.90, 0.90, 0.90)
