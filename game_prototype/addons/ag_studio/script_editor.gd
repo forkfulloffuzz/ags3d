@@ -306,7 +306,14 @@ func _make_highlighter() -> CodeHighlighter:
 	# Numbers
 	h.number_color = Color(0.80, 0.90, 0.60)
 
-	# Member access dot
+	# Symbols: . ( ) { } ; , etc. — default is black, must set explicitly
+	h.symbol_color = Color(0.85, 0.85, 0.85)
+
+	# Function calls and definitions — default is black
+	h.function_color            = Color(0.85, 0.85, 0.70)  # warm white
+	h.function_definition_color = Color(0.56, 0.80, 0.98)  # blue, same as keywords
+
+	# Member variable after dot
 	h.member_variable_color = Color(0.90, 0.90, 0.90)
 
 	return h
