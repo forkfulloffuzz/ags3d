@@ -173,7 +173,8 @@ func (p *printer) emitRegionDispatcher(f *parser.File) {
 	p.linef(`print("[AGS/RoomScript] trigger region found: ", child.name, " region_name=", child.get("region_name"))`)
 	p.pop()
 	p.pop()
-	p.line("super._ready()")
+	// AGSRoom uses NOTIFICATION_READY in C++, not a virtual _ready —
+	// super._ready() would fail with "hasn't been defined".
 	p.pop()
 	p.blank()
 	p.line("func region_walked_into(region_name: String) -> void:")
