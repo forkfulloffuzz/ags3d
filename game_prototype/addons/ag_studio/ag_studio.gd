@@ -329,20 +329,16 @@ func _apply_play_toolbar_whitelist(base: Control) -> void:
 
 	if run_bar:
 		var title_bar := run_bar.get_parent()
-		print("[AGS/toolbar] title_bar: ", title_bar)
-		print("[AGS/toolbar] _play_btn parent: ", _play_btn.get_parent() if _play_btn else "null")
-		print("[AGS/toolbar] _menu_btn parent: ", _menu_btn.get_parent() if _menu_btn else "null")
 		if title_bar:
 			for child in title_bar.get_children():
 				var is_box := child is HBoxContainer or child is VBoxContainer
-				var has_ours := _container_has_our_controls(child)
-				print("[AGS/toolbar]   child=%s class=%s is_box=%s has_ours=%s" % [
-					child.name, child.get_class(), str(is_box), str(has_ours)])
+				print("[AGS/toolbar]   child=%s class=%s is_box=%s" % [
+					child.name, child.get_class(), str(is_box)])
 				if child != run_bar and is_box:
-					if has_ours:
-						print("[AGS/toolbar]   → skipping (has our controls)")
-						continue
 					_hide_node(child)
+
+	# Log our controls' state after hiding so we can see if layout broke them.
+	call_deferred("_log_toolbar_state")
 
 
 func _container_has_our_controls(container: Node) -> bool:
@@ -350,6 +346,15 @@ func _container_has_our_controls(container: Node) -> bool:
 		if ctrl and is_instance_valid(ctrl) and container.is_ancestor_of(ctrl):
 			return true
 	return false
+
+
+func _log_toolbar_state() -> void:
+	if _play_btn:
+		print("[AGS/toolbar] play_btn: visible=%s size=%s global_pos=%s" % [
+			str(_play_btn.visible), str(_play_btn.size), str(_play_btn.global_position)])
+	if _menu_btn:
+		print("[AGS/toolbar] menu_btn: visible=%s size=%s global_pos=%s" % [
+			str(_menu_btn.visible), str(_menu_btn.size), str(_menu_btn.global_position)])
 
 
 func _log_visible_tabs(node: Node) -> void:
