@@ -7,6 +7,7 @@
 //  3. .agroom: initial_camera names a Camera block defined in the same room
 //  4. .agroom: each SpawnPoint.character matches a known .agchar name
 //  5. .agscript: WalkTo/FaceTo point-name args exist in the paired .agroom
+//  6. .agscript: AddInventory/LoseInventory/HasInventory item-name args resolve to a known .agitem
 package validate
 
 import (
@@ -16,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/ags3d/ag/internal/char"
+	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
 	"github.com/ags3d/ag/internal/room"
@@ -67,6 +69,28 @@ func ValidateProject(root string, manifest *project.Manifest) ([]Issue, error) {
 	files, err := project.Scan(root)
 	if err != nil {
 		return issues, err
+	}
+
+	// Build a set of known item names from all .agitem files.
+	itemNames := make(map[string]bool)
+	for _, f := range files {
+		if f.Ext != ".agitem" {
+			continue
+		}
+		data, err := os.ReadFile(f.Path)
+		if err != nil {
+			continue
+		}
+		it, parseErr := item.ParseItem(f.Rel, string(data))
+		if parseErr != nil {
+			issues = append(issues, Issue{
+				File:     f.Rel,
+				Severity: "error",
+				Message:  parseErr.Error(),
+			})
+			continue
+		}
+		itemNames[it.Name] = true
 	}
 
 	// Build a set of known character names from all .agchar files.
@@ -143,24 +167,25 @@ func ValidateProject(root string, manifest *project.Manifest) ([]Issue, error) {
 		}
 	}
 
-	// --- Check 5: .agscript point-name cross-references ---
+	// --- Check 5 & 6: .agscript cross-references ---
 	for _, f := range files {
 		if f.Ext != ".agscript" {
-			continue
-		}
-		// Find the paired .agroom: same directory, same stem.
-		pairedRoom := pairedAgroom(f.Rel)
-		rd, ok := roomData[pairedRoom]
-		if !ok {
-			// No paired room (global script, or room not parsed) — skip.
 			continue
 		}
 		data, err := os.ReadFile(f.Path)
 		if err != nil {
 			continue
 		}
-		scriptIssues := checkScriptPointRefs(f.Rel, string(data), rd)
-		issues = append(issues, scriptIssues...)
+		src := string(data)
+
+		// Check 5: WalkTo/FaceTo point names — only for scripts with a paired room.
+		pairedRoom := pairedAgroom(f.Rel)
+		if rd, ok := roomData[pairedRoom]; ok {
+			issues = append(issues, checkScriptPointRefs(f.Rel, src, rd)...)
+		}
+
+		// Check 6: AddInventory/LoseInventory/HasInventory item names.
+		issues = append(issues, checkScriptItemRefs(f.Rel, src, itemNames)...)
 	}
 
 	return issues, nil
@@ -203,6 +228,54 @@ func checkScriptPointRefs(rel, src string, rd *room.RoomData) []Issue {
 					Line:     tok.Line,
 					Severity: "error",
 					Message:  fmt.Sprintf("%s(%q): point %q is not defined in the room", method, name, name),
+				})
+			}
+		})
+	}
+	return issues
+}
+
+// inventoryBuiltins are the global inventory calls whose first string arg names an item.
+var inventoryBuiltins = map[string]bool{
+	"AddInventory":  true,
+	"LoseInventory": true,
+	"HasInventory":  true,
+}
+
+// checkScriptItemRefs parses src as an .agscript and returns Issues for any
+// AddInventory/LoseInventory/HasInventory call whose first string argument
+// does not name a known item.
+func checkScriptItemRefs(rel, src string, itemNames map[string]bool) []Issue {
+	s := scanner.New(rel, src)
+	p := parser.New(s)
+	f, _ := p.Parse(rel)
+
+	var issues []Issue
+	for _, decl := range f.Decls {
+		walkDecl(decl, func(call *parser.CallExpr) {
+			// These are bare function calls, not method calls.
+			ident, ok := call.Callee.(*parser.Identifier)
+			if !ok {
+				return
+			}
+			if !inventoryBuiltins[ident.Name] {
+				return
+			}
+			if len(call.Args) == 0 {
+				return
+			}
+			lit, ok := call.Args[0].(*parser.Literal)
+			if !ok || lit.Kind != "string" {
+				return
+			}
+			name := lit.Value
+			if !itemNames[name] {
+				tok := call.ExprPos()
+				issues = append(issues, Issue{
+					File:     rel,
+					Line:     tok.Line,
+					Severity: "error",
+					Message:  fmt.Sprintf("%s(%q): item %q is not defined (no matching .agitem found)", ident.Name, name, name),
 				})
 			}
 		})

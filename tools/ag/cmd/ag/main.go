@@ -26,6 +26,7 @@ import (
 
 	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/emitter"
+	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
 	"github.com/ags3d/ag/internal/room"
@@ -178,7 +179,7 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var scripts, rooms, chars []project.SourceFile
+	var scripts, rooms, chars, items []project.SourceFile
 	for _, f := range all {
 		switch f.Ext {
 		case ".agscript":
@@ -187,6 +188,8 @@ func build(root string, force bool, trace bool) error {
 			rooms = append(rooms, f)
 		case ".agchar":
 			chars = append(chars, f)
+		case ".agitem":
+			items = append(items, f)
 		}
 	}
 
@@ -195,16 +198,17 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var changedScripts, changedRooms, changedChars []project.SourceFile
+	var changedScripts, changedRooms, changedChars, changedItems []project.SourceFile
 	if force {
-		changedScripts, changedRooms, changedChars = scripts, rooms, chars
+		changedScripts, changedRooms, changedChars, changedItems = scripts, rooms, chars, items
 	} else {
 		changedScripts = project.Changed(scripts, manifest)
 		changedRooms = project.Changed(rooms, manifest)
 		changedChars = project.Changed(chars, manifest)
+		changedItems = project.Changed(items, manifest)
 	}
 
-	total := len(changedScripts) + len(changedRooms) + len(changedChars)
+	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems)
 	if total == 0 {
 		fmt.Println("ag build: nothing to do (no changed source files)")
 		return nil
@@ -319,6 +323,22 @@ func build(root string, force bool, trace bool) error {
 		project.RecordMtimes([]project.SourceFile{src}, manifest)
 		outRel := strings.TrimSuffix(src.Rel, ".agchar") + ".tscn"
 		fmt.Printf("  %s → %s\n", src.Rel, outRel)
+	}
+
+	// --- .agitem (data-only, no scene output — parse to validate) ---
+	for _, src := range changedItems {
+		data, err := os.ReadFile(src.Path)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if _, err := item.ParseItem(src.Rel, string(data)); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			errs = append(errs, err)
+			continue
+		}
+		project.RecordMtimes([]project.SourceFile{src}, manifest)
+		fmt.Printf("  %s (item — data only, no scene generated)\n", src.Rel)
 	}
 
 	if saveErr := project.SaveManifest(root, manifest); saveErr != nil {

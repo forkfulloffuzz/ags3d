@@ -10,16 +10,16 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-E03** — Go: `.agchar` parser + `CharData` → `.tscn`
 - [x] **T-E04** — Go: wire scene gen into `ag build` pipeline
 - [x] **T-E18** — Integration: prototype migration
-- [ ] **T-E05** — Go: `ag validate` cross-reference checks (SpawnPoint→agchar, initial_camera, point names, game.agp paths)
+- [x] **T-E05** — Go: `ag validate` cross-reference checks (SpawnPoint→agchar, initial_camera, point names, game.agp paths)
 
 ## M10 — Game Systems (Batch 1)
 
-- [ ] **T-GS07** — Go: grammar + emitter — `global.NAME` read/write; `[globals]` section in `game.agp`
-- [ ] **T-GS08** — C++: `AGSRuntime` — global variable store (init from `game.agp`, get/set API, include in save data)
-- [ ] **T-GS09** — Go: grammar + emitter — `GoToRoom("room")` blocking call *(T-GS10 already done; this wires the emitter)*
-- [ ] **T-GS02** — C++: `AGSItem` node + `AGSRuntime.get_item()`
-- [ ] **T-GS03** — C++: `AGSRoomItem` node — `item_clicked` signal, room wiring
-- [ ] **T-GS04** — Go: `ag build` — `.agitem` parser + inventory/item validation in `ag validate`
+- [x] **T-GS07** — Go: grammar + emitter — `global.NAME` read/write; `[globals]` section in `game.agp`
+- [x] **T-GS08** — C++: `AGSRuntime` — global variable store (init from `game.agp`, get/set API, include in save data)
+- [x] **T-GS09** — Go: grammar + emitter — `GoToRoom("room")` blocking call *(T-GS10 already done; this wires the emitter)*
+- [x] **T-GS02** — C++: `AGSItem` node + `AGSRuntime.get_item()`
+- [x] **T-GS03** — C++: `AGSRoomItem` node — `item_clicked` signal, room wiring
+- [x] **T-GS04** — Go: `ag build` — `.agitem` parser + inventory/item validation in `ag validate`
 - [ ] **T-GS05** — Go: grammar + emitter — `Say`, `Think`, `AddInventory`, `LoseInventory`, `HasInventory`
 - [ ] **T-GS06** — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
 - [ ] **T-GS18** — GDScript/C++: cutscene support — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`

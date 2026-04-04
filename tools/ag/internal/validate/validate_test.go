@@ -350,3 +350,81 @@ func TestScriptLineNumberReported(t *testing.T) {
 		t.Errorf("expected line number in issue, got %v", issues)
 	}
 }
+
+// --------------------------------------------------------------------------
+// Check 6: .agscript inventory call cross-references
+// --------------------------------------------------------------------------
+
+func TestAddInventoryKnownItem(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"items/rusty_key.agitem": `Item "rusty_key" { display_name = "Rusty Key" }`,
+		"rooms/r/r.agscript":    `function room_Enter() { AddInventory("rusty_key"); }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "rusty_key") {
+			t.Errorf("unexpected item issue: %v", i)
+		}
+	}
+}
+
+func TestAddInventoryUnknownItem(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agscript": `function room_Enter() { AddInventory("magic_wand"); }`,
+		// No .agitem for magic_wand
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"magic_wand"`) {
+		t.Errorf("expected unknown item issue, got %v", issues)
+	}
+	if !hasIssue(issues, "error") {
+		t.Errorf("expected severity error")
+	}
+}
+
+func TestLoseInventoryUnknownItem(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agscript": `function room_Enter() { LoseInventory("ghost_item"); }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"ghost_item"`) {
+		t.Errorf("expected unknown item issue for LoseInventory, got %v", issues)
+	}
+}
+
+func TestHasInventoryUnknownItem(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agscript": `function room_Enter() { if (HasInventory("nope")) {} }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"nope"`) {
+		t.Errorf("expected unknown item issue for HasInventory, got %v", issues)
+	}
+}
+
+func TestInventoryCheckGlobalScript(t *testing.T) {
+	// Script with no paired room should still get inventory checks.
+	root, m := scaffold(t, map[string]string{
+		"scripts/global.agscript": `function on_start() { AddInventory("no_such_item"); }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"no_such_item"`) {
+		t.Errorf("expected inventory issue for global script, got %v", issues)
+	}
+}
+
+func TestBrokenAgitemReportedAsIssue(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"items/bad.agitem": `NOT VALID SYNTAX`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, "bad.agitem") {
+		t.Errorf("expected parse error issue for bad.agitem, got %v", issues)
+	}
+}
