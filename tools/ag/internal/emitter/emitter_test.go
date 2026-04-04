@@ -383,7 +383,7 @@ func TestEmitter_BlockingCall_GlobalBuiltin(t *testing.T) {
 }
 
 func TestEmitter_BlockingCall_AllBuiltins(t *testing.T) {
-	builtins := []string{"Wait", "WaitKey", "WaitMouse", "WaitInput", "FadeIn", "FadeOut", "Display", "DisplayMessage"}
+	builtins := []string{"Wait", "WaitKey", "WaitMouse", "WaitInput", "FadeIn", "FadeOut", "Display", "DisplayMessage", "GoToRoom"}
 	for _, b := range builtins {
 		t.Run(b, func(t *testing.T) {
 			got := emit(t, `function f() { `+b+`(1); }`)
@@ -516,4 +516,18 @@ func TestEmitter_GlobalBoolAssign(t *testing.T) {
 func TestEmitter_GlobalInCondition(t *testing.T) {
 	got := emit(t, `function f() { if (global.door_unlocked) { } }`)
 	assertContains(t, got, `AGSRuntime.get_global("door_unlocked")`)
+}
+
+// -------------------------------------------------------------------
+// T-GS09 — GoToRoom room transition
+// -------------------------------------------------------------------
+
+func TestEmitter_GoToRoom_MapsToLoadRoom(t *testing.T) {
+	got := emit(t, `function f() { GoToRoom("library"); }`)
+	assertContains(t, got, `AGSRuntime.load_room("library")`)
+}
+
+func TestEmitter_GoToRoom_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { GoToRoom("library"); }`)
+	assertContains(t, got, `await AGSRuntime.load_room("library")`)
 }

@@ -31,6 +31,7 @@ var blockingGlobalFuncs = map[string]bool{
 	"FadeOut":        true,
 	"Display":        true,
 	"DisplayMessage": true,
+	"GoToRoom":       true, // triggers room transition; awaits until new room is active
 }
 
 // blockingMethodNames is the set of method names (called on any object,
