@@ -2,4 +2,5 @@
 
 function room_Enter() {
     player.FaceTo("fountain_edge");
+	player.WalkTo("gate_entrance");
 }
