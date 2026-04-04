@@ -23,14 +23,17 @@ func navigate_to(target: Vector3) -> void:
 	_nav_agent.target_position = target
 
 func walk_to(point_name: String) -> void:
+	print("[AGS/AGSCharacter::walk_to] char=", character_name, " point=", point_name, " start")
 	var room := _find_parent_room()
 	if not room:
 		push_error("AGSCharacter.walk_to: no parent AGSRoom found")
 		return
 	await navigate_to(room.get_point(point_name))
 	await walk_completed
+	print("[AGS/AGSCharacter::walk_to] char=", character_name, " point=", point_name, " done")
 
 func face_to(point_name: String) -> void:
+	print("[AGS/AGSCharacter::face_to] char=", character_name, " point=", point_name, " start")
 	var room := _find_parent_room()
 	if not room:
 		push_error("AGSCharacter.face_to: no parent AGSRoom found")
@@ -45,18 +48,23 @@ func face_to(point_name: String) -> void:
 		tween.tween_property(self, "rotation:y", target_y, 0.3)
 		await tween.finished
 	emit_signal("face_completed")
+	print("[AGS/AGSCharacter::face_to] char=", character_name, " point=", point_name, " done")
 
 ## Display [param text] as dialogue above the character for [param duration] seconds,
 ## then emit say_completed. Awaiting this method blocks until the line finishes.
 func say(text: String, duration: float = 2.0) -> void:
+	print("[AGS/AGSCharacter::say] char=", character_name, " text=", text, " start")
 	say_text = text
 	await get_tree().create_timer(duration).timeout
 	say_text = ""
 	emit_signal("say_completed")
+	print("[AGS/AGSCharacter::say] char=", character_name, " done")
 
 ## Display [param text] as a thought (same mechanic as say, different visual intent).
 func think(text: String, duration: float = 2.0) -> void:
+	print("[AGS/AGSCharacter::think] char=", character_name, " text=", text, " start")
 	await say(text, duration)
+	print("[AGS/AGSCharacter::think] char=", character_name, " done")
 
 func _on_navigation_finished() -> void:
 	_navigating = false
