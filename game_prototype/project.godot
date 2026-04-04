@@ -20,4 +20,4 @@ player="*res://characters/player.tscn"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/ag_studio/plugin.cfg")
+enabled=PackedStringArray()
