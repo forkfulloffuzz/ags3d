@@ -16,24 +16,13 @@ void AGSWalkableSurface::_notification(int p_what) {
 }
 
 void AGSWalkableSurface::_apply_editor_overlay() {
-	// Hide visual mesh in the editor — the AGSWalkableSurface gizmo plugin
-	// draws the green wireframe box instead.
-	for (int i = 0; i < get_child_count(); i++) {
-		MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(get_child(i));
-		if (mi) {
-			mi->set_visible(false);
-		}
-	}
+	// Mesh children remain visible — the standard Godot editor has no gizmo
+	// plugin to replace them. M12 (Custom Editor) will add gizmo overlays.
 }
 
 void AGSWalkableSurface::_setup_navmesh() {
-	// Hide visual geometry at runtime — navmesh handles pathfinding.
-	for (int i = 0; i < get_child_count(); i++) {
-		MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(get_child(i));
-		if (mi) {
-			mi->set_visible(false);
-		}
-	}
+	// Visual mesh children remain visible — they show the walkable floor.
+	// Authors can hide them manually in the scene if they add real geometry.
 
 	// Add self to the group the NavigationMesh will source geometry from.
 	add_to_group("ags_walkable");

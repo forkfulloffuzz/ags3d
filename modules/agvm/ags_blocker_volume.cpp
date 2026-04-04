@@ -14,14 +14,8 @@ void AGSBlockerVolume::_notification(int p_what) {
 		if (Engine::get_singleton()->is_editor_hint()) {
 			_apply_editor_overlay();
 		} else {
-			// Hide any scene-authored mesh children at runtime; collision shape
-			// stays active so it carves itself out of any NavigationMesh bake.
-			for (int i = 0; i < get_child_count(); i++) {
-				MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(get_child(i));
-				if (mi) {
-					mi->set_visible(false);
-				}
-			}
+			// Mesh children remain visible at runtime. Collision shape stays
+			// active for physics/navmesh. Authors hide visuals manually if needed.
 		}
 	}
 }
