@@ -6,6 +6,7 @@
 
 class AGSCamera;
 class AGSCharacter;
+class AGSItem;
 class AGSRoom;
 
 // SourceMapEntry maps one GDScript line back to the originating AGS-spirit
@@ -30,6 +31,7 @@ class AGSRuntime : public Object {
 
 	HashMap<StringName, AGSCamera *> cameras;
 	HashMap<StringName, AGSCharacter *> characters;
+	HashMap<StringName, AGSItem *> items;
 	HashMap<StringName, AGSRoom *> rooms;
 
 	// Source maps keyed by the res:// path of the generated .gd file.
@@ -66,6 +68,11 @@ public:
 	void register_character(AGSCharacter *p_character);
 	void unregister_character(AGSCharacter *p_character);
 	AGSCharacter *get_character(const String &p_name) const;
+
+	// Item registry — called by AGSItem on NOTIFICATION_READY / EXIT_TREE.
+	void register_item(AGSItem *p_item);
+	void unregister_item(AGSItem *p_item);
+	AGSItem *get_item(const String &p_name) const;
 
 	// Room registry — called by AGSRoom on NOTIFICATION_READY / EXIT_TREE.
 	void register_room(AGSRoom *p_room);

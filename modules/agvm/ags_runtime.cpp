@@ -2,6 +2,7 @@
 
 #include "ags_camera.h"
 #include "ags_character.h"
+#include "ags_item.h"
 #include "ags_room.h"
 #include "ags_trace.h"
 #include "core/object/class_db.h"
@@ -45,6 +46,8 @@ void AGSRuntime::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("load_room", "room_name"), &AGSRuntime::load_room);
 
+	ClassDB::bind_method(D_METHOD("get_item", "name"), &AGSRuntime::get_item);
+
 	ClassDB::bind_method(D_METHOD("get_global", "name"), &AGSRuntime::get_global);
 	ClassDB::bind_method(D_METHOD("set_global", "name", "value"), &AGSRuntime::set_global);
 	ClassDB::bind_method(D_METHOD("init_globals", "defaults"), &AGSRuntime::init_globals);
@@ -84,6 +87,30 @@ void AGSRuntime::init_globals(const Dictionary &p_defaults) {
 			_globals[key] = p_defaults[key];
 		}
 	}
+}
+
+// --------------------------------------------------------------------------
+// Item registry
+// --------------------------------------------------------------------------
+
+void AGSRuntime::register_item(AGSItem *p_item) {
+	ERR_FAIL_NULL(p_item);
+	AGS_TRACE("AGSRuntime", "register_item", vformat("name=%s", p_item->get_item_name()))
+	items[p_item->get_item_name()] = p_item;
+}
+
+void AGSRuntime::unregister_item(AGSItem *p_item) {
+	ERR_FAIL_NULL(p_item);
+	items.erase(p_item->get_item_name());
+}
+
+AGSItem *AGSRuntime::get_item(const String &p_name) const {
+	AGS_TRACE("AGSRuntime", "get_item", vformat("name=%s", p_name))
+	const AGSItem *const *found = items.getptr(StringName(p_name));
+	if (!found) {
+		return nullptr;
+	}
+	return const_cast<AGSItem *>(*found);
 }
 
 // --------------------------------------------------------------------------

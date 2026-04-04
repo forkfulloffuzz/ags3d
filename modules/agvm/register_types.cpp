@@ -5,6 +5,7 @@
 #include "ags_camera_zone.h"
 #include "ags_character.h"
 #include "ags_spawn_point.h"
+#include "ags_item.h"
 #include "ags_hotspot.h"
 #include "ags_point.h"
 #include "ags_room.h"
@@ -38,6 +39,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(AGSCharacter);
 	GDREGISTER_CLASS(AGSRoom);
 	GDREGISTER_CLASS(AGSPoint);
+	GDREGISTER_CLASS(AGSItem);
 	GDREGISTER_CLASS(AGSHotspot);
 	GDREGISTER_CLASS(AGSTriggerRegion);
 	GDREGISTER_CLASS(AGSWalkableSurface);
