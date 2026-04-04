@@ -5,6 +5,7 @@
 
 class AGSHotspot;
 class AGSPoint;
+class AGSRoomItem;
 class AGSTriggerRegion;
 
 class AGSRoom : public Node3D {
@@ -15,6 +16,7 @@ class AGSRoom : public Node3D {
 	HashMap<StringName, AGSPoint *> points;
 	HashMap<StringName, AGSTriggerRegion *> regions;
 	HashMap<StringName, AGSHotspot *> hotspots;
+	HashMap<StringName, AGSRoomItem *> room_items;
 
 protected:
 	static void _bind_methods();
@@ -36,6 +38,9 @@ public:
 
 	void register_hotspot(AGSHotspot *p_hotspot);
 	void unregister_hotspot(AGSHotspot *p_hotspot);
+
+	void register_room_item(AGSRoomItem *p_item);
+	void unregister_room_item(AGSRoomItem *p_item);
 
 private:
 	// Bridge: drops the Node3D body from region_entered/region_exited and passes

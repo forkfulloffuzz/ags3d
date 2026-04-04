@@ -35,6 +35,7 @@ const SUITES: Array[String] = [
 	"m10_game_systems/test_load_room.gd",  # T-GS10
 	"m10_game_systems/test_globals.gd",    # T-GS08
 	"m10_game_systems/test_item.gd",       # T-GS02
+	"m10_game_systems/test_room_item.gd",  # T-GS03
 ]
 
 ## Async test suites — each test_* method is awaited so coroutine-based tests

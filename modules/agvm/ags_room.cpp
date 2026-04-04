@@ -5,6 +5,7 @@
 #include "scene/3d/node_3d.h"
 #include "ags_hotspot.h"
 #include "ags_point.h"
+#include "ags_room_item.h"
 #include "ags_runtime.h"
 #include "ags_trace.h"
 #include "ags_trigger_region.h"
@@ -22,6 +23,7 @@ void AGSRoom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point", "name"), &AGSRoom::get_point);
 
 	ADD_SIGNAL(MethodInfo("hotspot_clicked", PropertyInfo(Variant::STRING, "hotspot_name")));
+	ADD_SIGNAL(MethodInfo("item_clicked", PropertyInfo(Variant::STRING, "item_name")));
 	ADD_SIGNAL(MethodInfo("room_enter"));
 }
 
@@ -52,6 +54,9 @@ void AGSRoom::_notification(int p_what) {
 
 			if (has_method("hotspot_interact")) {
 				connect("hotspot_clicked", Callable(this, "hotspot_interact"));
+			}
+			if (has_method("item_interact")) {
+				connect("item_clicked", Callable(this, "item_interact"));
 			}
 
 			// Connect each child AGSTriggerRegion's signals to the room's handlers.
@@ -166,4 +171,14 @@ void AGSRoom::register_hotspot(AGSHotspot *p_hotspot) {
 void AGSRoom::unregister_hotspot(AGSHotspot *p_hotspot) {
 	ERR_FAIL_NULL(p_hotspot);
 	hotspots.erase(p_hotspot->get_hotspot_name());
+}
+
+void AGSRoom::register_room_item(AGSRoomItem *p_item) {
+	ERR_FAIL_NULL(p_item);
+	room_items[p_item->get_item_name()] = p_item;
+}
+
+void AGSRoom::unregister_room_item(AGSRoomItem *p_item) {
+	ERR_FAIL_NULL(p_item);
+	room_items.erase(p_item->get_item_name());
 }
