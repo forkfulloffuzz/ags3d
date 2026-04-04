@@ -712,10 +712,15 @@ var builtinGlobalFunctions = map[string]string{
 // builtinCharacterMethods maps AGS-spirit PascalCase character method names
 // to their GDScript snake_case counterparts on AGSCharacter.  Calls to these
 // are rewritten from  obj.Method(arg)  to
-//   AGSRuntime.get_character("obj").method("point_name")
+//   AGSRuntime.get_character("obj").method(args...)
 var builtinCharacterMethods = map[string]string{
-	"WalkTo": "walk_to",
-	"FaceTo": "face_to",
+	"WalkTo":        "walk_to",
+	"FaceTo":        "face_to",
+	"Say":           "say",
+	"Think":         "think",
+	"AddInventory":  "add_inventory",
+	"LoseInventory": "lose_inventory",
+	"HasInventory":  "has_inventory",
 }
 
 // characterBuiltinCallee returns the receiver expression, the GDScript method

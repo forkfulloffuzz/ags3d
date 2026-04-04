@@ -531,3 +531,40 @@ func TestEmitter_GoToRoom_IsBlocking(t *testing.T) {
 	got := emit(t, `function f() { GoToRoom("library"); }`)
 	assertContains(t, got, `await AGSRuntime.load_room("library")`)
 }
+
+// -------------------------------------------------------------------
+// T-GS05 — Say, Think, AddInventory, LoseInventory, HasInventory
+// -------------------------------------------------------------------
+
+func TestEmitter_Say_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { global.player.Say("Hello!"); }`)
+	assertContains(t, got, `await AGSRuntime.get_character("player").say("Hello!")`)
+}
+
+func TestEmitter_Think_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { global.player.Think("Hmm..."); }`)
+	assertContains(t, got, `await AGSRuntime.get_character("player").think("Hmm...")`)
+}
+
+func TestEmitter_AddInventory_NonBlocking(t *testing.T) {
+	got := emit(t, `function f() { global.player.AddInventory("rusty_key"); }`)
+	assertContains(t, got, `AGSRuntime.get_character("player").add_inventory("rusty_key")`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_LoseInventory_NonBlocking(t *testing.T) {
+	got := emit(t, `function f() { global.player.LoseInventory("rusty_key"); }`)
+	assertContains(t, got, `AGSRuntime.get_character("player").lose_inventory("rusty_key")`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_HasInventory_NonBlocking(t *testing.T) {
+	got := emit(t, `function f() { if (global.player.HasInventory("rusty_key")) { } }`)
+	assertContains(t, got, `AGSRuntime.get_character("player").has_inventory("rusty_key")`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_Say_IdentifierReceiver(t *testing.T) {
+	got := emit(t, `function f() { cGuard.Say("Halt!"); }`)
+	assertContains(t, got, `await AGSRuntime.get_character("c_guard").say("Halt!")`)
+}

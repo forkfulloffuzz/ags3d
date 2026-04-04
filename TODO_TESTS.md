@@ -145,3 +145,38 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Calling `say()` with a custom `duration` argument (e.g. `say("Long line", 4.0)`) waits the correct amount
 - [ ] `say_text` property is visible in the Godot Inspector on an `AGSCharacter` node (requires Godot rebuild with new C++ changes)
 - [ ] `say_completed` signal appears in the Node panel's Signals tab (requires Godot rebuild)
+
+---
+
+### T-GS04 — `ag build` `.agitem` parser + `ag validate` inventory checks
+
+**Setup:** Create a small project with at least one `.agitem` file and a room script.
+
+#### ag build
+- [ ] Create `items/rusty_key.agitem` with `Item "rusty_key" { display_name = "Rusty Key" description = "An old key." sprite = "assets/key.png" }` — `ag build --force` reports `rusty_key.agitem (item — data only, no scene generated)` with no errors
+- [ ] Create an `.agitem` with a syntax error (e.g. `Item "bad" {`) — `ag build` prints the parse error and exits with a non-zero code
+- [ ] After a successful build, running `ag build` again (no changes) reports "nothing to do"
+
+#### ag validate — check 6
+- [ ] With `rusty_key.agitem` present, a script containing `AddInventory("rusty_key")` produces **no** issues
+- [ ] With `rusty_key.agitem` present, a script containing `AddInventory("magic_wand")` produces an error: `"magic_wand"` is not defined
+- [ ] `LoseInventory("unknown")` in a script produces the same kind of error
+- [ ] `HasInventory("unknown")` inside an `if` condition produces the same kind of error
+- [ ] A global script (not paired with any `.agroom`) with `AddInventory("no_such")` still produces the error (not silently skipped)
+- [ ] The error message includes the line number of the offending call
+
+---
+
+## M10 — Game Systems (Batch 1)
+
+### T-GS05 — Go: grammar + emitter — `Say`, `Think`, `AddInventory`, `LoseInventory`, `HasInventory`
+
+**Setup:** Write an `.agscript` file and run `ag build` or manually inspect emitted `.gd` in `.engine/generated/`.
+
+- [ ] `global.player.Say("Hello!")` in a room script emits `await AGSRuntime.get_character("player").say("Hello!")` — note `await` present
+- [ ] `global.player.Think("Hmm...")` emits `await AGSRuntime.get_character("player").think("Hmm...")` — note `await` present
+- [ ] `global.player.AddInventory("rusty_key")` emits `AGSRuntime.get_character("player").add_inventory("rusty_key")` — no `await`
+- [ ] `global.player.LoseInventory("rusty_key")` emits `AGSRuntime.get_character("player").lose_inventory("rusty_key")` — no `await`
+- [ ] `if (global.player.HasInventory("rusty_key"))` emits `AGSRuntime.get_character("player").has_inventory("rusty_key")` inside an `if` — no `await`
+- [ ] `cGuard.Say("Halt!")` (identifier receiver) emits `await AGSRuntime.get_character("c_guard").say("Halt!")` (snake_case applied to receiver name)
+- [ ] A function that calls `Say` is itself treated as blocking — a call to it from another function emits `await that_func()`

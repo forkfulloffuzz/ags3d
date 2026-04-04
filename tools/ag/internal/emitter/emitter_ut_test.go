@@ -160,7 +160,7 @@ function room_AfterFadeIn() {
 	if !strings.Contains(got, `await AGSRuntime.get_character("player").walk_to("door")`) {
 		t.Errorf("UT-M3-09: missing walk_to await, got:\n%s", got)
 	}
-	if !strings.Contains(got, `await AGSRuntime.get_global("player").say(`) {
+	if !strings.Contains(got, `await AGSRuntime.get_character("player").say(`) {
 		t.Errorf("UT-M3-09: missing say await, got:\n%s", got)
 	}
 	if !strings.Contains(got, "await wait(60)") {
