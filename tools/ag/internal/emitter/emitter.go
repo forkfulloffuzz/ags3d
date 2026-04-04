@@ -369,6 +369,19 @@ func (p *printer) emitStmt(s parser.Stmt) {
 				return
 			}
 		}
+		// global.NAME = value / global.NAME op= value → AGSRuntime.set_global(...)
+		if assign, ok := v.X.(*parser.AssignExpr); ok {
+			if g, ok := assign.Target.(*parser.GlobalExpr); ok {
+				rhs := p.exprStr(assign.Value)
+				if assign.Op != "=" {
+					// Decompose compound assign: op= → set_global(name, get_global(name) op rhs)
+					binOp := strings.TrimSuffix(assign.Op, "=")
+					rhs = fmt.Sprintf(`AGSRuntime.get_global(%q) %s %s`, g.Property, binOp, rhs)
+				}
+				p.linef(`AGSRuntime.set_global(%q, %s)`, g.Property, rhs)
+				return
+			}
+		}
 		if p.trace {
 			if call, ok := v.X.(*parser.CallExpr); ok && call.IsBlocking {
 				p.emitExprStmtTrace(call)
@@ -541,8 +554,10 @@ func (p *printer) exprStr(e parser.Expr) string {
 		return toSnakeCase(v.Name)
 
 	case *parser.GlobalExpr:
-		// global.player → player  (global namespace is flat in the runtime)
-		return toSnakeCase(v.Property)
+		// global.NAME → AGSRuntime.get_global("name")
+		// AGSRuntime.get_global resolves both user-defined globals (from game.agp
+		// [globals]) and engine-owned globals (player, room, camera).
+		return fmt.Sprintf(`AGSRuntime.get_global(%q)`, v.Property)
 
 	case *parser.AssignExpr:
 		return p.exprStr(v.Target) + " " + v.Op + " " + p.exprStr(v.Value)
@@ -621,7 +636,7 @@ func (p *printer) calleeStr(e parser.Expr) string {
 	case *parser.MemberExpr:
 		return p.exprStr(v.Object) + "." + toSnakeCase(v.Field)
 	case *parser.GlobalExpr:
-		return toSnakeCase(v.Property)
+		return fmt.Sprintf(`AGSRuntime.get_global(%q)`, v.Property)
 	}
 	return p.exprStr(e)
 }

@@ -1,13 +1,13 @@
 func test_character_blocking():
 	await AGSRuntime.get_character("player").walk_to("door_left")
-	await player.walk_straight(point.window)
-	await player.say("Hello, world.")
-	await player.think("I wonder what that is.")
-	await player.play_animation("wave")
-	await player.face_direction(e_north)
-	await player.face_character(character.guard)
-	await player.face_point(point.npc_guard)
-	await player.run_interaction(1)
+	await AGSRuntime.get_global("player").walk_straight(point.window)
+	await AGSRuntime.get_global("player").say("Hello, world.")
+	await AGSRuntime.get_global("player").think("I wonder what that is.")
+	await AGSRuntime.get_global("player").play_animation("wave")
+	await AGSRuntime.get_global("player").face_direction(e_north)
+	await AGSRuntime.get_global("player").face_character(character.guard)
+	await AGSRuntime.get_global("player").face_point(point.npc_guard)
+	await AGSRuntime.get_global("player").run_interaction(1)
 
 func test_global_blocking():
 	await wait(60)
@@ -20,14 +20,14 @@ func test_global_blocking():
 
 func test_blocking_chain():
 	await AGSRuntime.get_character("player").walk_to("stage_centre")
-	await player.face_point(point.audience)
+	await AGSRuntime.get_global("player").face_point(point.audience)
 	await fade_out(15)
-	await player.say("And so it ends.")
+	await AGSRuntime.get_global("player").say("And so it ends.")
 	await fade_in(15)
 
 func walk_and_greet():
 	await AGSRuntime.get_character("player").walk_to("npc_guard")
-	await player.say("Good day!")
+	await AGSRuntime.get_global("player").say("Good day!")
 
 func room_after_fade_in():
 	await walk_and_greet()

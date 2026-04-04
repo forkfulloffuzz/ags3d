@@ -14,6 +14,9 @@ import (
 type Manifest struct {
 	Project  ProjectSection  `toml:"project"`
 	Settings SettingsSection `toml:"settings"`
+	// Globals holds the user-defined global variables from the [globals] section.
+	// Key: variable name, Value: default value string (e.g. "0", "false", `""`).
+	Globals map[string]string `toml:"globals"`
 	// Root is the directory containing game.agp (set after parsing).
 	Root string `toml:"-"`
 }
@@ -97,17 +100,28 @@ func parseAGP(src string, m *Manifest) error {
 		}
 		k = strings.TrimSpace(k)
 		v = strings.Trim(strings.TrimSpace(v), `"`)
-		switch section + "." + k {
-		case "project.name":
-			m.Project.Name = v
-		case "project.start_room":
-			m.Project.StartRoom = v
-		case "project.start_character":
-			m.Project.StartCharacter = v
-		case "settings.rendering_mode":
-			m.Settings.RenderingMode = v
-		case "settings.autosave":
-			m.Settings.Autosave = v == "true"
+		switch section {
+		case "project":
+			switch k {
+			case "name":
+				m.Project.Name = v
+			case "start_room":
+				m.Project.StartRoom = v
+			case "start_character":
+				m.Project.StartCharacter = v
+			}
+		case "settings":
+			switch k {
+			case "rendering_mode":
+				m.Settings.RenderingMode = v
+			case "autosave":
+				m.Settings.Autosave = v == "true"
+			}
+		case "globals":
+			if m.Globals == nil {
+				m.Globals = make(map[string]string)
+			}
+			m.Globals[k] = v
 		}
 	}
 	return nil

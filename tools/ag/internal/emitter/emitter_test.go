@@ -342,10 +342,10 @@ func TestEmitter_StringLiteral_HasQuotes(t *testing.T) {
 	assertContains(t, got, `"Hello, world!"`)
 }
 
-func TestEmitter_GlobalExpr_StripsGlobalPrefix(t *testing.T) {
+func TestEmitter_GlobalExpr_EmitsGetGlobal(t *testing.T) {
 	got := emit(t, `function f() { global.player.SetPosition(0, 0); }`)
 	assertNotContains(t, got, "global.")
-	assertContains(t, got, "player.set_position(0, 0)")
+	assertContains(t, got, `AGSRuntime.get_global("player").set_position(0, 0)`)
 }
 
 func TestEmitter_MemberExpr_SnakeCase(t *testing.T) {
@@ -433,10 +433,11 @@ func TestEmitter_T32_FaceTo_IsBlocking(t *testing.T) {
 	assertContains(t, got, `await AGSRuntime.get_character("player").face_to("door")`)
 }
 
-func TestEmitter_T32_NonBuiltin_Unchanged(t *testing.T) {
-	// WalkStraight is not in T32's table — uses the old receiver.method format.
+func TestEmitter_T32_NonBuiltin_UsesGetGlobal(t *testing.T) {
+	// WalkStraight is not in T32's table — falls through to generic method call.
+	// global.player resolves via AGSRuntime.get_global("player").
 	got := emit(t, `function f() { global.player.WalkStraight(point.window); }`)
-	assertContains(t, got, "player.walk_straight(point.window)")
+	assertContains(t, got, `AGSRuntime.get_global("player").walk_straight`)
 	assertNotContains(t, got, "AGSRuntime.get_character")
 }
 
@@ -480,4 +481,39 @@ func TestEmitter_ValidFixtures_NoPanic(t *testing.T) {
 			}
 		})
 	}
+}
+
+// -------------------------------------------------------------------
+// T-GS07 — global variable read/write
+// -------------------------------------------------------------------
+
+func TestEmitter_GlobalRead_EmitsGetGlobal(t *testing.T) {
+	got := emit(t, `function f() { int x = global.score; }`)
+	assertContains(t, got, `AGSRuntime.get_global("score")`)
+}
+
+func TestEmitter_GlobalAssign_EmitsSetGlobal(t *testing.T) {
+	got := emit(t, `function f() { global.score = 10; }`)
+	assertContains(t, got, `AGSRuntime.set_global("score", 10)`)
+	assertNotContains(t, got, "global.score")
+}
+
+func TestEmitter_GlobalCompoundAdd_Expanded(t *testing.T) {
+	got := emit(t, `function f() { global.score += 5; }`)
+	assertContains(t, got, `AGSRuntime.set_global("score", AGSRuntime.get_global("score") + 5)`)
+}
+
+func TestEmitter_GlobalCompoundSub_Expanded(t *testing.T) {
+	got := emit(t, `function f() { global.score -= 1; }`)
+	assertContains(t, got, `AGSRuntime.set_global("score", AGSRuntime.get_global("score") - 1)`)
+}
+
+func TestEmitter_GlobalBoolAssign(t *testing.T) {
+	got := emit(t, `function f() { global.door_unlocked = true; }`)
+	assertContains(t, got, `AGSRuntime.set_global("door_unlocked", true)`)
+}
+
+func TestEmitter_GlobalInCondition(t *testing.T) {
+	got := emit(t, `function f() { if (global.door_unlocked) { } }`)
+	assertContains(t, got, `AGSRuntime.get_global("door_unlocked")`)
 }
