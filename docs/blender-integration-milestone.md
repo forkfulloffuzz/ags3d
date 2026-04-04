@@ -358,8 +358,8 @@ game_prototype/
 | T-BL11 | Go: `ag build` — detect `.glb` in room directory; embed as sub-scene in generated `.tscn` | T-BL04 |
 | T-BL12 | Go: `.agchar` — parse `mesh` and `animations` fields; embed `.glb` in character `.tscn`; wire `AnimationPlayer` | T-BL10 |
 | T-BL13 | GDScript: `ags_character.gd` — drive `AnimationPlayer` clips: idle/walk/talk based on state | T-BL12 |
-| T-BL14 | GDScript: AG Studio — Room editor "Re-import from Blender" button + conflict indicator banner | T-BL11 |
-| T-BL15 | GDScript: AG Studio — Character editor Animations section (list clips, preview button) | T-BL12 |
+| ~~T-BL14~~ | ➡️ M12 T-CE08 | ~~GDScript: AG Studio — Room editor "Re-import from Blender" button~~ | moved to Custom Editor milestone |
+| ~~T-BL15~~ | ➡️ M12 T-CE14 | ~~GDScript: AG Studio — Character editor Animations section~~ | moved to Custom Editor milestone |
 | T-BL16 | **STUB** — Animation frame tags: trigger events (sounds, signals) on specific keyframes | T-BL12, T-BL13 |
 
 ---

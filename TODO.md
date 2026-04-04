@@ -3,22 +3,33 @@
 This file tracks the active batch of tasks. Update status as work progresses.
 When all tasks are done, ask Claude to pick the next 10.
 
-## M9 — AG Studio Editor (Batch 2)
+## M9 — Scene Generator & Runtime Core
 
-- [x] **#94 T-E11** — GDScript: AGS Inspector plugin — property forms for all AGS node types
-- [x] **#95 T-E15** — GDScript: Build Log dock — RichTextLabel + clickable error links
-- [x] **#96 T-E16** — GDScript: Play button wired to `ag build` + `play_main_scene()` *(needs T-E15)*
-- [x] **#97 T-E13** — GDScript: Character editor main screen — property form for `.agchar`
-- [x] **#98 T-E14** — GDScript: Script editor main screen — CodeEdit + AGS syntax highlighting
-- [x] **#99 T-E12** — GDScript: `.agroom` ↔ `.tscn` sync (gizmo edits → write back to `.agroom`) *(needs T-E11)*
-- [x] **#100 T-E17** — GDScript: Project wizard — new project scaffold via AG Studio menu
-- [x] **#101 T-E18** — Integration: prototype migration — delete hand-maintained `.tscn`, verify `ag build` regenerates it
-- [x] **#111 T-GS10** — GDScript: `AGSRuntime.load_room()` + `room_change_requested` signal
-- [x] **#103 T-GS01** — C++: `AGSCharacter` `say_completed` signal + `say()` / `think()` in runtime script
+- [x] **T-E01** — Go: `.agroom` parser → `RoomData` struct
+- [x] **T-E02** — Go: `RoomData` → `.tscn` serialiser
+- [x] **T-E03** — Go: `.agchar` parser + `CharData` → `.tscn`
+- [x] **T-E04** — Go: wire scene gen into `ag build` pipeline
+- [x] **T-E18** — Integration: prototype migration
+- [ ] **T-E05** — Go: `ag validate` cross-reference checks (SpawnPoint→agchar, initial_camera, point names, game.agp paths)
+
+## M10 — Game Systems (Batch 1)
+
+- [ ] **T-GS07** — Go: grammar + emitter — `global.NAME` read/write; `[globals]` section in `game.agp`
+- [ ] **T-GS08** — C++: `AGSRuntime` — global variable store (init from `game.agp`, get/set API, include in save data)
+- [ ] **T-GS09** — Go: grammar + emitter — `GoToRoom("room")` blocking call *(T-GS10 already done; this wires the emitter)*
+- [ ] **T-GS02** — C++: `AGSItem` node + `AGSRuntime.get_item()`
+- [ ] **T-GS03** — C++: `AGSRoomItem` node — `item_clicked` signal, room wiring
+- [ ] **T-GS04** — Go: `ag build` — `.agitem` parser + inventory/item validation in `ag validate`
+- [ ] **T-GS05** — Go: grammar + emitter — `Say`, `Think`, `AddInventory`, `LoseInventory`, `HasInventory`
+- [ ] **T-GS06** — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
+- [ ] **T-GS18** — GDScript/C++: cutscene support — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
+- [ ] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
 
 ## Notes
 
-- Critical path to first playable build: T-E15 → T-E16
-- T-E12 blocked on T-E11; T-E16 blocked on T-E15 — do those first
-- T-E18 validates the full pipeline end-to-end
-- T-GS10 + T-GS01 are M10 Game Systems seeds — independent of M9 editor work
+- T-E05 unblocks better error messages for authors — do it first.
+- T-GS07 + T-GS08 (globals) are needed by save/load (T-GS16/17) — do early.
+- T-GS09: `GoToRoom` emitter — T-GS10 (runtime `load_room`) is already done; this task adds the grammar/emitter side.
+- T-GS02→T-GS06 are the item/inventory chain — each depends on the previous.
+- T-GS18 + T-GS19 (cutscenes) are independent of items — can be done in parallel with item chain.
+- Custom Editor (M12) tasks are **not** in this batch — deferred until engine is stable.

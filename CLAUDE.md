@@ -12,6 +12,20 @@ Development tasks are tracked in `TODO.md` at the project root.
 - Work **one task at a time**: finish and mark complete before starting the next.
 - Do exactly what the task asks — no scope creep, no pre-emptive refactoring.
 
+### Custom Editor UI tracking
+
+The Custom Editor (AG Studio) milestone (M12) is deferred. Engine and runtime
+features are built first and used through the normal Godot editor. The M12
+milestone doc at `docs/custom-editor-milestone.md` tracks what UI will
+eventually need to be built.
+
+**Rule:** After completing any engine, runtime, or tooling task (C++ node,
+Go CLI feature, GDScript runtime method, `.agroom` block type), add or update
+a stub entry in the `## Pending UI Stubs` table in
+`docs/custom-editor-milestone.md` describing what AG Studio UI will expose
+that feature. Use prefix `T-CE-UI` and note the engine task it corresponds to.
+This keeps M12 complete as engine work accumulates.
+
 When **all tasks in `TODO.md` are completed**:
 1. Update the final task to `[x]`.
 2. Stop and ask the user: *"All tasks are done. Shall I analyse the milestones and pick the next 10 tasks?"*
@@ -51,11 +65,12 @@ tools/ag/       Go CLI (ag build, ag validate, ...)
 
 ## Active milestones
 
-| ID  | Name                    | Doc |
-|-----|-------------------------|-----|
-| M9  | AG Studio Editor        | docs/editor-milestone.md |
-| M10 | Game Systems            | docs/game-systems-milestone.md |
-| M11 | Blender Integration     | docs/blender-integration-milestone.md |
+| ID  | Name                    | Doc | Status |
+|-----|-------------------------|-----|--------|
+| M9  | Scene Generator & Runtime Core | docs/editor-milestone.md | Essentially complete — only T-E05 (`ag validate`) remaining |
+| M10 | Game Systems            | docs/game-systems-milestone.md | Active |
+| M11 | Blender Integration     | docs/blender-integration-milestone.md | Active |
+| M12 | Custom Editor           | docs/custom-editor-milestone.md | **Deferred** — build after engine features are stable |
 
 ## Key architecture decisions
 

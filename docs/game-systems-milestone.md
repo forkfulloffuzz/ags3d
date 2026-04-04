@@ -498,10 +498,10 @@ Camera "main" {
 | T-GS17 | Go: grammar + emitter — `SaveGame`, `LoadGame`, `GameSaved` | T-GS16 |
 | T-GS18 | GDScript/C++: cutscene support — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait` | Editor milestone |
 | T-GS19 | Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait` | T-GS18 |
-| T-GS20 | GDScript: AG Studio — item editor panel (main screen or dock) | T-GS04 |
-| T-GS21 | GDScript: AG Studio — room editor extended with `RoomItem` gizmo/placement | T-GS03 |
-| T-GS22 | GDScript: AG Studio — GUI layout editor for `.agui` files | T-GS13 |
-| T-GS23 | GDScript: AG Studio — global variables editor in project settings panel | T-GS07 |
+| ~~T-GS20~~ | ➡️ M12 T-CE19 | ~~GDScript: AG Studio — item editor panel~~ | moved to Custom Editor milestone |
+| ~~T-GS21~~ | ➡️ M12 T-CE07 | ~~GDScript: AG Studio — room editor RoomItem gizmo~~ | moved to Custom Editor milestone |
+| ~~T-GS22~~ | ➡️ M12 T-CE20 | ~~GDScript: AG Studio — GUI layout editor~~ | moved to Custom Editor milestone |
+| ~~T-GS23~~ | ➡️ M12 T-CE21 | ~~GDScript: AG Studio — global variables editor~~ | moved to Custom Editor milestone |
 | T-GS24 | C++: `AGSCharacter` — `visual_mode` property; `ag build` generates `Sprite3D` scene for billboard mode | Editor milestone |
 | T-GS25 | Go: `.agchar` billboard properties (`visual_mode`, `sprite_sheet`, `sprite_angles`, `frame_size`, `frames_per_angle`); scene generator outputs `Sprite3D` node | T-GS24 |
 | T-GS26 | GDScript: billboard direction selection runtime — angle quantization (4/8-way), frame cycling, `sprite_locked` camera support | T-GS24 |

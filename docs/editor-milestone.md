@@ -1,6 +1,14 @@
-# AGS3D Editor Milestone — Design Document
+# AGS3D Editor Milestone (M9) — Scene Generator & Runtime Core
 
-## Goal
+> **Status: Essentially complete.** The tooling tasks (T-E01–T-E05, T-E18)
+> are done or nearly done. All **AG Studio UI tasks** (EditorPlugin, docks,
+> gizmos, editors, wizard) have been extracted to
+> **[M12 — Custom Editor](custom-editor-milestone.md)** and deferred until
+> all engine features are working through the normal Godot editor.
+>
+> Remaining open task: **T-E05** (`ag validate` cross-reference checks).
+
+## Goal (original)
 
 Build **AG Studio** — a specialized adventure-game authoring environment built
 directly on top of the Godot editor. AG Studio replaces the generic Godot UI
@@ -446,33 +454,32 @@ An author with no Godot or coding experience:
 
 ## Task Breakdown
 
-| Task | Description | Depends on |
-|---|---|---|
-| T-E01 | Go: `.agroom` parser → `RoomData` struct | — |
-| T-E02 | Go: `RoomData` → `.tscn` serialiser | T-E01 |
-| T-E03 | Go: `.agchar` parser + `CharData` → `.tscn` | — |
-| T-E04 | Go: wire scene gen into `ag build` pipeline | T-E01, T-E02, T-E03 |
-| T-E05 | Go: `ag validate` cross-reference checks | T-E01, T-E03 |
-| T-E06 | C++/GDScript: `--godot-editor` flag (F1) | — |
-| T-E07 | GDScript: `EditorPlugin` skeleton — hide Godot docks, register screens | T-E06 |
-| T-E08 | GDScript: Project panel dock (F2) | T-E07 |
-| T-E09 | GDScript: Room editor main screen + 3D viewport embed (F3) | T-E07, T-E04 |
-| T-E10 | GDScript: AGS gizmo plugins for all node types (F3) | T-E09 |
-| T-E11 | GDScript: AGS Inspector plugin — property forms (F3) | T-E09 |
-| T-E12 | GDScript: `.agroom` ↔ `.tscn` sync (edit in editor → write agroom) | T-E10, T-E11 |
-| T-E13 | GDScript: Character editor main screen (F4) | T-E07 |
-| T-E14 | GDScript: Script editor main screen — CodeEdit + AGS highlighting (F5) | T-E07 |
-| T-E15 | GDScript: Build Log dock (F8) | T-E07 |
-| T-E16 | GDScript: Play button wired to build + `play_main_scene()` (F9) | T-E04, T-E15 |
-| T-E17 | GDScript: Project wizard (F10) | T-E08 |
-| T-E18 | Integration: prototype migration (F11) | T-E04 |
-| T-E19 | GDScript: billboard camera warnings — elevation/arc/lock checks in `ag validate` + gizmo overlays (F12) | T-E10, T-GS24 |
-| T-E20 | GDScript: Character editor — type selector (3D/2D) with type-specific property sections (F4 extension) | T-E13, T-GS27 |
-| T-E21 | GDScript: 3D Animation viewer — embedded `SubViewport`, clip selector, transport controls, frame scrubber | T-E20, T-GS28 |
-| T-E22 | GDScript: 2D Animation viewer — sprite sheet grid, direction thumbnails, animated preview cell | T-E20, T-GS29 |
+Legend: ✅ done · 🔜 remaining · ➡️ moved to M12 Custom Editor
 
-Critical path to first playable build: T-E01 → T-E02 → T-E03 → T-E04 →
-T-E07 → T-E09 → T-E16.
+| Task | Status | Description | Depends on |
+|---|---|---|---|
+| T-E01 | ✅ | Go: `.agroom` parser → `RoomData` struct | — |
+| T-E02 | ✅ | Go: `RoomData` → `.tscn` serialiser | T-E01 |
+| T-E03 | ✅ | Go: `.agchar` parser + `CharData` → `.tscn` | — |
+| T-E04 | ✅ | Go: wire scene gen into `ag build` pipeline | T-E01, T-E02, T-E03 |
+| T-E05 | 🔜 | Go: `ag validate` cross-reference checks | T-E01, T-E03 |
+| T-E06 | ➡️ M12 T-CE01 | C++/GDScript: `--godot-editor` flag | — |
+| T-E07 | ➡️ M12 T-CE02 | GDScript: `EditorPlugin` skeleton | T-E06 |
+| T-E08 | ➡️ M12 T-CE03 | GDScript: Project panel dock | T-E07 |
+| T-E09 | ➡️ M12 T-CE04 | GDScript: Room editor main screen | T-E07 |
+| T-E10 | ➡️ M12 T-CE05 | GDScript: AGS gizmo plugins | T-E09 |
+| T-E11 | ➡️ M12 T-CE10 | GDScript: AGS Inspector plugin | T-E09 |
+| T-E12 | ➡️ M12 T-CE06 | GDScript: `.agroom` ↔ `.tscn` sync | T-E10, T-E11 |
+| T-E13 | ➡️ M12 T-CE11 | GDScript: Character editor main screen | T-E07 |
+| T-E14 | ➡️ M12 T-CE15 | GDScript: Script editor main screen | T-E07 |
+| T-E15 | ➡️ M12 T-CE16 | GDScript: Build Log dock | T-E07 |
+| T-E16 | ➡️ M12 T-CE17 | GDScript: Play button | T-E04, T-E15 |
+| T-E17 | ➡️ M12 T-CE18 | GDScript: Project wizard | T-E08 |
+| T-E18 | ✅ | Integration: prototype migration | T-E04 |
+| T-E19 | ➡️ M12 T-CE09 (UI) | GDScript: billboard camera warnings — `ag validate` part stays in M10; gizmo overlays in M12 | T-E10, T-GS24 |
+| T-E20 | ➡️ M12 T-CE11 | GDScript: Character editor type selector | T-E13, T-GS27 |
+| T-E21 | ➡️ M12 T-CE12 | GDScript: 3D Animation viewer | T-E20, T-GS28 |
+| T-E22 | ➡️ M12 T-CE13 | GDScript: 2D Animation viewer | T-E20, T-GS29 |
 
 ---
 
