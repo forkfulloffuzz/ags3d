@@ -1,6 +1,7 @@
 // library.agscript — room script for 'library'
 
 function room_Enter() {
-    player.FaceTo("desk");
-    player.WalkTo("door_left");
+	player.FaceTo("desk");
+	player.WalkTo("desk");
+	player.WalkTo("exit");
 }
