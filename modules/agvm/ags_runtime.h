@@ -35,6 +35,10 @@ class AGSRuntime : public Object {
 	// Source maps keyed by the res:// path of the generated .gd file.
 	HashMap<String, Vector<SourceMapEntry>> _source_maps;
 
+	// User-defined global variables from game.agp [globals], plus engine-owned
+	// globals (player, room, camera) registered at runtime.
+	Dictionary _globals;
+
 protected:
 	static void _bind_methods();
 
@@ -74,6 +78,16 @@ public:
 	// Room transition — emits room_change_requested(room_name) for the game
 	// scene manager to handle (load the new room scene and free the old one).
 	void load_room(const String &p_room_name);
+
+	// Global variable store — user-defined vars from game.agp [globals] and
+	// engine-owned globals (player, room, camera).
+	// Scripts access these via AGSRuntime.get_global("name") / set_global("name", value).
+	Variant get_global(const String &p_name) const;
+	void set_global(const String &p_name, const Variant &p_value);
+
+	// Initialise globals from a Dictionary of { name: default_value_string }.
+	// Called once at startup by the game's autoload script after loading game.agp.
+	void init_globals(const Dictionary &p_defaults);
 
 	// Source map registry — called by AGSScript loader after transpilation.
 	// p_agmap is the parsed JSON: [[gd_line, "rel/path.agscript", agscript_line], ...].

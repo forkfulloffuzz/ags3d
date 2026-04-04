@@ -45,12 +45,48 @@ void AGSRuntime::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("load_room", "room_name"), &AGSRuntime::load_room);
 
+	ClassDB::bind_method(D_METHOD("get_global", "name"), &AGSRuntime::get_global);
+	ClassDB::bind_method(D_METHOD("set_global", "name", "value"), &AGSRuntime::set_global);
+	ClassDB::bind_method(D_METHOD("init_globals", "defaults"), &AGSRuntime::init_globals);
+
 	ClassDB::bind_method(D_METHOD("set_trace_enabled", "enabled"), &AGSRuntime::set_trace_enabled);
 	ClassDB::bind_method(D_METHOD("get_trace_enabled"), &AGSRuntime::get_trace_enabled);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "trace_enabled"), "set_trace_enabled", "get_trace_enabled");
 
 	ADD_SIGNAL(MethodInfo("room_change_requested", PropertyInfo(Variant::STRING, "room_name")));
 }
+
+// --------------------------------------------------------------------------
+// Global variable store
+// --------------------------------------------------------------------------
+
+Variant AGSRuntime::get_global(const String &p_name) const {
+	AGS_TRACE("AGSRuntime", "get_global", vformat("name=%s", p_name))
+	if (_globals.has(p_name)) {
+		return _globals[p_name];
+	}
+	WARN_PRINT(vformat("AGSRuntime.get_global: unknown global %q", p_name));
+	return Variant();
+}
+
+void AGSRuntime::set_global(const String &p_name, const Variant &p_value) {
+	AGS_TRACE("AGSRuntime", "set_global", vformat("name=%s value=%s", p_name, p_value))
+	_globals[p_name] = p_value;
+}
+
+void AGSRuntime::init_globals(const Dictionary &p_defaults) {
+	// Merge defaults into _globals without overwriting values already set
+	// (allows save/load to restore values before init is called again).
+	Array keys = p_defaults.keys();
+	for (int i = 0; i < keys.size(); i++) {
+		String key = keys[i];
+		if (!_globals.has(key)) {
+			_globals[key] = p_defaults[key];
+		}
+	}
+}
+
+// --------------------------------------------------------------------------
 
 void AGSRuntime::register_camera(AGSCamera *p_camera) {
 	ERR_FAIL_NULL(p_camera);
