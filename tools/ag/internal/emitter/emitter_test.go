@@ -568,3 +568,31 @@ func TestEmitter_Say_IdentifierReceiver(t *testing.T) {
 	got := emit(t, `function f() { cGuard.Say("Halt!"); }`)
 	assertContains(t, got, `await AGSRuntime.get_character("c_guard").say("Halt!")`)
 }
+
+// -------------------------------------------------------------------
+// T-GS06 — HideRoomItem, ShowRoomItem, item_interact handler
+// -------------------------------------------------------------------
+
+func TestEmitter_HideRoomItem_NonBlocking(t *testing.T) {
+	got := emit(t, `function f() { HideRoomItem("old_chest"); }`)
+	assertContains(t, got, `AGSRuntime.hide_room_item("old_chest")`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_ShowRoomItem_NonBlocking(t *testing.T) {
+	got := emit(t, `function f() { ShowRoomItem("old_chest"); }`)
+	assertContains(t, got, `AGSRuntime.show_room_item("old_chest")`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_ItemInteract_EmitsFunc(t *testing.T) {
+	got := emit(t, `function item_interact(string name) {
+    if (name == "old_chest") {
+        global.player.AddInventory("rusty_key");
+        HideRoomItem("old_chest");
+    }
+}`)
+	assertContains(t, got, "func item_interact(name: String):")
+	assertContains(t, got, `AGSRuntime.get_character("player").add_inventory("rusty_key")`)
+	assertContains(t, got, `AGSRuntime.hide_room_item("old_chest")`)
+}

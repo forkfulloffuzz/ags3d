@@ -180,3 +180,14 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] `if (global.player.HasInventory("rusty_key"))` emits `AGSRuntime.get_character("player").has_inventory("rusty_key")` inside an `if` — no `await`
 - [ ] `cGuard.Say("Halt!")` (identifier receiver) emits `await AGSRuntime.get_character("c_guard").say("Halt!")` (snake_case applied to receiver name)
 - [ ] A function that calls `Say` is itself treated as blocking — a call to it from another function emits `await that_func()`
+
+### T-GS06 — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
+
+**Setup:** Write an `.agscript` in a room directory and run `ag build`; inspect the emitted `.gd`.
+
+- [ ] `HideRoomItem("old_chest")` in a room script emits `AGSRuntime.hide_room_item("old_chest")` — no `await`
+- [ ] `ShowRoomItem("old_chest")` emits `AGSRuntime.show_room_item("old_chest")` — no `await`
+- [ ] A function named `item_interact` with a `string name` parameter emits `func item_interact(name: String):`
+- [ ] Inside `item_interact`, `HideRoomItem("old_chest")` emits the runtime call correctly
+- [ ] Inside `item_interact`, `global.player.AddInventory("rusty_key")` emits the character runtime call correctly
+- [ ] In-game: place an `AGSRoomItem` in a room; clicking it calls `item_interact` on the room script with the item name

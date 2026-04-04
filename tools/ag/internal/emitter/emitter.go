@@ -705,8 +705,10 @@ func (p *printer) emitExprStmtTrace(call *parser.CallExpr) {
 // to their GDScript equivalents on AGSRuntime.
 //   SetCamera("overview") → AGSRuntime.set_camera("overview")
 var builtinGlobalFunctions = map[string]string{
-	"SetCamera": "AGSRuntime.set_camera",
-	"GoToRoom":  "AGSRuntime.load_room",
+	"SetCamera":    "AGSRuntime.set_camera",
+	"GoToRoom":     "AGSRuntime.load_room",
+	"HideRoomItem": "AGSRuntime.hide_room_item",
+	"ShowRoomItem": "AGSRuntime.show_room_item",
 }
 
 // builtinCharacterMethods maps AGS-spirit PascalCase character method names

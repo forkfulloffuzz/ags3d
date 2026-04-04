@@ -123,7 +123,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI08 | `say()` / `think()` (T-GS01, T-GS05) | Character editor Speech section: speech_colour picker, speech_font file picker; script editor autocomplete for Say/Think on character receivers |
 | T-CE-UI18 | `AddInventory`/`LoseInventory`/`HasInventory` emitter (T-GS05) | Script editor autocomplete for inventory methods on character receivers; no separate UI panel needed |
 | T-CE-UI09 | `ag validate` cross-reference checks (T-E05) | Build Log shows validate warnings/errors with clickable links; gutters in Script editor |
-| T-CE-UI10 | RoomItem node (T-GS03, when done) | Room editor "Add Item" button; sprite icon at position; Inspector shows item reference + visible toggle |
+| T-CE-UI10 | RoomItem node + HideRoomItem/ShowRoomItem (T-GS03, T-GS06) | Room editor "Add Item" button; sprite icon at position; Inspector shows item reference + visible toggle; script editor autocomplete for HideRoomItem/ShowRoomItem |
 | T-CE-UI11 | Inventory system (T-GS02/T-GS04, when done) | Item editor panel (T-CE19) |
 | T-CE-UI12 | GUI system / .agui (T-GS13, when done) | GUI layout editor (T-CE20) |
 | T-CE-UI13 | Global variables (T-GS07/T-GS08, when done) | Global variables editor (T-CE21) |

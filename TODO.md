@@ -21,7 +21,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-GS03** — C++: `AGSRoomItem` node — `item_clicked` signal, room wiring
 - [x] **T-GS04** — Go: `ag build` — `.agitem` parser + inventory/item validation in `ag validate`
 - [x] **T-GS05** — Go: grammar + emitter — `Say`, `Think`, `AddInventory`, `LoseInventory`, `HasInventory`
-- [ ] **T-GS06** — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
+- [x] **T-GS06** — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
 - [ ] **T-GS18** — GDScript/C++: cutscene support — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
 - [ ] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
 
