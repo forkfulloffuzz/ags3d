@@ -263,3 +263,90 @@ func TestBrokenAgroomReportedAsIssue(t *testing.T) {
 		t.Errorf("expected parse error issue for r.agroom, got %v", issues)
 	}
 }
+
+// --------------------------------------------------------------------------
+// Check 5: .agscript point-name cross-references
+// --------------------------------------------------------------------------
+
+func TestScriptWalkToKnownPoint(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Point "door" { position = (1.0, 0.0, 0.0) }
+		}`,
+		"rooms/r/r.agscript": `function room_Enter() { player.WalkTo("door"); }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "WalkTo") || contains(i.String(), "door") {
+			t.Errorf("unexpected point issue: %v", i)
+		}
+	}
+}
+
+func TestScriptWalkToUnknownPoint(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Point "door" { position = (1.0, 0.0, 0.0) }
+		}`,
+		"rooms/r/r.agscript": `function room_Enter() { player.WalkTo("window"); }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"window"`) {
+		t.Errorf("expected unknown point issue for 'window', got %v", issues)
+	}
+	if !hasIssue(issues, "error") {
+		t.Errorf("expected severity error")
+	}
+}
+
+func TestScriptFaceToUnknownPoint(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Point "door" { position = (1.0, 0.0, 0.0) }
+		}`,
+		"rooms/r/r.agscript": `function room_Enter() { player.FaceTo("nowhere"); }`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"nowhere"`) {
+		t.Errorf("expected unknown point issue for 'nowhere', got %v", issues)
+	}
+}
+
+func TestScriptNoRoomNoPanic(t *testing.T) {
+	// Global script with no paired .agroom — no point checks, no crash.
+	root, m := scaffold(t, map[string]string{
+		"scripts/global.agscript": `function on_start() { player.WalkTo("anywhere"); }`,
+	})
+
+	issues, err := validate.ValidateProject(root, m)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// No room paired → no point check → no issues from check 5.
+	for _, i := range issues {
+		if contains(i.String(), "WalkTo") {
+			t.Errorf("unexpected WalkTo issue for unpairedscript: %v", i)
+		}
+	}
+}
+
+func TestScriptLineNumberReported(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {}`,
+		"rooms/r/r.agscript": `function room_Enter() {
+	player.WalkTo("missing_point");
+}`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, "missing_point") {
+		t.Errorf("expected issue for missing_point, got %v", issues)
+	}
+	// Line number should be included (line 2).
+	if !hasIssue(issues, ":2:") {
+		t.Errorf("expected line number in issue, got %v", issues)
+	}
+}
