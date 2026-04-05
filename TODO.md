@@ -38,6 +38,19 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-BL01** — Python: Blender add-on scaffold — `tools/blender_addon/`, `blender_manifest.toml`, register/unregister hooks, installable in Blender 4.x; no UI yet
 - [x] **T-BL02** — Python: AGS3D object type panel — Object Properties sidebar + N-panel; type dropdown (None/WalkableSurface/BlockerVolume/Point/Camera/Hotspot/TriggerRegion/SpawnPoint/NavMesh); stores `AGS_type`/`AGS_name` as custom properties on the Blender object *(depends on T-BL01)*
 
+## M10 — Game Systems (Batch 3) / M11 — Blender Integration (Batch 1)
+
+- [ ] **T-GS26** — GDScript: billboard direction selection runtime — angle quantization (4/8-way snap from velocity→camera angle), per-angle frame cycling, `sprite_locked` camera support *(depends on T-GS24, T-GS25)*
+- [ ] **T-GS29** — GDScript: `AGSAnimationPlayer2D` — billboard direction + frame cycling; implements `AGSAnimationPlayerBase` API *(depends on T-GS27, T-GS28)*
+- [ ] **T-GS13** — Go: `.agui` parser + `ag build` GUI scene generator (`InventoryBar`, `VerbBar`, `StatusLine` → `CanvasLayer` `.tscn`) *(no blockers)*
+- [ ] **T-BL03** — Python: Viewport overlay — colored wireframes per AGS type drawn via `SpaceView3D.draw_handler_add`; toggled from View → Overlays *(depends on T-BL02)*
+- [ ] **T-BL08** — Python: Import operator (`File → Import → AGS3D Room`) — reads `.agroom` → creates Blender empties/meshes in `AGS_Gameplay` collection *(depends on T-BL02)*
+- [ ] **T-BL10** — Python: Character export operator (`File → Export → AGS3D Character`) — exports armature + mesh + NLA actions → `.glb` *(depends on T-BL01)*
+- [ ] **T-BL04** — Python: Export operator (`File → Export → AGS3D Room`) — extract tagged gameplay objects → `.agroom`; call GLTF exporter → `.glb` *(depends on T-BL02; unlocks T-BL05/06/07)*
+- [ ] **T-BL05** — Python: Export — coordinate system conversion (Blender Y-up → Godot Z-up) + bounding-box size extraction for volume types *(depends on T-BL04)*
+- [ ] **T-BL06** — Python: Export — Camera look_at: auto-compute from forward vector OR use eyedropper-picked Empty *(depends on T-BL04)*
+- [ ] **T-BL07** — Python: Export — merge mode: read existing `.agroom`, overwrite geometry-derived fields only, preserve non-geometry fields *(depends on T-BL04)*
+
 ## Notes
 
 - T-GS11 + T-GS12: audio pair — do T-GS11 (emitter) before T-GS12 (runtime).
@@ -45,4 +58,5 @@ When all tasks are done, ask Claude to pick the next 10.
 - T-GS27 → T-GS28: character split must come before animation player refactor.
 - T-GS24 → T-GS25: visual_mode C++ property must exist before Go scene gen can branch on it.
 - T-BL01 → T-BL02: add-on must be installable before any panels are built.
-- T-GS29 (AGSAnimationPlayer2D), T-GS30 (ag build char type routing), T-BL03–T-BL09 follow in the next batch.
+- T-GS30 (ag build char type routing) is fully covered by T-GS25 — no separate work needed.
+- T-BL04 is the critical-path unlocker: T-BL05/06/07/09/11 all depend on it.
