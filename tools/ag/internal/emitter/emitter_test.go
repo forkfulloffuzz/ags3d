@@ -379,7 +379,7 @@ func TestEmitter_BlockingCall_MethodGetsAwait(t *testing.T) {
 
 func TestEmitter_BlockingCall_GlobalBuiltin(t *testing.T) {
 	got := emit(t, `function f() { Wait(60); }`)
-	assertContains(t, got, "await wait(60)")
+	assertContains(t, got, "await AGSCutscene.wait(60)")
 }
 
 func TestEmitter_BlockingCall_AllBuiltins(t *testing.T) {
@@ -595,4 +595,67 @@ func TestEmitter_ItemInteract_EmitsFunc(t *testing.T) {
 	assertContains(t, got, "func item_interact(name: String):")
 	assertContains(t, got, `AGSRuntime.get_character("player").add_inventory("rusty_key")`)
 	assertContains(t, got, `AGSRuntime.hide_room_item("old_chest")`)
+}
+
+// -------------------------------------------------------------------
+// T-GS19 — SetPlayerControl, FadeIn, FadeOut, Wait
+// -------------------------------------------------------------------
+
+func TestEmitter_Wait_MapsToAGSCutscene(t *testing.T) {
+	got := emit(t, `function f() { Wait(2.0); }`)
+	assertContains(t, got, `AGSCutscene.wait(2.0)`)
+}
+
+func TestEmitter_Wait_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { Wait(2.0); }`)
+	assertContains(t, got, `await AGSCutscene.wait(2.0)`)
+}
+
+func TestEmitter_FadeOut_MapsToAGSCutscene(t *testing.T) {
+	got := emit(t, `function f() { FadeOut(); }`)
+	assertContains(t, got, `AGSCutscene.fade_out()`)
+}
+
+func TestEmitter_FadeOut_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { FadeOut(0.5); }`)
+	assertContains(t, got, `await AGSCutscene.fade_out(0.5)`)
+}
+
+func TestEmitter_FadeIn_MapsToAGSCutscene(t *testing.T) {
+	got := emit(t, `function f() { FadeIn(); }`)
+	assertContains(t, got, `AGSCutscene.fade_in()`)
+}
+
+func TestEmitter_FadeIn_IsBlocking(t *testing.T) {
+	got := emit(t, `function f() { FadeIn(1.0); }`)
+	assertContains(t, got, `await AGSCutscene.fade_in(1.0)`)
+}
+
+func TestEmitter_SetPlayerControl_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { SetPlayerControl(false); }`)
+	assertContains(t, got, `AGSRuntime.set_player_control(false)`)
+}
+
+func TestEmitter_SetPlayerControl_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { SetPlayerControl(false); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_CutsceneSequence(t *testing.T) {
+	// Full cutscene pattern: disable control → fade out → action → fade in → re-enable.
+	src := `function room_Enter() {
+    SetPlayerControl(false);
+    FadeOut(0.5);
+    global.player.Say("Darkness falls.");
+    FadeIn(0.5);
+    SetPlayerControl(true);
+}`
+	got := emit(t, src)
+	assertContains(t, got, `AGSRuntime.set_player_control(false)`)
+	assertContains(t, got, `await AGSCutscene.fade_out(0.5)`)
+	assertContains(t, got, `await AGSRuntime.get_character("player").say("Darkness falls.")`)
+	assertContains(t, got, `await AGSCutscene.fade_in(0.5)`)
+	assertContains(t, got, `AGSRuntime.set_player_control(true)`)
+	// SetPlayerControl is not blocking — no await before it.
+	assertNotContains(t, got, `await AGSRuntime.set_player_control`)
 }

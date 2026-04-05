@@ -23,7 +23,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-GS05** — Go: grammar + emitter — `Say`, `Think`, `AddInventory`, `LoseInventory`, `HasInventory`
 - [x] **T-GS06** — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
 - [x] **T-GS18** — GDScript/C++: cutscene support — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
-- [ ] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
+- [x] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
 
 ## Notes
 
