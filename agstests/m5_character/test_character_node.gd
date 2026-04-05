@@ -6,7 +6,7 @@ func suite_name() -> String:
 
 # UT-M5-01: AGSCharacter instantiates without crash.
 func test_01_ags_character_instantiates() -> void:
-	var ch: AGSCharacter = AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	assert_not_null(ch, "AGSCharacter.new() returned null")
 	ch.free()
 
@@ -14,7 +14,7 @@ func test_01_ags_character_instantiates() -> void:
 func test_02_character_registers_with_runtime() -> void:
 	var root := Node.new()
 	add_to_tree(root)
-	var ch: AGSCharacter = AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	ch.character_name = "player"
 	root.add_child(ch)
 	# _ready() is deferred in Godot 4 — fire manually so it runs now.
@@ -31,8 +31,8 @@ func test_02_character_registers_with_runtime() -> void:
 func test_03_two_characters_independently_retrievable() -> void:
 	var root := Node.new()
 	add_to_tree(root)
-	var ch_a: AGSCharacter = AGSCharacter.new()
-	var ch_b: AGSCharacter = AGSCharacter.new()
+	var ch_a := AGSCharacter3D.new()
+	var ch_b := AGSCharacter3D.new()
 	ch_a.character_name = "hero"
 	ch_b.character_name = "villain"
 	root.add_child(ch_a)

@@ -28,12 +28,12 @@ func test_03_get_character_returns_registered_character() -> void:
 	room.room_name = "char_lookup_room"
 	add_to_tree(room)
 
-	var ch := AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	ch.character_name = "runtime_api_char"
 	room.add_child(ch)
 	ch.notification(Node.NOTIFICATION_READY)
 
-	var found: AGSCharacter = AGSRuntime.get_character("runtime_api_char")
+	var found := AGSRuntime.get_character("runtime_api_char")
 	assert_not_null(found, "AGSRuntime.get_character() returned null")
 	assert_eq(found, ch, "AGSRuntime.get_character() returned wrong node")
 

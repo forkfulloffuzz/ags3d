@@ -29,7 +29,7 @@ func suite_name() -> String:
 
 # UT-M10-10: say_text property is readable and writable on a bare AGSCharacter.
 func test_10_say_text_property_readable_writable() -> void:
-	var ch := AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	assert_eq(ch.say_text, "", "say_text should default to empty string")
 	ch.say_text = "Hello world"
 	assert_eq(ch.say_text, "Hello world", "say_text did not store the assigned value")
@@ -38,7 +38,7 @@ func test_10_say_text_property_readable_writable() -> void:
 
 # UT-M10-11: say_completed signal is registered on AGSCharacter.
 func test_11_say_completed_signal_exists() -> void:
-	var ch := AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	assert_true(ch.has_signal("say_completed"), "AGSCharacter does not have a say_completed signal")
 	ch.free()
 
@@ -47,10 +47,10 @@ func test_11_say_completed_signal_exists() -> void:
 
 ## Create an AGSCharacter with the runtime script attached and add it to the tree.
 ## Caller must free the returned node's parent (get_parent().free()).
-func _make_runtime_char(char_name: String) -> AGSCharacter:
+func _make_runtime_char(char_name: String) -> AGSCharacterBase:
 	var root := Node.new()
 	add_to_tree(root)
-	var ch := AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	ch.set_script(load(CHAR_SCRIPT))
 	ch.character_name = char_name
 	root.add_child(ch)

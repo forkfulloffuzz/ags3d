@@ -10,7 +10,7 @@ func test_10_spawn_point_places_character_at_position() -> void:
 	room.room_name = "spawn_test_room"
 	add_to_tree(room)
 
-	var ch: AGSCharacter = AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	ch.character_name = "spawn_player"
 	room.add_child(ch)
 	ch.notification(Node.NOTIFICATION_READY)  # registers with AGSRuntime

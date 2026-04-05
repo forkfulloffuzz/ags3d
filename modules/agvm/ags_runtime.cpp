@@ -1,7 +1,7 @@
 #include "ags_runtime.h"
 
 #include "ags_camera.h"
-#include "ags_character.h"
+#include "ags_character_base.h"
 #include "ags_item.h"
 #include "ags_room.h"
 #include "ags_room_item.h"
@@ -168,23 +168,23 @@ void AGSRuntime::set_camera(const String &p_name) {
 	cam->make_current();
 }
 
-void AGSRuntime::register_character(AGSCharacter *p_character) {
+void AGSRuntime::register_character(AGSCharacterBase *p_character) {
 	ERR_FAIL_NULL(p_character);
 	characters[p_character->get_character_name()] = p_character;
 }
 
-void AGSRuntime::unregister_character(AGSCharacter *p_character) {
+void AGSRuntime::unregister_character(AGSCharacterBase *p_character) {
 	ERR_FAIL_NULL(p_character);
 	characters.erase(p_character->get_character_name());
 }
 
-AGSCharacter *AGSRuntime::get_character(const String &p_name) const {
-	const AGSCharacter *const *found = characters.getptr(StringName(p_name));
+AGSCharacterBase *AGSRuntime::get_character(const String &p_name) const {
+	const AGSCharacterBase *const *found = characters.getptr(StringName(p_name));
 	AGS_TRACE("AGSRuntime", "get_character", vformat("name=%s → %s", p_name, found ? "found" : "null"))
 	if (!found) {
 		return nullptr;
 	}
-	return const_cast<AGSCharacter *>(*found);
+	return const_cast<AGSCharacterBase *>(*found);
 }
 
 void AGSRuntime::register_room(AGSRoom *p_room) {
@@ -301,7 +301,7 @@ void AGSRuntime::save_game(int p_slot) {
 
 	// Character inventories — call GDScript get_inventory() on each character.
 	Dictionary char_data;
-	for (const KeyValue<StringName, AGSCharacter *> &kv : characters) {
+	for (const KeyValue<StringName, AGSCharacterBase *> &kv : characters) {
 		Variant inv = kv.value->call("get_inventory");
 		char_data[String(kv.key)] = inv;
 	}
@@ -365,9 +365,9 @@ void AGSRuntime::load_game(int p_slot) {
 		Array char_keys = char_data.keys();
 		for (int i = 0; i < char_keys.size(); i++) {
 			String char_name = char_keys[i];
-			const AGSCharacter *const *found = characters.getptr(StringName(char_name));
+			const AGSCharacterBase *const *found = characters.getptr(StringName(char_name));
 			if (found) {
-				(*const_cast<AGSCharacter **>(found))->call("set_inventory", char_data[char_name]);
+				(*const_cast<AGSCharacterBase **>(found))->call("set_inventory", char_data[char_name]);
 			}
 		}
 	}

@@ -21,7 +21,7 @@ func _make_room_with_character_and_points() -> Array:
 	room.add_child(pt_b)
 	pt_b.notification(Node.NOTIFICATION_READY)
 
-	var ch: AGSCharacter = AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	ch.character_name = "face_test_char"
 	room.add_child(ch)
 	ch.notification(Node.NOTIFICATION_READY)
@@ -32,7 +32,7 @@ func _make_room_with_character_and_points() -> Array:
 func test_07_sequential_walk_to_returns_valid_signals() -> void:
 	var parts: Array = _make_room_with_character_and_points()
 	var room: AGSRoom = parts[0]
-	var ch: AGSCharacter = parts[1]
+	var ch: AGSCharacterBase = parts[1]
 
 	var sig_a: Signal = ch.walk_to("door")
 	var sig_b: Signal = ch.walk_to("window")
@@ -49,7 +49,7 @@ func test_07_sequential_walk_to_returns_valid_signals() -> void:
 func test_08_face_to_returns_face_completed_signal() -> void:
 	var parts: Array = _make_room_with_character_and_points()
 	var room: AGSRoom = parts[0]
-	var ch: AGSCharacter = parts[1]
+	var ch: AGSCharacterBase = parts[1]
 
 	var sig: Signal = ch.face_to("window")
 	assert_true(sig.get_name() == "face_completed",
@@ -63,7 +63,7 @@ func test_08_face_to_returns_face_completed_signal() -> void:
 func test_09_face_to_applies_rotation_headless() -> void:
 	var parts: Array = _make_room_with_character_and_points()
 	var room: AGSRoom = parts[0]
-	var ch: AGSCharacter = parts[1]
+	var ch: AGSCharacterBase = parts[1]
 
 	var initial_y: float = ch.rotation.y
 	ch.face_to("window")  # window is at (-4, 0, 0) — requires non-zero rotation

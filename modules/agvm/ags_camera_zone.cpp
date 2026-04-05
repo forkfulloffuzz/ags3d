@@ -1,7 +1,7 @@
 #include "ags_camera_zone.h"
 
 #include "ags_camera.h"
-#include "ags_character.h"
+#include "ags_character_base.h"
 #include "ags_runtime.h"
 #include "ags_trace.h"
 #include "core/object/class_db.h"
@@ -27,7 +27,7 @@ void AGSCameraZone::_notification(int p_what) {
 }
 
 void AGSCameraZone::_on_body_entered(Node3D *p_body) {
-	if (!Object::cast_to<AGSCharacter>(p_body)) {
+	if (!Object::cast_to<AGSCharacterBase>(p_body)) {
 		return;
 	}
 	if (target_camera.is_empty()) {
@@ -55,7 +55,7 @@ void AGSCameraZone::_on_body_exited(Node3D *p_body) {
 	if (!revert_on_exit) {
 		return;
 	}
-	if (!Object::cast_to<AGSCharacter>(p_body)) {
+	if (!Object::cast_to<AGSCharacterBase>(p_body)) {
 		return;
 	}
 	if (_previous_camera.is_empty()) {

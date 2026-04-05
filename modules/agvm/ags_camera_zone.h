@@ -2,7 +2,7 @@
 
 #include "scene/3d/physics/area_3d.h"
 
-class AGSCharacter;
+class AGSCharacterBase;
 
 class AGSCameraZone : public Area3D {
 	GDCLASS(AGSCameraZone, Area3D);

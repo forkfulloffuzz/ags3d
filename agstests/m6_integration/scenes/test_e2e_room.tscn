@@ -33,7 +33,7 @@ position = Vector3(-4, 0, 0)
 point_name = "window"
 position = Vector3(4, 0, 4)
 
-[node name="e2e_player" type="AGSCharacter" parent="."]
+[node name="e2e_player" type="AGSCharacter3D" parent="."]
 character_name = "e2e_player"
 move_speed = 8.0
 script = ExtResource("Script_char")

@@ -1,6 +1,6 @@
 #include "ags_spawn_point.h"
 
-#include "ags_character.h"
+#include "ags_character_base.h"
 #include "ags_runtime.h"
 #include "ags_trace.h"
 #include "core/object/class_db.h"
@@ -22,7 +22,7 @@ void AGSSpawnPoint::_notification(int p_what) {
 	if (!runtime) {
 		return;
 	}
-	AGSCharacter *character = runtime->get_character(spawn_character);
+	AGSCharacterBase *character = runtime->get_character(spawn_character);
 	if (!character) {
 		WARN_PRINT(vformat("AGSSpawnPoint: character '%s' not found in AGSRuntime.", spawn_character));
 		return;

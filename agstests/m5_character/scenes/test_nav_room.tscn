@@ -30,7 +30,7 @@ shape = SubResource("BoxShape3D_2")
 point_name = "target"
 position = Vector3(5, 0, 0)
 
-[node name="Player" type="AGSCharacter" parent="."]
+[node name="Player" type="AGSCharacter3D" parent="."]
 character_name = "nav_player"
 
 [node name="SpawnPoint" type="AGSSpawnPoint" parent="."]

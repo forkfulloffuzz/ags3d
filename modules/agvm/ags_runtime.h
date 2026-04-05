@@ -5,7 +5,7 @@
 #include "core/templates/vector.h"
 
 class AGSCamera;
-class AGSCharacter;
+class AGSCharacterBase;
 class AGSItem;
 class AGSRoom;
 class AGSRoomItem;
@@ -31,7 +31,7 @@ class AGSRuntime : public Object {
 	static bool _trace_enabled;
 
 	HashMap<StringName, AGSCamera *> cameras;
-	HashMap<StringName, AGSCharacter *> characters;
+	HashMap<StringName, AGSCharacterBase *> characters;
 	HashMap<StringName, AGSItem *> items;
 	HashMap<StringName, AGSRoom *> rooms;
 	HashMap<StringName, AGSRoomItem *> room_items;
@@ -74,10 +74,10 @@ public:
 	// Read-only access to the camera map — used by AGSCameraZone to find the current camera.
 	const HashMap<StringName, AGSCamera *> &get_cameras() const { return cameras; }
 
-	// Character registry — called by AGSCharacter on NOTIFICATION_READY / EXIT_TREE.
-	void register_character(AGSCharacter *p_character);
-	void unregister_character(AGSCharacter *p_character);
-	AGSCharacter *get_character(const String &p_name) const;
+	// Character registry — called by AGSCharacterBase on NOTIFICATION_READY / EXIT_TREE.
+	void register_character(AGSCharacterBase *p_character);
+	void unregister_character(AGSCharacterBase *p_character);
+	AGSCharacterBase *get_character(const String &p_name) const;
 
 	// Item registry — called by AGSItem on NOTIFICATION_READY / EXIT_TREE.
 	void register_item(AGSItem *p_item);

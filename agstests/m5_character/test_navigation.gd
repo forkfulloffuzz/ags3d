@@ -17,7 +17,7 @@ func test_04_character_has_nav_agent_after_ready() -> void:
 	var root := Node.new()
 	add_to_tree(root)
 
-	var ch: AGSCharacter = AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	ch.character_name = "nav_test_char"
 	ch.set_script(load(CHAR_SCRIPT))  # runtime script creates NavigationAgent3D in _ready()
 	root.add_child(ch)  # tree propagates READY since root is live
@@ -36,7 +36,7 @@ func test_04_character_has_nav_agent_after_ready() -> void:
 # walk_to / face_to are GDScript coroutines on the runtime script; this verifies
 # the signals the coroutines emit are declared at the C++ level.
 func test_05_walk_completed_and_face_completed_signals_declared() -> void:
-	var ch := AGSCharacter.new()
+	var ch := AGSCharacter3D.new()
 	assert_true(ch.has_signal("walk_completed"),
 			"AGSCharacter must declare walk_completed signal")
 	assert_true(ch.has_signal("face_completed"),

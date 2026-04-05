@@ -62,7 +62,7 @@ func test_10_walk_to_reaches_destination() -> void:
 	await _tree.physics_frame
 	await _tree.physics_frame
 
-	var ch: AGSCharacter = room.get_node("e2e_player")
+	var ch: AGSCharacterBase = room.get_node("e2e_player")
 	var door_pos := Vector3(-4.0, 0.0, 0.0)
 
 	ch.walk_to("door_left")  # coroutine runs in background
@@ -83,7 +83,7 @@ func test_11_face_to_rotates_character() -> void:
 
 	await _tree.physics_frame
 
-	var ch: AGSCharacter = room.get_node("e2e_player")
+	var ch: AGSCharacterBase = room.get_node("e2e_player")
 	var window_pos := Vector3(4.0, 0.0, 4.0)
 
 	ch.face_to("window")  # coroutine runs in background
@@ -124,7 +124,7 @@ func test_12_full_prototype_script_drives_walk_and_face() -> void:
 	await _tree.physics_frame
 	await _tree.physics_frame
 
-	var ch: AGSCharacter = room.get_node("e2e_player")
+	var ch: AGSCharacterBase = room.get_node("e2e_player")
 
 	# Await face_completed — the last signal in the walk_to → face_to chain.
 	var done := await _await_signal(ch.face_completed, WALK_TIMEOUT_SEC)

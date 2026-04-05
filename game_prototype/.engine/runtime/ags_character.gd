@@ -1,4 +1,4 @@
-extends AGSCharacter
+extends AGSCharacter3D
 
 var _nav_agent: NavigationAgent3D
 var _navigating: bool = false
