@@ -142,6 +142,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI26 | GUI scene generator (T-GS13) | GUI editor: .agui file list in Project panel; layout canvas showing InventoryBar/VerbBar/StatusLine at their anchors; property inspector for each widget |
 | T-CE-UI27 | .agroom import operator (T-BL08) | No AG Studio UI needed; round-trip is Blender→AG Studio; AG Studio "Re-import from Blender" button (T-CE08) uses the export operator (T-BL04), not the import |
 | T-CE-UI28 | Character export operator (T-BL10) | Character editor "Export to Blender" button; shows NLA track → clip name mapping; links to .agchar animations block |
+| T-CE-UI29 | Room export operator (T-BL04) | Room editor "Export to Blender" button; opens Blender with AGS_Gameplay collection pre-tagged from the .agroom |
 
 ---
 

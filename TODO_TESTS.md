@@ -71,6 +71,26 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL04 — Room export operator
+
+**Setup:** Blender 4.2+ with AGS3D add-on. A scene with visual mesh objects and AGS-tagged gameplay objects (Camera, WalkableSurface, BlockerVolume, etc.).
+
+- [ ] `File → Export → AGS3D Room (.agroom + .glb)` appears in the Export menu.
+- [ ] File selector opens pre-filled with the blend file stem as `.agroom` path.
+- [ ] After export: `.agroom` file is created containing `Room "name" { ... }` with all AGS-tagged objects serialised.
+- [ ] A `.glb` is created beside the `.agroom` containing only visual (non-gameplay-tagged) objects.
+- [ ] WalkableSurface objects are NOT in the `.glb` (gameplay-only types excluded).
+- [ ] Camera objects are NOT in the `.glb`.
+- [ ] Visual mesh objects (untagged or `VisualMesh` type) ARE in the `.glb`.
+- [ ] Camera position and computed look_at appear in the `.agroom` `Camera` block.
+- [ ] SpawnPoint with `AGS_character = "player"` → `character = "player"` in SpawnPoint block.
+- [ ] WalkableSurface size derived from object's bounding box × scale.
+- [ ] `Export Gameplay Data` unchecked → only `.glb` written, no `.agroom`.
+- [ ] `Export Visual Mesh` unchecked → only `.agroom` written, no `.glb`.
+- [ ] Generated `.agroom` can be parsed by `ag validate` without errors.
+
+---
+
 ### T-BL10 — Character export operator
 
 **Setup:** Blender 4.2+ with AGS3D add-on. A scene with an `Armature` object parented to a `Mesh` object. NLA editor has tracks named `Idle`, `Walk`, `Talk` with at least one strip each.

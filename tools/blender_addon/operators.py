@@ -370,27 +370,330 @@ class AGS3D_OT_ImportRoom(bpy.types.Operator):
 
 
 # ------------------------------------------------------------------ #
-# File → Import menu entry                                             #
+# Coordinate conversion: Blender → Godot                              #
+# ------------------------------------------------------------------ #
+
+def _blender_to_godot(bx: float, by: float, bz: float) -> tuple[float, float, float]:
+    """Convert Blender (Y-up, right-handed) to Godot (Y-up, left-handed)."""
+    return bx, by, -bz
+
+
+def _bbox_size_godot(obj: bpy.types.Object) -> tuple[float, float, float]:
+    """Return the object's axis-aligned bounding box size in Godot coordinates.
+
+    Reads the 8 bbox corners in local space, applies the object's scale
+    (not rotation) to get approximate world-space extents, then converts.
+    T-BL05 will refine this to use the full world-space bounding box.
+    """
+    bb = obj.bound_box  # 8 corners in local space
+    xs = [c[0] for c in bb]
+    ys = [c[1] for c in bb]
+    zs = [c[2] for c in bb]
+    # Local-space extents × object scale = world-space extents (approx).
+    sx = (max(xs) - min(xs)) * abs(obj.scale.x)
+    sy = (max(ys) - min(ys)) * abs(obj.scale.y)
+    sz = (max(zs) - min(zs)) * abs(obj.scale.z)
+    # In Godot, Y is up and Z is depth, same as Blender — no axis swap for size.
+    return sx, sy, sz
+
+
+# ------------------------------------------------------------------ #
+# .agroom writer                                                       #
+# ------------------------------------------------------------------ #
+
+def _fmt(v: float) -> str:
+    """Format a float for .agroom output (trim trailing zeros)."""
+    s = f"{v:.4f}".rstrip("0").rstrip(".")
+    return s if s else "0"
+
+
+def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
+    """Serialise AGS-tagged Blender objects to .agroom text.
+
+    Coordinate conversion: Blender → Godot (_blender_to_godot).
+    Camera look_at: auto-computed from the camera's -Z forward vector × 5 m.
+    T-BL05 (full bounding-box extraction) and T-BL06 (eyedropper look_at)
+    will refine these two aspects.
+    """
+    from .panels import _get_ags_type
+
+    lines: list[str] = [f'Room "{room_name}" {{']
+
+    # Collect by type.
+    cameras: list[bpy.types.Object] = []
+    points: list[bpy.types.Object] = []
+    walkable: list[bpy.types.Object] = []
+    blockers: list[bpy.types.Object] = []
+    spawns: list[bpy.types.Object] = []
+    hotspots: list[bpy.types.Object] = []
+    triggers: list[bpy.types.Object] = []
+
+    for obj in objects:
+        t = _get_ags_type(obj)
+        if t == "CAMERA":
+            cameras.append(obj)
+        elif t == "POINT":
+            points.append(obj)
+        elif t == "WALKABLE":
+            walkable.append(obj)
+        elif t == "BLOCKER":
+            blockers.append(obj)
+        elif t == "SPAWN":
+            spawns.append(obj)
+        elif t == "HOTSPOT":
+            hotspots.append(obj)
+        elif t == "TRIGGER":
+            triggers.append(obj)
+
+    # initial_camera = first camera's name.
+    if cameras:
+        first_cam_name = cameras[0].get("AGS_name", cameras[0].name)
+        lines.append(f'    initial_camera = "{first_cam_name}"')
+        lines.append("")
+
+    # Cameras
+    for obj in cameras:
+        name = obj.get("AGS_name", obj.name)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        # Auto-compute look_at from camera forward (-Z in local space).
+        fwd = obj.matrix_world.to_3x3() @ Vector((0.0, 0.0, -5.0))
+        lax, lay, laz = _blender_to_godot(bx + fwd.x, by + fwd.y, bz + fwd.z)
+        lines.append(f'    Camera "{name}" {{')
+        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append(f'        look_at  = ({_fmt(lax)}, {_fmt(lay)}, {_fmt(laz)})')
+        lines.append("    }")
+        lines.append("")
+
+    # Points
+    for obj in points:
+        name = obj.get("AGS_name", obj.name)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        lines.append(f'    Point "{name}" {{')
+        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append("    }")
+        lines.append("")
+
+    # WalkableSurface
+    for obj in walkable:
+        name = obj.get("AGS_name", obj.name)
+        sx, sy, sz = _bbox_size_godot(obj)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        lines.append(f'    WalkableSurface "{name}" {{')
+        lines.append(f'        size   = ({_fmt(sx)}, {_fmt(sz)})')  # XZ plane
+        lines.append(f'        offset = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append("    }")
+        lines.append("")
+
+    # BlockerVolume
+    for obj in blockers:
+        name = obj.get("AGS_name", obj.name)
+        sx, sy, sz = _bbox_size_godot(obj)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        lines.append(f'    BlockerVolume "{name}" {{')
+        lines.append(f'        size     = ({_fmt(sx)}, {_fmt(sy)}, {_fmt(sz)})')
+        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append("    }")
+        lines.append("")
+
+    # SpawnPoint
+    for obj in spawns:
+        name = obj.get("AGS_name", obj.name)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        char = obj.get("AGS_character", "")
+        lines.append(f'    SpawnPoint "{name}" {{')
+        if char:
+            lines.append(f'        character = "{char}"')
+        lines.append(f'        position  = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append("    }")
+        lines.append("")
+
+    # Hotspot
+    for obj in hotspots:
+        name = obj.get("AGS_name", obj.name)
+        sx, sy, sz = _bbox_size_godot(obj)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        lines.append(f'    Hotspot "{name}" {{')
+        lines.append(f'        size     = ({_fmt(sx)}, {_fmt(sy)}, {_fmt(sz)})')
+        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append("    }")
+        lines.append("")
+
+    # TriggerRegion
+    for obj in triggers:
+        name = obj.get("AGS_name", obj.name)
+        sx, sy, sz = _bbox_size_godot(obj)
+        bx, by, bz = obj.matrix_world.translation
+        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        lines.append(f'    TriggerRegion "{name}" {{')
+        lines.append(f'        size     = ({_fmt(sx)}, {_fmt(sy)}, {_fmt(sz)})')
+        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append("    }")
+        lines.append("")
+
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+# ------------------------------------------------------------------ #
+# Export operator (T-BL04)                                             #
+# ------------------------------------------------------------------ #
+
+# Gameplay-only types: not exported as visual geometry.
+_GAMEPLAY_ONLY = {"WALKABLE", "BLOCKER", "HOTSPOT", "TRIGGER", "SPAWN", "NAVMESH"}
+
+
+class AGS3D_OT_ExportRoom(bpy.types.Operator):
+    """Export AGS3D room — gameplay objects → .agroom, visual mesh → .glb"""
+
+    bl_idname = "ags3d.export_room"
+    bl_label = "AGS3D Room (.agroom + .glb)"
+    bl_options = {"REGISTER"}
+
+    filepath: bpy.props.StringProperty(
+        name=".agroom File Path",
+        subtype="FILE_PATH",
+    )  # type: ignore[assignment]
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.agroom",
+        options={"HIDDEN"},
+    )  # type: ignore[assignment]
+
+    room_name: bpy.props.StringProperty(
+        name="Room Name",
+        description="Written to the Room block; defaults to blend file stem",
+        default="",
+    )  # type: ignore[assignment]
+
+    export_visual: bpy.props.BoolProperty(
+        name="Export Visual Mesh (.glb)",
+        description="Call the GLTF exporter for non-gameplay objects",
+        default=True,
+    )  # type: ignore[assignment]
+
+    export_gameplay: bpy.props.BoolProperty(
+        name="Export Gameplay Data (.agroom)",
+        description="Write .agroom from AGS-tagged objects",
+        default=True,
+    )  # type: ignore[assignment]
+
+    def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set:
+        # Pre-fill filepath from blend file name.
+        blend = bpy.data.filepath
+        if blend:
+            import os as _os
+            stem = _os.path.splitext(_os.path.basename(blend))[0]
+            self.filepath = _os.path.join(_os.path.dirname(blend), stem + ".agroom")
+            if not self.room_name:
+                self.room_name = stem
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+    def execute(self, context: bpy.types.Context) -> set:
+        import os as _os
+
+        agroom_path = self.filepath
+        if not agroom_path.endswith(".agroom"):
+            agroom_path += ".agroom"
+        glb_path = agroom_path.replace(".agroom", ".glb")
+
+        room_name = self.room_name or _os.path.splitext(_os.path.basename(agroom_path))[0]
+
+        all_objects = list(context.scene.objects)
+
+        # --- write .agroom ---
+        if self.export_gameplay:
+            agroom_text = _write_agroom(room_name, all_objects)
+            try:
+                with open(agroom_path, "w", encoding="utf-8") as fh:
+                    fh.write(agroom_text)
+            except OSError as exc:
+                self.report({"ERROR"}, f"Cannot write .agroom: {exc}")
+                return {"CANCELLED"}
+
+        # --- export .glb (visual objects only) ---
+        if self.export_visual:
+            from .panels import _get_ags_type
+
+            # Select only visual objects (non-gameplay-only, non-camera, non-none-type).
+            visual_objects = [
+                obj for obj in all_objects
+                if _get_ags_type(obj) not in _GAMEPLAY_ONLY
+                and _get_ags_type(obj) != "CAMERA"
+                and obj.type in {"MESH", "LIGHT", "EMPTY"}
+                and _get_ags_type(obj) != "POINT"
+                and _get_ags_type(obj) != "SPAWN"
+            ]
+
+            prev_selected = list(context.selected_objects)
+            prev_active = context.active_object
+            bpy.ops.object.select_all(action="DESELECT")
+            for obj in visual_objects:
+                obj.select_set(True)
+            if visual_objects:
+                context.view_layer.objects.active = visual_objects[0]
+
+            result = bpy.ops.export_scene.gltf(
+                filepath=glb_path,
+                export_format="GLB",
+                use_selection=True,
+                export_apply=True,
+                export_animations=False,
+                export_yup=True,
+            )
+
+            bpy.ops.object.select_all(action="DESELECT")
+            for obj in prev_selected:
+                obj.select_set(True)
+            if prev_active:
+                context.view_layer.objects.active = prev_active
+
+            if "FINISHED" not in result:
+                self.report({"WARNING"}, "AGS3D: GLTF export failed or produced no output")
+
+        parts = []
+        if self.export_gameplay:
+            parts.append(f".agroom → {_os.path.basename(agroom_path)}")
+        if self.export_visual:
+            parts.append(f".glb → {_os.path.basename(glb_path)}")
+        self.report({"INFO"}, f"AGS3D: exported {room_name!r}: {', '.join(parts)}")
+        return {"FINISHED"}
+
+
+# ------------------------------------------------------------------ #
+# File → Import / Export menu entries                                  #
 # ------------------------------------------------------------------ #
 
 def _menu_import(self: bpy.types.Menu, context: bpy.types.Context) -> None:
     self.layout.operator(AGS3D_OT_ImportRoom.bl_idname, text="AGS3D Room (.agroom)")
 
 
+def _menu_export(self: bpy.types.Menu, context: bpy.types.Context) -> None:
+    self.layout.operator(AGS3D_OT_ExportRoom.bl_idname, text="AGS3D Room (.agroom + .glb)")
+
+
 # ------------------------------------------------------------------ #
 # Registration                                                         #
 # ------------------------------------------------------------------ #
 
-_classes = [AGS3D_OT_ImportRoom]
+_classes = [AGS3D_OT_ImportRoom, AGS3D_OT_ExportRoom]
 
 
 def register() -> None:
     for cls in _classes:
         bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(_menu_import)
+    bpy.types.TOPBAR_MT_file_export.append(_menu_export)
 
 
 def unregister() -> None:
+    bpy.types.TOPBAR_MT_file_export.remove(_menu_export)
     bpy.types.TOPBAR_MT_file_import.remove(_menu_import)
     for cls in reversed(_classes):
         bpy.utils.unregister_class(cls)
