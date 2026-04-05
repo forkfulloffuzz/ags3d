@@ -18,6 +18,16 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] `Character "x" { visual_mode = "puppet" }` — `ag validate` / parse reports error `visual_mode must be "mesh" or "billboard"`.
 - [ ] Open the generated billboard `.tscn` in Godot. The `AGSCharacter2D` node should appear in the scene tree; `visual_mode` property shows `billboard` in the Inspector.
 
+### T-BL01 — Blender add-on scaffold
+
+**Setup:** Blender 4.2+ installed.
+
+- [ ] In Blender: Preferences → Extensions → Install from Disk → select `tools/blender_addon/` folder (or a .zip of it). Add-on installs without errors.
+- [ ] After installation, the add-on appears in the Extensions list as **AGS3D** version 0.1.0.
+- [ ] Enable the add-on → no errors in the Blender console (`register()` called silently).
+- [ ] Disable the add-on → no errors in the Blender console (`unregister()` called silently).
+- [ ] Re-enable the add-on after a Blender restart — it stays enabled across restarts.
+
 ---
 
 ## M9 — AG Studio Editor (Batch 2)

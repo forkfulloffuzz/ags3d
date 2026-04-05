@@ -1,0 +1,17 @@
+schema_version = "1.0.0"
+
+id = "ags3d"
+version = "0.1.0"
+name = "AGS3D"
+tagline = "Adventure game development tools for the AGS3D engine"
+maintainer = "AGS3D contributors"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+tags = ["Game Engine", "Import-Export"]
+
+[permissions]
+files = "Export room and character data to .agroom / .glb files"
