@@ -423,6 +423,11 @@ tools/ag/dist/
 tools/ag/build/
 ag.spec
 
+tools/agui/agui
+game_prototype/.godot
+tools/ag/ag
+.keys/**/*.*
+
 # GitHub MCP server binary (downloaded, not committed)
 .vscode/github-mcp-server
 .vscode/*.tar.gz
@@ -433,6 +438,3 @@ ag.spec
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/tasks.json
-tools/agui/agui
-game_prototype/.godot
-tools/ag/ag

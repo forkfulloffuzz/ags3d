@@ -42,7 +42,16 @@
       "Bash(.dev/ag.sh build:*)",
       "Bash(.dev/build-ag.sh ag:*)",
       "Bash(../bin/ag build:*)",
-      "Bash(grep -rn void.*make_visible /home/sebastian/Projects/ags3d/editor/plugins/node_3d_editor_plugin.cpp /home/sebastian/Projects/ags3d/editor/plugins/node_3d_editor_plugin.h)"
+      "Bash(grep -rn void.*make_visible /home/sebastian/Projects/ags3d/editor/plugins/node_3d_editor_plugin.cpp /home/sebastian/Projects/ags3d/editor/plugins/node_3d_editor_plugin.h)",
+      "Bash(../.dev/ag.sh build:*)",
+      "Bash(grep -r \"start_room\\\\|main_scene\\\\|game\\\\.agp\" /home/sebastian/Projects/ags3d/game_prototype --include=*.gd --include=*.tscn --include=*.godot -l)",
+      "Bash(grep -r \"AGSTrigger\\\\|load_room\\\\|room_change\" /home/sebastian/Projects/ags3d/game_prototype/.engine/runtime/ --include=*.gd -l)",
+      "Bash(grep -r AGSTrigger /home/sebastian/Projects/ags3d/modules/ --include=*.h --include=*.cpp -l)",
+      "Bash(grep -rn \"go_to_room\\\\|GoToRoom\" /home/sebastian/Projects/ags3d/game_prototype/.engine/ --include=*.gd)",
+      "Bash(cat /home/sebastian/Projects/ags3d/tools/ag/internal/validate/*.go)",
+      "Bash(head -60 /home/sebastian/Projects/ags3d/tools/ag/internal/analysis/*.go)",
+      "Bash(go run:*)",
+      "Bash(ls /home/sebastian/Projects/ags3d/modules/agvm/ags_item*)"
     ],
     "additionalDirectories": [
       "/home/sebastian/Projects/ags3d/game_prototype/addons/ag_studio"

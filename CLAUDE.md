@@ -28,9 +28,10 @@ This keeps M12 complete as engine work accumulates.
 
 When **all tasks in `TODO.md` are completed**:
 1. Update the final task to `[x]`.
-2. Stop and ask the user: *"All tasks are done. Shall I analyse the milestones and pick the next 10 tasks?"*
-3. Only proceed to select new tasks after explicit user approval.
-4. When approved: review open GitHub issues across active milestones, apply the same ordering logic (critical path first, then unblocked parallel work), write the new batch to `TODO.md`, and report the list to the user.
+2. Print a one-line summary for every completed task in the batch. Each line must state what capability exists now that did not exist before (format: `- **T-ID** — [what you can do now that you couldn't before]`).
+3. Stop and ask the user: *"All tasks are done. Shall I analyse the milestones and pick the next 10 tasks?"*
+4. Only proceed to select new tasks after explicit user approval.
+5. When approved: review open GitHub issues across active milestones, apply the same ordering logic (critical path first, then unblocked parallel work), write the new batch to `TODO.md`, and report the list to the user.
 
 ### Commits
 
