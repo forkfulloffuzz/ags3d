@@ -71,6 +71,20 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL03 — Viewport overlay
+
+**Setup:** Blender 4.2+ with AGS3D add-on enabled. A scene with several mesh objects tagged as different AGS types.
+
+- [ ] In the 3D viewport header, click **Overlays** → dropdown contains an **AGS3D** toggle. It is enabled by default.
+- [ ] With overlay enabled: objects tagged as `WalkableSurface` show a **green** wireframe bounding box; `BlockerVolume` → **red**; `Hotspot` → **blue**; `TriggerRegion` → **purple**; `SpawnPoint` → **cyan**; `Camera` → **yellow**; `NavMesh` → **teal**; `Point` → **white**.
+- [ ] Each tagged object shows a text label at its origin with format `"TypeName: object_name"` (or `AGS_name` if set).
+- [ ] Objects with type `None` show no overlay.
+- [ ] Disable the AGS3D overlay toggle → all colored wireframes and labels disappear immediately.
+- [ ] Re-enable → overlays reappear.
+- [ ] Disable the add-on → no errors in console; overlay is removed cleanly.
+
+---
+
 ### T-BL02 — AGS3D object type panel
 
 **Setup:** Blender 4.2+ with AGS3D add-on enabled (T-BL01). Open any scene.

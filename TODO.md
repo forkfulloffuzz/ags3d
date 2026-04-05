@@ -43,7 +43,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-GS26** — GDScript: billboard direction selection runtime — angle quantization (4/8-way snap from velocity→camera angle), per-angle frame cycling, `sprite_locked` camera support *(depends on T-GS24, T-GS25)*
 - [x] **T-GS29** — GDScript: `AGSAnimationPlayer2D` — billboard direction + frame cycling; implements `AGSAnimationPlayerBase` API *(depends on T-GS27, T-GS28)*
 - [x] **T-GS13** — Go: `.agui` parser + `ag build` GUI scene generator (`InventoryBar`, `VerbBar`, `StatusLine` → `CanvasLayer` `.tscn`) *(no blockers)*
-- [ ] **T-BL03** — Python: Viewport overlay — colored wireframes per AGS type drawn via `SpaceView3D.draw_handler_add`; toggled from View → Overlays *(depends on T-BL02)*
+- [x] **T-BL03** — Python: Viewport overlay — colored wireframes per AGS type drawn via `SpaceView3D.draw_handler_add`; toggled from View → Overlays *(depends on T-BL02)*
 - [ ] **T-BL08** — Python: Import operator (`File → Import → AGS3D Room`) — reads `.agroom` → creates Blender empties/meshes in `AGS_Gameplay` collection *(depends on T-BL02)*
 - [ ] **T-BL10** — Python: Character export operator (`File → Export → AGS3D Character`) — exports armature + mesh + NLA actions → `.glb` *(depends on T-BL01)*
 - [ ] **T-BL04** — Python: Export operator (`File → Export → AGS3D Room`) — extract tagged gameplay objects → `.agroom`; call GLTF exporter → `.glb` *(depends on T-BL02; unlocks T-BL05/06/07)*
