@@ -29,7 +29,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 - [x] **T-GS11** — Go: grammar + emitter — `PlayMusic`, `StopMusic`, `PlaySound` (non-blocking; map to `AGSRuntime.play_music`, `stop_music`, `play_sound`)
 - [x] **T-GS12** — GDScript: `AGSRuntime` — audio manager (`AudioStreamPlayer` for music + sfx pool; `play_music(name)`, `stop_music()`, `play_sound(name)`; audio files in `audio/music/` and `audio/sfx/`)
-- [ ] **T-GS16** — GDScript: `AGSRuntime` — `save_game(slot)` / `load_game(slot)` (serialise globals, room name, character inventories, room item visibility to `user://save_<slot>.json`)
+- [x] **T-GS16** — GDScript: `AGSRuntime` — `save_game(slot)` / `load_game(slot)` (serialise globals, room name, character inventories, room item visibility to `user://save_<slot>.json`)
 - [ ] **T-GS17** — Go: grammar + emitter — `SaveGame`, `LoadGame`, `GameSaved` (non-blocking; map to `AGSRuntime.save_game`, `load_game`, `game_saved`)
 - [ ] **T-GS27** — C++: split `AGSCharacter` → `AGSCharacterBase` (signals + shared props) + `AGSCharacter3D` + `AGSCharacter2D`; preserve all existing signal/property interface
 - [ ] **T-GS28** — GDScript: `AGSAnimationPlayerBase` (common API: `play_clip`, `stop`, `set_state`, `on_anim_event`) + `AGSAnimationPlayer3D` wrapping existing `AnimationPlayer` *(depends on T-GS27)*

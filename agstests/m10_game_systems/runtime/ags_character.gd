@@ -63,6 +63,33 @@ func _on_navigation_finished() -> void:
 	velocity = Vector3.ZERO
 	emit_signal("walk_completed")
 
+## Inventory management — backing store for AddInventory/LoseInventory/HasInventory.
+var _inventory: Array[StringName] = []
+
+func add_inventory(item_name: String) -> void:
+	var n := StringName(item_name)
+	if not _inventory.has(n):
+		_inventory.append(n)
+
+func lose_inventory(item_name: String) -> void:
+	_inventory.erase(StringName(item_name))
+
+func has_inventory(item_name: String) -> bool:
+	return _inventory.has(StringName(item_name))
+
+## Returns a copy of the inventory as an Array of Strings (for save/load).
+func get_inventory() -> Array:
+	var out: Array = []
+	for n in _inventory:
+		out.append(String(n))
+	return out
+
+## Replaces the inventory (used by load_game). Accepts Array[String].
+func set_inventory(items: Array) -> void:
+	_inventory.clear()
+	for item in items:
+		_inventory.append(StringName(String(item)))
+
 func _find_parent_room() -> AGSRoom:
 	var parent := get_parent()
 	while parent:

@@ -243,3 +243,19 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Calling `play_music` with a name that has no file in `audio/music/` prints a warning and does not crash
 - [ ] Calling `play_sound` with a name that has no file in `audio/sfx/` prints a warning and does not crash
 - [ ] `play_music_requested`, `stop_music_requested`, `play_sound_requested` signals appear in the Node panel's Signals tab on `AGSRuntime` (requires Godot rebuild)
+
+---
+
+### T-GS16 — GDScript: `AGSRuntime` save_game / load_game
+
+**Setup:** Add a room script that saves and loads. Use Godot remote inspector to verify state.
+
+- [ ] `AGSRuntime.game_saved(1)` returns `false` before any save has been made to slot 1
+- [ ] `AGSRuntime.save_game(1)` creates `user://save_1.json`; `game_saved(1)` returns `true`
+- [ ] `AGSRuntime.load_game(1)` restores global variables to their saved values
+- [ ] After `load_game`, character inventory matches what was saved (inspect via remote debugger)
+- [ ] After `load_game`, hidden room items remain hidden; visible items remain visible
+- [ ] `load_game_requested` signal fires with a dictionary containing `"globals"`, `"characters"`, `"room_items"`, `"room"`, `"music"` keys
+- [ ] Saving to slot 1 and slot 2 independently — loading slot 1 does not affect slot 2 state
+- [ ] `load_game` with a non-existent slot prints a warning and does not crash
+- [ ] `save_game` / `load_game` appear as signals in the Node panel (requires Godot rebuild)

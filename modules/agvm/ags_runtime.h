@@ -39,6 +39,11 @@ class AGSRuntime : public Object {
 	// Whether the player can walk by clicking. Scripts toggle this during cutscenes.
 	bool _player_control_enabled = true;
 
+	// Save-state tracking: names of the active room and music track.
+	// Updated by load_room() and play_music()/stop_music() respectively.
+	String _current_room;
+	String _current_music;
+
 	// Source maps keyed by the res:// path of the generated .gd file.
 	HashMap<String, Vector<SourceMapEntry>> _source_maps;
 
@@ -94,6 +99,14 @@ public:
 	// Player control — disabled during cutscenes so click-to-walk is suppressed.
 	void set_player_control(bool p_enabled);
 	bool is_player_control_enabled() const;
+
+	// Save / Load — serialise/restore game state to user://save_<slot>.json.
+	// save_game / load_game / game_saved are also accessible from AGS-spirit scripts.
+	void save_game(int p_slot);
+	void load_game(int p_slot);
+	bool game_saved(int p_slot) const;
+	String get_current_room() const { return _current_room; }
+	String get_current_music() const { return _current_music; }
 
 	// Audio — emit signals for the AGSAudio AutoLoad to handle.
 	// AGSRuntime is an Object, not a Node, so AudioStreamPlayer nodes live in
