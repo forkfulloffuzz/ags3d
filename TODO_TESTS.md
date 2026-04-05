@@ -28,6 +28,22 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Disable the add-on → no errors in the Blender console (`unregister()` called silently).
 - [ ] Re-enable the add-on after a Blender restart — it stays enabled across restarts.
 
+### T-BL02 — AGS3D object type panel
+
+**Setup:** Blender 4.2+ with AGS3D add-on enabled (T-BL01). Open any scene.
+
+- [ ] Select any mesh object → Object Properties → **AGS3D** section appears.
+- [ ] The **Type** dropdown defaults to **None** on a new object.
+- [ ] Select **WalkableSurface** → a **Name** text field appears below the dropdown.
+- [ ] Enter `"floor"` in the Name field → the object gains a custom property `AGS_name = "floor"` (visible in Object Properties → Custom Properties).
+- [ ] Select the object → Object Properties → Custom Properties shows `AGS_type = "WALKABLE"`.
+- [ ] Switch to **SpawnPoint** type → a **Character** field appears in addition to Name.
+- [ ] Enter `"player"` in Character → `AGS_character = "player"` custom property is set.
+- [ ] Select **None** type → name and character fields disappear.
+- [ ] Open View3D → Sidebar (N key) → **AGS3D** tab → same panel appears and stays in sync with Object Properties panel.
+- [ ] Save the .blend file, reopen it → `AGS_type` and `AGS_name` custom properties are preserved on the object.
+- [ ] Select a light object → the panel still renders without crashing (type stays None by default).
+
 ---
 
 ## M9 — AG Studio Editor (Batch 2)

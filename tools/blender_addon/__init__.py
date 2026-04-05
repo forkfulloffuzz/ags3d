@@ -20,10 +20,9 @@ bl_info = {
     "category": "Game Engine",
 }
 
-# Sub-modules are imported here once they exist.
-# from . import panels, operators, overlay  # noqa: E402  (uncomment as added)
+from . import panels  # noqa: E402
 
-_modules = []  # populated as panels / operators are added
+_modules = [panels]
 
 
 def register() -> None:
