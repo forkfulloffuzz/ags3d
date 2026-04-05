@@ -17,6 +17,10 @@ class AGSCharacterBase : public CharacterBody3D {
 	float move_speed = 4.0f;
 	String say_text;
 
+	// Visual rendering mode: "mesh" (default, 3D geometry) or "billboard" (Sprite3D).
+	// Determines which concrete subclass (AGSCharacter3D / AGSCharacter2D) ag build generates.
+	String visual_mode = "mesh";
+
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
@@ -30,4 +34,7 @@ public:
 
 	void set_say_text(const String &p_text);
 	String get_say_text() const;
+
+	void set_visual_mode(const String &p_mode);
+	String get_visual_mode() const;
 };

@@ -33,7 +33,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-GS17** — Go: grammar + emitter — `SaveGame`, `LoadGame`, `GameSaved` (non-blocking; map to `AGSRuntime.save_game`, `load_game`, `game_saved`)
 - [x] **T-GS27** — C++: split `AGSCharacter` → `AGSCharacterBase` (signals + shared props) + `AGSCharacter3D` + `AGSCharacter2D`; preserve all existing signal/property interface
 - [x] **T-GS28** — GDScript: `AGSAnimationPlayerBase` (common API: `play_clip`, `stop`, `set_state`, `on_anim_event`) + `AGSAnimationPlayer3D` wrapping existing `AnimationPlayer` *(depends on T-GS27)*
-- [ ] **T-GS24** — C++: `AGSCharacter` — add `visual_mode` property (`"mesh"` | `"billboard"`); no scene gen change yet
+- [x] **T-GS24** — C++: `AGSCharacter` — add `visual_mode` property (`"mesh"` | `"billboard"`); no scene gen change yet
 - [ ] **T-GS25** — Go: `.agchar` billboard properties (`visual_mode`, `sprite_sheet`, `sprite_angles`, `frame_size`, `frames_per_angle`); `ag build` outputs `Sprite3D`-rooted `.tscn` when `visual_mode = "billboard"` *(depends on T-GS24)*
 - [ ] **T-BL01** — Python: Blender add-on scaffold — `tools/blender_addon/`, `blender_manifest.toml`, register/unregister hooks, installable in Blender 4.x; no UI yet
 - [ ] **T-BL02** — Python: AGS3D object type panel — Object Properties sidebar + N-panel; type dropdown (None/WalkableSurface/BlockerVolume/Point/Camera/Hotspot/TriggerRegion/SpawnPoint/NavMesh); stores `AGS_type`/`AGS_name` as custom properties on the Blender object *(depends on T-BL01)*

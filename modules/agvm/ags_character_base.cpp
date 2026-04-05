@@ -16,6 +16,11 @@ void AGSCharacterBase::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_say_text"), &AGSCharacterBase::get_say_text);
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "say_text"), "set_say_text", "get_say_text");
 
+	ClassDB::bind_method(D_METHOD("set_visual_mode", "mode"), &AGSCharacterBase::set_visual_mode);
+	ClassDB::bind_method(D_METHOD("get_visual_mode"), &AGSCharacterBase::get_visual_mode);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "visual_mode", PROPERTY_HINT_ENUM, "mesh,billboard"),
+			"set_visual_mode", "get_visual_mode");
+
 	ADD_SIGNAL(MethodInfo("walk_completed"));
 	ADD_SIGNAL(MethodInfo("face_completed"));
 	ADD_SIGNAL(MethodInfo("say_completed"));
@@ -65,4 +70,12 @@ void AGSCharacterBase::set_say_text(const String &p_text) {
 
 String AGSCharacterBase::get_say_text() const {
 	return say_text;
+}
+
+void AGSCharacterBase::set_visual_mode(const String &p_mode) {
+	visual_mode = p_mode;
+}
+
+String AGSCharacterBase::get_visual_mode() const {
+	return visual_mode;
 }

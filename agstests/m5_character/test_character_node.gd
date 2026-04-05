@@ -45,3 +45,12 @@ func test_03_two_characters_independently_retrievable() -> void:
 	assert_ne(AGSRuntime.get_character("hero"), ch_b, "hero and villain resolve to the same node")
 
 	root.free()
+
+
+# UT-M5-04b: visual_mode defaults to "mesh" and can be set to "billboard".
+func test_04b_visual_mode_property() -> void:
+	var ch := AGSCharacterBase.new()
+	assert_eq(ch.visual_mode, "mesh", "visual_mode should default to 'mesh'")
+	ch.visual_mode = "billboard"
+	assert_eq(ch.visual_mode, "billboard", "visual_mode should store 'billboard'")
+	ch.free()
