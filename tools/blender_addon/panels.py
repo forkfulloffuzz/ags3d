@@ -84,6 +84,7 @@ class AGS3D_OT_SetType(bpy.types.Operator):
             self.report({"WARNING"}, "No active object")
             return {"CANCELLED"}
         _set_ags_type(obj, self.ags_type)
+        _init_type_props(obj, self.ags_type)
         return {"FINISHED"}
 
 
@@ -91,10 +92,29 @@ class AGS3D_OT_SetType(bpy.types.Operator):
 # Shared panel draw function                                           #
 # ------------------------------------------------------------------ #
 
+def _init_type_props(obj: bpy.types.Object, ags_type: str) -> None:
+    """Ensure custom property keys required by *ags_type* exist on *obj*.
+
+    layout.prop / layout.prop_search silently render nothing when the
+    property key is absent — initialise to empty string so the widget draws.
+    """
+    if ags_type in _NAMED_TYPES:
+        if "AGS_name" not in obj:
+            obj["AGS_name"] = ""
+    if ags_type == "SPAWN":
+        if "AGS_character" not in obj:
+            obj["AGS_character"] = ""
+    if ags_type == "CAMERA":
+        if "AGS_look_at" not in obj:
+            obj["AGS_look_at"] = ""
+
+
 def _draw_ags3d_panel(layout: bpy.types.UILayout, obj: bpy.types.Object) -> None:
     """Draw the AGS3D type selector and type-specific fields."""
 
     current_type = _get_ags_type(obj)
+    # Ensure property keys exist before widgets try to bind to them.
+    _init_type_props(obj, current_type)
 
     # --- Type dropdown ------------------------------------------------
     row = layout.row()
