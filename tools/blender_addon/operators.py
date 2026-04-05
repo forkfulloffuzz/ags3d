@@ -608,11 +608,109 @@ def _write_agroom(
 
 
 # ------------------------------------------------------------------ #
+# NavMesh baking (T-BL09)                                              #
+# ------------------------------------------------------------------ #
+
+_NAVMESH_OBJ_NAME = "AGS_NavMesh"
+_NAVMESH_COLLECTION = "AGS_NavMesh"
+
+
+def _top_quad_verts(obj: bpy.types.Object) -> list:
+    """Return the 4 world-space corners of the top XZ face of *obj*'s bounding box."""
+    from mathutils import Vector as _V
+    corners = [obj.matrix_world @ _V(v) for v in obj.bound_box]
+    xs = [c.x for c in corners]
+    ys = [c.y for c in corners]
+    zs = [c.z for c in corners]
+    x_min, x_max = min(xs), max(xs)
+    y_top = max(ys)
+    z_min, z_max = min(zs), max(zs)
+    return [
+        _V((x_min, y_top, z_min)),
+        _V((x_max, y_top, z_min)),
+        _V((x_max, y_top, z_max)),
+        _V((x_min, y_top, z_max)),
+    ]
+
+
+def _bake_navmesh(scene: bpy.types.Scene) -> "bpy.types.Object | None":
+    """Bake a navigation mesh from all WalkableSurface objects in *scene*.
+
+    Creates (or replaces) a single Blender mesh object named "AGS_NavMesh"
+    containing one quad per WalkableSurface.  The object is tagged with
+    AGS_type = "NAVMESH" so Godot's importer can identify it.
+
+    Returns the baked object, or None if no WalkableSurface objects exist.
+    """
+    from .panels import _get_ags_type
+
+    walkable = [
+        obj for obj in scene.objects
+        if _get_ags_type(obj) == "WALKABLE" and obj.type == "MESH"
+    ]
+    if not walkable:
+        return None
+
+    # Remove stale AGS_NavMesh object/mesh if present.
+    old_obj = bpy.data.objects.get(_NAVMESH_OBJ_NAME)
+    if old_obj is not None:
+        old_mesh = old_obj.data
+        bpy.data.objects.remove(old_obj, do_unlink=True)
+        if old_mesh and old_mesh.users == 0:
+            bpy.data.meshes.remove(old_mesh)
+
+    # Build combined mesh from top quads of all WalkableSurface objects.
+    mesh = bpy.data.meshes.new(_NAVMESH_OBJ_NAME)
+    bm = bmesh.new()
+    for ws_obj in walkable:
+        verts = _top_quad_verts(ws_obj)
+        bm_verts = [bm.verts.new(v) for v in verts]
+        bm.faces.new(bm_verts)
+    bm.to_mesh(mesh)
+    bm.free()
+
+    # Create object and tag it.
+    nav_obj = bpy.data.objects.new(_NAVMESH_OBJ_NAME, mesh)
+    nav_obj["AGS_type"] = "NAVMESH"
+    nav_obj["AGS_name"] = _NAVMESH_OBJ_NAME
+
+    # Link to a dedicated collection (create if needed).
+    col = bpy.data.collections.get(_NAVMESH_COLLECTION)
+    if col is None:
+        col = bpy.data.collections.new(_NAVMESH_COLLECTION)
+        scene.collection.children.link(col)
+    col.objects.link(nav_obj)
+
+    return nav_obj
+
+
+class AGS3D_OT_BakeNavMesh(bpy.types.Operator):
+    """Bake a navigation mesh from all WalkableSurface objects in the scene.
+
+    The result is stored as a mesh object named AGS_NavMesh in the AGS_NavMesh
+    collection.  It is included automatically when exporting a room (.glb).
+    """
+
+    bl_idname = "ags3d.bake_navmesh"
+    bl_label = "Bake NavMesh"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context: bpy.types.Context) -> set:
+        nav_obj = _bake_navmesh(context.scene)
+        if nav_obj is None:
+            self.report({"WARNING"}, "AGS3D: no WalkableSurface objects found — nothing baked")
+            return {"CANCELLED"}
+        self.report({"INFO"}, f"AGS3D: baked {_NAVMESH_OBJ_NAME} from WalkableSurface objects")
+        return {"FINISHED"}
+
+
+# ------------------------------------------------------------------ #
 # Export operator (T-BL04)                                             #
 # ------------------------------------------------------------------ #
 
-# Gameplay-only types: not exported as visual geometry.
-_GAMEPLAY_ONLY = {"WALKABLE", "BLOCKER", "HOTSPOT", "TRIGGER", "SPAWN", "NAVMESH"}
+# Types excluded from visual GLTF export (pure gameplay descriptors).
+# NAVMESH is exported separately as part of the visual mesh (carries geo).
+_GAMEPLAY_ONLY = {"WALKABLE", "BLOCKER", "HOTSPOT", "TRIGGER", "SPAWN"}
 
 
 class AGS3D_OT_ExportRoom(bpy.types.Operator):
@@ -704,18 +802,24 @@ class AGS3D_OT_ExportRoom(bpy.types.Operator):
                 self.report({"ERROR"}, f"Cannot write .agroom: {exc}")
                 return {"CANCELLED"}
 
-        # --- export .glb (visual objects only) ---
+        # --- export .glb (visual objects + baked navmesh) ---
         if self.export_visual:
             from .panels import _get_ags_type
 
-            # Select only visual objects (non-gameplay-only, non-camera, non-none-type).
+            # Auto-bake navmesh from WalkableSurface objects before export.
+            nav_obj = _bake_navmesh(context.scene)
+
+            # Select only visual objects (non-gameplay-only, non-camera, non-none-type)
+            # PLUS the freshly baked NavMesh (AGS_type = "NAVMESH").
+            all_objects_now = list(context.scene.objects)
             visual_objects = [
-                obj for obj in all_objects
-                if _get_ags_type(obj) not in _GAMEPLAY_ONLY
-                and _get_ags_type(obj) != "CAMERA"
-                and obj.type in {"MESH", "LIGHT", "EMPTY"}
-                and _get_ags_type(obj) != "POINT"
-                and _get_ags_type(obj) != "SPAWN"
+                obj for obj in all_objects_now
+                if (_get_ags_type(obj) not in _GAMEPLAY_ONLY
+                    and _get_ags_type(obj) != "CAMERA"
+                    and obj.type in {"MESH", "LIGHT", "EMPTY"}
+                    and _get_ags_type(obj) != "POINT"
+                    and _get_ags_type(obj) != "SPAWN")
+                or _get_ags_type(obj) == "NAVMESH"
             ]
 
             prev_selected = list(context.selected_objects)
@@ -733,6 +837,7 @@ class AGS3D_OT_ExportRoom(bpy.types.Operator):
                 export_apply=True,
                 export_animations=False,
                 export_yup=True,
+                export_extras=True,  # include AGS_type / AGS_name as GLTF extras
             )
 
             bpy.ops.object.select_all(action="DESELECT")
@@ -769,7 +874,7 @@ def _menu_export(self: bpy.types.Menu, context: bpy.types.Context) -> None:
 # Registration                                                         #
 # ------------------------------------------------------------------ #
 
-_classes = [AGS3D_OT_ImportRoom, AGS3D_OT_ExportRoom]
+_classes = [AGS3D_OT_ImportRoom, AGS3D_OT_ExportRoom, AGS3D_OT_BakeNavMesh]
 
 
 def register() -> None:

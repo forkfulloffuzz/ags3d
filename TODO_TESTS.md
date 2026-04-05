@@ -37,6 +37,17 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] A character with no `animations` block in `.agchar` (no `anim_*` properties in `.tscn`) should navigate and speak without errors — no AnimationPlayer driven, no warnings.
 - [ ] A character with `anim_walk = "Walk"` but the `.glb` AnimationPlayer missing a "Walk" clip should log a warning (`ags_character: clip 'Walk' not found`) but not crash.
 
+### T-BL09 — NavMesh baking from WalkableSurface objects
+
+**Setup:** Blender with the AGS3D add-on installed. Create a room `.blend` with at least two box objects tagged `AGS_type = "WALKABLE"`.
+
+- [ ] Open the `.blend`. Run **Object → AGS3D → Bake NavMesh** (or press F3 and search "Bake NavMesh"). An `AGS_NavMesh` object should appear in a new `AGS_NavMesh` collection.
+- [ ] The `AGS_NavMesh` mesh contains one flat quad per WalkableSurface, positioned at the top Y of each box's bounding box.
+- [ ] Running "Bake NavMesh" again replaces the existing `AGS_NavMesh` (no duplicate objects).
+- [ ] With no WalkableSurface objects in the scene, running "Bake NavMesh" reports a warning and does not create any object.
+- [ ] Run **File → Export → AGS3D Room (.agroom + .glb)**. The resulting `.glb` contains a node named `AGS_NavMesh` with extras `{"AGS_type": "NAVMESH", "AGS_name": "AGS_NavMesh"}` (inspect with a GLTF viewer or `gltf-validator`).
+- [ ] After exporting, the `AGS_NavMesh` object persists in the Blender scene for inspection.
+
 ### T-BL01 — Blender add-on scaffold
 
 **Setup:** Blender 4.2+ installed.
