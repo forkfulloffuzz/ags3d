@@ -689,6 +689,55 @@ func TestEmitter_AudioSequence(t *testing.T) {
 	assertNotContains(t, got, "await ")
 }
 
+// -------------------------------------------------------------------
+// T-GS17 — SaveGame, LoadGame, GameSaved
+// -------------------------------------------------------------------
+
+func TestEmitter_SaveGame_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { SaveGame(1); }`)
+	assertContains(t, got, `AGSRuntime.save_game(1)`)
+}
+
+func TestEmitter_SaveGame_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { SaveGame(1); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_LoadGame_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { LoadGame(1); }`)
+	assertContains(t, got, `AGSRuntime.load_game(1)`)
+}
+
+func TestEmitter_LoadGame_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { LoadGame(1); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_GameSaved_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { if (GameSaved(1)) { } }`)
+	assertContains(t, got, `AGSRuntime.game_saved(1)`)
+}
+
+func TestEmitter_GameSaved_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { if (GameSaved(1)) { } }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_SaveLoadSequence(t *testing.T) {
+	src := `function room_Load() {
+    if (GameSaved(1)) {
+        LoadGame(1);
+    } else {
+        SaveGame(1);
+    }
+}`
+	got := emit(t, src)
+	assertContains(t, got, `AGSRuntime.game_saved(1)`)
+	assertContains(t, got, `AGSRuntime.load_game(1)`)
+	assertContains(t, got, `AGSRuntime.save_game(1)`)
+	assertNotContains(t, got, "await ")
+}
+
 func TestEmitter_CutsceneSequence(t *testing.T) {
 	// Full cutscene pattern: disable control → fade out → action → fade in → re-enable.
 	src := `function room_Enter() {

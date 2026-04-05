@@ -716,6 +716,9 @@ var builtinGlobalFunctions = map[string]string{
 	"PlayMusic":         "AGSRuntime.play_music",
 	"StopMusic":         "AGSRuntime.stop_music",
 	"PlaySound":         "AGSRuntime.play_sound",
+	"SaveGame":          "AGSRuntime.save_game",
+	"LoadGame":          "AGSRuntime.load_game",
+	"GameSaved":         "AGSRuntime.game_saved",
 }
 
 // builtinCharacterMethods maps AGS-spirit PascalCase character method names
