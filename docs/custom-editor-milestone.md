@@ -137,6 +137,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI21 | Billboard char scene gen (T-GS25) | Character editor 2D tab: visual_mode selector (mesh/billboard); sprite_sheet file picker; sprite_angles, frame_size, frames_per_angle fields; `ag build` preview shows Sprite3D tree |
 | T-CE-UI22 | Blender add-on scaffold (T-BL01) | No AG Studio UI needed for scaffold; once panels exist (T-BL02+), AG Studio "Open in Blender" button launches Blender with the room's .blend file |
 | T-CE-UI23 | AGS3D object type panel (T-BL02) | No AG Studio UI; the panel lives in Blender. AG Studio docs/tooltip should mention tagging workflow |
+| T-CE-UI24 | Billboard direction runtime (T-GS26) | Character editor 2D tab: live preview of direction/frame selection based on simulated camera angle; sprite_locked toggle |
 
 ---
 

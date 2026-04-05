@@ -28,6 +28,21 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Disable the add-on → no errors in the Blender console (`unregister()` called silently).
 - [ ] Re-enable the add-on after a Blender restart — it stays enabled across restarts.
 
+### T-GS26 — Billboard direction selection runtime
+
+**Setup:** A Godot project with an `AGSCharacter2D` node, a `Sprite3D` child with `vframes = 8` (8 directions), and an `AGSBillboardController` child (`sprite_angles = 8`, `frames_per_angle = 1`).
+
+- [ ] Character moving away from camera → Sprite3D shows row 0 (N, back sprite).
+- [ ] Character moving toward camera → row 4 (S, front sprite).
+- [ ] Character moving right (from camera's perspective) → row 2 (E).
+- [ ] Character moving left → row 6 (W).
+- [ ] `sprite_locked = true` → row stays 0 regardless of movement direction.
+- [ ] `sprite_angles = 4` with `frames_per_angle = 6`: moving character cycles through 6 frames in the correct row; row changes on direction change.
+- [ ] `fps = 8.0` with `frames_per_angle = 6`: visible frame advance at ~8 fps during movement.
+- [ ] Character standing still → row does not change (last direction held).
+
+---
+
 ### T-BL02 — AGS3D object type panel
 
 **Setup:** Blender 4.2+ with AGS3D add-on enabled (T-BL01). Open any scene.

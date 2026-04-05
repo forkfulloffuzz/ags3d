@@ -40,7 +40,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M10 — Game Systems (Batch 3) / M11 — Blender Integration (Batch 1)
 
-- [ ] **T-GS26** — GDScript: billboard direction selection runtime — angle quantization (4/8-way snap from velocity→camera angle), per-angle frame cycling, `sprite_locked` camera support *(depends on T-GS24, T-GS25)*
+- [x] **T-GS26** — GDScript: billboard direction selection runtime — angle quantization (4/8-way snap from velocity→camera angle), per-angle frame cycling, `sprite_locked` camera support *(depends on T-GS24, T-GS25)*
 - [ ] **T-GS29** — GDScript: `AGSAnimationPlayer2D` — billboard direction + frame cycling; implements `AGSAnimationPlayerBase` API *(depends on T-GS27, T-GS28)*
 - [ ] **T-GS13** — Go: `.agui` parser + `ag build` GUI scene generator (`InventoryBar`, `VerbBar`, `StatusLine` → `CanvasLayer` `.tscn`) *(no blockers)*
 - [ ] **T-BL03** — Python: Viewport overlay — colored wireframes per AGS type drawn via `SpaceView3D.draw_handler_add`; toggled from View → Overlays *(depends on T-BL02)*
