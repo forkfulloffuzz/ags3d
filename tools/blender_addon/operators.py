@@ -495,19 +495,18 @@ def _write_agroom(
         cam_names.add(name)
         bx, by, bz = obj.matrix_world.translation
         gx, gy, gz = _blender_to_godot(bx, by, bz)
-        # look_at: use eyedropper-picked Empty if set, else auto-compute from
-        # the camera's forward vector (-Z in local space).
+        # look_at: only written when user explicitly set an AGS_look_at target
+        # Empty in Blender. When absent, ag build falls back to auto-look-at
+        # (floor centre). The camera's position/rotation in Blender is the
+        # author's responsibility; we never auto-compute from the forward vector.
         look_at_name = obj.get("AGS_look_at", "")
         target = bpy.data.objects.get(look_at_name) if look_at_name else None
+        lines.append(f'    Camera "{name}" {{')
+        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
         if target is not None:
             tx, ty, tz = target.matrix_world.translation
             lax, lay, laz = _blender_to_godot(tx, ty, tz)
-        else:
-            fwd = obj.matrix_world.to_3x3() @ Vector((0.0, 0.0, -5.0))
-            lax, lay, laz = _blender_to_godot(bx + fwd.x, by + fwd.y, bz + fwd.z)
-        lines.append(f'    Camera "{name}" {{')
-        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
-        lines.append(f'        look_at  = ({_fmt(lax)}, {_fmt(lay)}, {_fmt(laz)})')
+            lines.append(f'        look_at  = ({_fmt(lax)}, {_fmt(lay)}, {_fmt(laz)})')
         lines.append("    }")
         lines.append("")
     if existing:

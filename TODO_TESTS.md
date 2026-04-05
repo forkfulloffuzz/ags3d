@@ -116,10 +116,10 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Click the eyedropper / type the Empty's name in the Look-at field → `AGS_look_at` custom property is set to the Empty's name.
 - [ ] Export → AGS3D Room. In the `.agroom`, the Camera `look_at` vector should match the Empty's world position (converted to Godot coords), NOT the auto-computed forward vector.
 - [ ] Move the Empty to a different location, re-export → look_at updates to the new Empty position.
-- [ ] Clear the Look-at field (empty string) → export falls back to auto-computing look_at from the camera's -Z forward vector.
-- [ ] Delete the referenced Empty from the scene, then export → export falls back to auto-compute (no crash).
-- [ ] A Camera with no `AGS_look_at` property → auto-compute still works (default behaviour unchanged).
-- [ ] Auto-computed look_at points 5 units ahead in the camera's local -Z direction (converted to Godot coords).
+- [ ] Clear the Look-at field (empty string) → `look_at` line is **absent** from the Camera block; `ag build` falls back to auto-look-at (floor centre).
+- [ ] Delete the referenced Empty from the scene, then export → `look_at` line is absent (no crash).
+- [ ] A Camera with no `AGS_look_at` property → no `look_at` in the exported block; `ag build` auto-computes orientation from the floor centre.
+- [ ] Camera position is always written; orientation in Blender (rotation, FOV) is the author's concern and is NOT re-derived by the exporter.
 
 ---
 
