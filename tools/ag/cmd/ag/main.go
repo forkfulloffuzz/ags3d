@@ -288,7 +288,13 @@ func build(root string, force bool, trace bool) error {
 		}
 		// Derive companion script path (same name, .agscript extension).
 		scriptRelPath := strings.TrimSuffix(src.Rel, ".agroom") + ".agscript"
-		tscnText := scene.GenerateRoomScene(rd, scriptRelPath)
+		// Detect optional .glb visual mesh beside the .agroom file.
+		glbPath := strings.TrimSuffix(src.Path, ".agroom") + ".glb"
+		glbRelPath := ""
+		if _, statErr := os.Stat(glbPath); statErr == nil {
+			glbRelPath = strings.TrimSuffix(src.Rel, ".agroom") + ".glb"
+		}
+		tscnText := scene.GenerateRoomScene(rd, scriptRelPath, glbRelPath)
 
 		// Write .tscn beside the .agroom source file.
 		outPath := strings.TrimSuffix(src.Path, ".agroom") + ".tscn"

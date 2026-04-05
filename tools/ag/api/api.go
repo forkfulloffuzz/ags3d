@@ -355,12 +355,14 @@ func ParseRoom(filename, src string) ParsedRoom {
 
 // GenerateRoomScene parses a .agroom and returns the generated .tscn text.
 // scriptRelPath is the companion .agscript path (may be empty).
-func GenerateRoomScene(filename, src, scriptRelPath string) string {
+// glbRelPath is the optional .glb visual mesh path relative to the project
+// root (pass "" when no .glb exists).
+func GenerateRoomScene(filename, src, scriptRelPath, glbRelPath string) string {
 	rd, err := room.ParseRoom(filename, src)
 	if err != nil {
 		return "-- parse error: " + err.Error()
 	}
-	return scene.GenerateRoomScene(rd, scriptRelPath)
+	return scene.GenerateRoomScene(rd, scriptRelPath, glbRelPath)
 }
 
 // ParsedChar is the result of parsing a .agchar file.

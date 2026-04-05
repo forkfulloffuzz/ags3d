@@ -18,7 +18,7 @@ func generate(t *testing.T, src string) string {
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	return scene.GenerateRoomScene(rd, "rooms/test/test.agscript")
+	return scene.GenerateRoomScene(rd, "rooms/test/test.agscript", "")
 }
 
 func assertContains(t *testing.T, got, want string) {
@@ -288,6 +288,50 @@ func TestCameraLookAtNonTrivial(t *testing.T) {
 	}`
 	out := generate(t, src)
 	assertContains(t, out, `[node name="Top" type="AGSCamera" parent="."`)
+}
+
+// --------------------------------------------------------------------------
+// GLB visual mesh embedding (T-BL11)
+// --------------------------------------------------------------------------
+
+func TestGLBNotIncludedWhenEmpty(t *testing.T) {
+	// No glbRelPath — no ext_resource or Visual node for the mesh.
+	out := generate(t, `Room "r" {}`)
+	assertNotContains(t, out, "PackedScene")
+	assertNotContains(t, out, "RoomVisual")
+	assertNotContains(t, out, `name="Visual"`)
+}
+
+func TestGLBExtResourceAdded(t *testing.T) {
+	rd, err := room.ParseRoom("test.agroom", `Room "start" { Camera "main" { position = (0.0,5.0,5.0) look_at = (0.0,0.0,0.0) } }`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	out := scene.GenerateRoomScene(rd, "rooms/start/start.agscript", "rooms/start/start.glb")
+	assertContains(t, out, `[ext_resource type="PackedScene" path="res://rooms/start/start.glb" id="RoomVisual"]`)
+}
+
+func TestGLBVisualNodeAdded(t *testing.T) {
+	rd, err := room.ParseRoom("test.agroom", `Room "start" {}`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	out := scene.GenerateRoomScene(rd, "rooms/start/start.agscript", "rooms/start/start.glb")
+	assertContains(t, out, `name="Visual"`)
+	assertContains(t, out, `instance=ExtResource("RoomVisual")`)
+	assertContains(t, out, `parent="."`)
+}
+
+func TestGLBDeterministic(t *testing.T) {
+	rd, err := room.ParseRoom("test.agroom", `Room "start" { Point "door" { position = (1.0,0.0,0.0) } }`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	out1 := scene.GenerateRoomScene(rd, "rooms/start/start.agscript", "rooms/start/start.glb")
+	out2 := scene.GenerateRoomScene(rd, "rooms/start/start.agscript", "rooms/start/start.glb")
+	if out1 != out2 {
+		t.Error("output with .glb is not deterministic")
+	}
 }
 
 // --------------------------------------------------------------------------

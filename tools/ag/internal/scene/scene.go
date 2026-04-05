@@ -24,9 +24,14 @@ import (
 // root, e.g. "rooms/start/start.agscript". The generated scene references
 // the corresponding compiled GDScript at
 // res://.engine/generated/<scriptRelPath>.gd.
-func GenerateRoomScene(rd *room.RoomData, scriptRelPath string) string {
+//
+// glbRelPath is the path to the room's visual mesh .glb file relative to the
+// project root, e.g. "rooms/start/start.glb". When non-empty, the generated
+// scene includes an [ext_resource] for the .glb and instantiates it as a
+// "Visual" node under the room root. Pass "" when no .glb exists.
+func GenerateRoomScene(rd *room.RoomData, scriptRelPath, glbRelPath string) string {
 	g := &generator{}
-	return g.roomScene(rd, scriptRelPath)
+	return g.roomScene(rd, scriptRelPath, glbRelPath)
 }
 
 // --------------------------------------------------------------------------
@@ -46,7 +51,7 @@ func (g *generator) init() {
 }
 
 // roomScene assembles the complete .tscn text.
-func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
+func (g *generator) roomScene(rd *room.RoomData, scriptRelPath, glbRelPath string) string {
 	g.init()
 
 	scriptGDPath := "res://.engine/generated/" + scriptRelPath + ".gd"
@@ -221,11 +226,22 @@ func (g *generator) roomScene(rd *room.RoomData, scriptRelPath string) string {
 	fmt.Fprintln(&out, "[gd_scene format=3]")
 	fmt.Fprintln(&out)
 	fmt.Fprintf(&out, "[ext_resource type=\"Script\" path=%q id=\"RoomScript\"]\n", scriptGDPath)
+	if glbRelPath != "" {
+		glbResPath := "res://" + glbRelPath
+		fmt.Fprintf(&out, "[ext_resource type=\"PackedScene\" path=%q id=\"RoomVisual\"]\n", glbResPath)
+	}
 	if g.subRes.Len() > 0 {
 		fmt.Fprintln(&out)
 		out.WriteString(g.subRes.String())
 	}
 	out.WriteString(g.nodes.String())
+	// Visual mesh node — instanced from .glb, placed first under room root so
+	// it renders behind gameplay geometry.
+	if glbRelPath != "" {
+		rootName := toPascalCase(rd.Name)
+		uid := nodeUID(rootName + "/Visual")
+		fmt.Fprintf(&out, "[node name=\"Visual\" parent=\".\" instance=ExtResource(\"RoomVisual\") unique_id=%d]\n\n", uid)
+	}
 	return out.String()
 }
 
