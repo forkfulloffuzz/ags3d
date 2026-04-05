@@ -108,6 +108,21 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL06 — Camera look_at: eyedropper-picked Empty
+
+**Setup:** Blender 4.2+ with AGS3D add-on. Create a scene with a Camera object tagged as `CAMERA` and a separate Empty object.
+
+- [ ] Select the Camera object; in the AGS3D panel (Object Properties or N-panel), the **Look-at** field appears for CAMERA type objects.
+- [ ] Click the eyedropper / type the Empty's name in the Look-at field → `AGS_look_at` custom property is set to the Empty's name.
+- [ ] Export → AGS3D Room. In the `.agroom`, the Camera `look_at` vector should match the Empty's world position (converted to Godot coords), NOT the auto-computed forward vector.
+- [ ] Move the Empty to a different location, re-export → look_at updates to the new Empty position.
+- [ ] Clear the Look-at field (empty string) → export falls back to auto-computing look_at from the camera's -Z forward vector.
+- [ ] Delete the referenced Empty from the scene, then export → export falls back to auto-compute (no crash).
+- [ ] A Camera with no `AGS_look_at` property → auto-compute still works (default behaviour unchanged).
+- [ ] Auto-computed look_at points 5 units ahead in the camera's local -Z direction (converted to Godot coords).
+
+---
+
 ### T-BL10 — Character export operator
 
 **Setup:** Blender 4.2+ with AGS3D add-on. A scene with an `Armature` object parented to a `Mesh` object. NLA editor has tracks named `Idle`, `Walk`, `Talk` with at least one strip each.
