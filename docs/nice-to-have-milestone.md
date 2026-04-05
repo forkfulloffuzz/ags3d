@@ -217,4 +217,164 @@ Promote to a full implementation milestone when:
 
 ---
 
+---
+
+## IDEA-02 — Conditional Item Descriptions in `.agitem`
+
+### Summary
+
+Move per-character "look" descriptions out of room scripts and into the `.agitem`
+file itself. Instead of authors writing `player.Say("It's a rusty key.")` by
+hand inside `hotspot_Interact`, the item declares what each character says when
+examined, and optionally varies the line based on game state (first look vs.
+repeat, inventory contents, global flags).
+
+### Motivation
+
+In classic adventure games almost every item has a "look" description that the
+player character says on examination. Writing this as a `Say` call in every
+`item_interact` handler is boilerplate. Centralising it in `.agitem` keeps room
+scripts focused on puzzle logic and makes the descriptions easy to localise.
+
+### Proposed `.agitem` additions
+
+```
+Item "rusty_key" {
+    display_name = "Rusty Key"
+    description  = "An old iron key."   # used as tooltip / inventory label
+
+    look = {
+        player = {
+            default = "It's a rusty key. Very rusty."
+            # Conditional overrides — evaluated top-to-bottom, first match wins.
+            if_not_examined = "I've never seen a key this corroded."
+            if_has_item "golden_lock" = "This might fit the golden lock!"
+            if_global "door_unlocked" = "I've already used this."
+        }
+        guard = {
+            default = "Just a key. Nothing interesting."
+        }
+    }
+}
+```
+
+The `look` block is keyed by character name. Each character block has a
+`default` line and optional conditional overrides. Conditions are evaluated
+at runtime by the conversation handler, not at compile time.
+
+### Condition types (initial proposal)
+
+| Condition | Meaning |
+|---|---|
+| `if_not_examined` | This is the first time this character looks at the item |
+| `if_examined` | Item has already been looked at by this character |
+| `if_has_item "name"` | Player currently holds item `"name"` |
+| `if_not_has_item "name"` | Player does not hold item `"name"` |
+| `if_global "name"` | Global variable `"name"` is truthy |
+| `if_global "name" == value` | Global variable equals a specific value |
+
+### Build pipeline impact
+
+- The `.agitem` parser (`tools/ag/internal/item/`) is extended to read the
+  `look` block and emit a structured `LookData` table.
+- `ag build` generates **no** GDScript for the look logic directly. Instead it
+  writes the condition table into a sidecar data file (e.g. `.agitemdata`) that
+  the conversation/dialogue handler loads at runtime.
+- The conversation handler (to be designed in a future dialogue milestone) is
+  responsible for evaluating conditions and selecting the correct line at runtime.
+  This keeps `ag build` as a pure compiler and the condition evaluation in GDScript.
+- If no conversation system exists yet, `ag build` can emit a simple fallback
+  `item_look_<name>()` function that just calls `player.Say(default_line)`.
+
+### Dependencies and open questions
+
+- **Dialogue/conversation system** — the condition evaluator and runtime line
+  selection belong there. This idea is blocked until the conversation format and
+  handler are designed (likely a future M-DLG milestone).
+- **Localisation** — line strings in `.agitem` will need to feed into whatever
+  string-extraction pipeline the dialogue system uses.
+- **Multi-character look** — should non-player characters also be able to
+  "examine" items? The `look` block is keyed by character name, so it supports
+  this, but the runtime hook for NPC examine actions is not yet defined.
+- **Examined tracking** — `if_not_examined` requires per-item, per-character
+  state. This could be a boolean in the global variable store or a dedicated
+  `examined` set in `AGSRuntime`. Needs a decision before implementation.
+
+### Promotion criteria
+
+Promote to a full task when:
+
+1. The dialogue/conversation system milestone is drafted and a format is chosen.
+2. A concrete game scene benefits from conditional look descriptions.
+3. The condition set is finalised (avoid scope creep — start with the table above).
+
 *Add new ideas below this line following the same stub format.*
+
+---
+
+## IDEA-05 — Dynamic Camera Follow Target + Rotation Limits
+
+### Summary
+
+Allow an `AGSCamera` to track a live scene object (typically a character) as
+its `look_at` point, rather than a fixed world-space position. Combined with
+configurable rotation limits that cap how far the camera can pan/tilt from its
+base orientation, this enables soft follow cameras without writing custom
+GDScript per room.
+
+### Proposed .agroom syntax
+
+```
+Camera "main" {
+    position      = (4.0, 6.0, 5.0)
+
+    # Optional: name of an AGSCharacter or Point node to track at runtime.
+    # When set, look_at is computed each frame from the target's position.
+    follow_target = "player"
+
+    # Optional: maximum angular deviation (degrees) from the base look_at
+    # before the camera stops following.  Omit for unlimited tracking.
+    follow_limit_h = 30.0   # horizontal (yaw)
+    follow_limit_v = 15.0   # vertical (tilt)
+
+    # Optional: smoothing factor (0 = instant snap, 1 = never moves).
+    follow_smooth = 0.1
+}
+```
+
+### Runtime behaviour
+
+- `AGSCamera` (C++ node) gains `follow_target: StringName`, `follow_limit_h: float`,
+  `follow_limit_v: float`, `follow_smooth: float` properties.
+- Each `_process` frame: if `follow_target` is set, resolve the named character
+  or point in the current room, lerp the current look_at toward it (weighted by
+  `follow_smooth`), then clamp the resulting direction to within the horizontal
+  and vertical arc limits relative to the camera's base forward vector.
+- When the target moves outside the arc limits the camera holds at the limit
+  angle (hard clamp, not a spring).
+- `follow_target = ""` (default) disables tracking — existing static behaviour
+  unchanged.
+
+### Blender integration
+
+- AGS3D panel: when type = CAMERA, add a **Follow target** string field (object
+  name, not an eyedropper, since the target is a runtime character name).
+- Add **Follow limit H / V** and **Follow smooth** numeric fields below it;
+  only shown when Follow target is non-empty.
+- Exporter writes the extra fields to the Camera block only when set.
+
+### Open questions
+
+- Should `follow_smooth` use delta-time lerp or a spring damper?
+  Spring damper is smoother but harder to tune via a single scalar.
+- Should the arc limits be relative to the camera's authored orientation or
+  relative to the straight line from camera to target's spawn point?
+- Should exceeding the arc limit trigger a script event (`camera_limit_reached`)?
+
+### Promotion criteria
+
+Promote when:
+
+1. A concrete room in a game needs a follow camera (not just a nice demo).
+2. The arc-limit clamping behaviour is agreed on (hard clamp vs. soft spring).
+3. AGSCamera C++ node and `.agroom` parser changes are scoped as a single task.
