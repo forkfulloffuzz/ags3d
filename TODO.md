@@ -45,7 +45,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-GS13** — Go: `.agui` parser + `ag build` GUI scene generator (`InventoryBar`, `VerbBar`, `StatusLine` → `CanvasLayer` `.tscn`) *(no blockers)*
 - [x] **T-BL03** — Python: Viewport overlay — colored wireframes per AGS type drawn via `SpaceView3D.draw_handler_add`; toggled from View → Overlays *(depends on T-BL02)*
 - [x] **T-BL08** — Python: Import operator (`File → Import → AGS3D Room`) — reads `.agroom` → creates Blender empties/meshes in `AGS_Gameplay` collection *(depends on T-BL02)*
-- [ ] **T-BL10** — Python: Character export operator (`File → Export → AGS3D Character`) — exports armature + mesh + NLA actions → `.glb` *(depends on T-BL01)*
+- [x] **T-BL10** — Python: Character export operator (`File → Export → AGS3D Character`) — exports armature + mesh + NLA actions → `.glb` *(depends on T-BL01)*
 - [ ] **T-BL04** — Python: Export operator (`File → Export → AGS3D Room`) — extract tagged gameplay objects → `.agroom`; call GLTF exporter → `.glb` *(depends on T-BL02; unlocks T-BL05/06/07)*
 - [ ] **T-BL05** — Python: Export — coordinate system conversion (Blender Y-up → Godot Z-up) + bounding-box size extraction for volume types *(depends on T-BL04)*
 - [ ] **T-BL06** — Python: Export — Camera look_at: auto-compute from forward vector OR use eyedropper-picked Empty *(depends on T-BL04)*

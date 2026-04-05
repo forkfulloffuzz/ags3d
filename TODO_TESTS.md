@@ -71,6 +71,28 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL10 — Character export operator
+
+**Setup:** Blender 4.2+ with AGS3D add-on. A scene with an `Armature` object parented to a `Mesh` object. NLA editor has tracks named `Idle`, `Walk`, `Talk` with at least one strip each.
+
+- [ ] `File → Export → AGS3D Character (.glb)` appears in the Export menu.
+- [ ] File selector opens, pre-filled with `characters/<armature-name>/<name>.glb` relative to the blend file.
+- [ ] Export completes; a valid `.glb` file is created at the chosen path.
+- [ ] The `.glb` contains animation clips named `Idle`, `Walk`, `Talk` (matching NLA track names).
+- [ ] Opening the `.glb` in Godot shows the armature + mesh + three animation clips in the AnimationPlayer.
+- [ ] With no armature selected but a mesh selected: exports the mesh as a static `.glb` (no animation clips). No crash.
+- [ ] With nothing selected: operator reports a warning "nothing to export" and returns cancelled.
+- [ ] `Export Animations = false` toggle: exported `.glb` has no animation clips.
+- [ ] The `.agchar` `mesh` + `animations` block can reference the exported file and clip names:
+  ```
+  Character "hero" {
+      mesh = "characters/hero/hero.glb"
+      animations = { idle = "Idle"  walk = "Walk"  talk = "Talk" }
+  }
+  ```
+
+---
+
 ### T-BL08 — Import operator
 
 **Setup:** Blender 4.2+ with AGS3D add-on. Have a sample `.agroom` file with Camera, WalkableSurface, BlockerVolume, Point, SpawnPoint, Hotspot, and TriggerRegion blocks.
