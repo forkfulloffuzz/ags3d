@@ -39,6 +39,10 @@ class AGSRuntime : public Object {
 	// Whether the player can walk by clicking. Scripts toggle this during cutscenes.
 	bool _player_control_enabled = true;
 
+	// GUI runtime state — drives ags_gui.gd widgets.
+	String _status_text;
+	String _active_verb;
+
 	// Save-state tracking: names of the active room and music track.
 	// Updated by load_room() and play_music()/stop_music() respectively.
 	String _current_room;
@@ -114,6 +118,13 @@ public:
 	void play_music(const String &p_name);
 	void stop_music();
 	void play_sound(const String &p_name);
+
+	// GUI state — status line text and active verb.
+	// set_status_text emits status_text_changed; set_active_verb emits active_verb_changed.
+	void set_status_text(const String &p_text);
+	String get_status_text() const;
+	void set_active_verb(const String &p_verb);
+	String get_active_verb() const;
 
 	// Cross-room point lookup — delegates to AGSRoom::get_point().
 	Vector3 get_point(const String &p_room_name, const String &p_point_name) const;

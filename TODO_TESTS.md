@@ -48,6 +48,18 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Run **File → Export → AGS3D Room (.agroom + .glb)**. The resulting `.glb` contains a node named `AGS_NavMesh` with extras `{"AGS_type": "NAVMESH", "AGS_name": "AGS_NavMesh"}` (inspect with a GLTF viewer or `gltf-validator`).
 - [ ] After exporting, the `AGS_NavMesh` object persists in the Blender scene for inspection.
 
+### T-GS14 — GUI runtime (`InventoryBar`, `VerbBar`, `StatusLine`)
+
+**Setup:** Build `ag build` for a room + .agui file. Add the generated CanvasLayer `.tscn` as an AutoLoad in the Godot project. Run the game.
+
+- [ ] With a `.agui` that has a `StatusLine`, calling `AGSRuntime.set_status_text("Look at the door")` from any script displays "Look at the door" on the Label widget in the scene.
+- [ ] `AGSRuntime.set_status_text("")` clears the status line.
+- [ ] With a `.agui` that has a `VerbBar` with verbs ["Look", "Use", "Pick up"], three buttons appear at the defined anchor position. Clicking "Look" calls `AGSRuntime.set_active_verb("Look")`.
+- [ ] After `set_active_verb("Look")`, the "Look" button shows as pressed/highlighted; clicking another verb unpresses the previous one.
+- [ ] With a `.agui` that has an `InventoryBar`, picking up an item (via `AddInventory`) causes a new button with the item name to appear in the GridContainer.
+- [ ] Losing an item (via `LoseInventory`) removes its button from the InventoryBar.
+- [ ] The CanvasLayer persists across room transitions (since it is an AutoLoad).
+
 ### T-BL01 — Blender add-on scaffold
 
 **Setup:** Blender 4.2+ installed.

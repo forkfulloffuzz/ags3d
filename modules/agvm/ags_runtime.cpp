@@ -76,12 +76,22 @@ void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("stop_music"), &AGSRuntime::stop_music);
 	ClassDB::bind_method(D_METHOD("play_sound", "name"), &AGSRuntime::play_sound);
 
+	ClassDB::bind_method(D_METHOD("set_status_text", "text"), &AGSRuntime::set_status_text);
+	ClassDB::bind_method(D_METHOD("get_status_text"), &AGSRuntime::get_status_text);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "status_text"), "set_status_text", "get_status_text");
+
+	ClassDB::bind_method(D_METHOD("set_active_verb", "verb"), &AGSRuntime::set_active_verb);
+	ClassDB::bind_method(D_METHOD("get_active_verb"), &AGSRuntime::get_active_verb);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "active_verb"), "set_active_verb", "get_active_verb");
+
 	ADD_SIGNAL(MethodInfo("room_change_requested", PropertyInfo(Variant::STRING, "room_name")));
 	ADD_SIGNAL(MethodInfo("player_control_changed", PropertyInfo(Variant::BOOL, "enabled")));
 	ADD_SIGNAL(MethodInfo("play_music_requested", PropertyInfo(Variant::STRING, "name")));
 	ADD_SIGNAL(MethodInfo("stop_music_requested"));
 	ADD_SIGNAL(MethodInfo("play_sound_requested", PropertyInfo(Variant::STRING, "name")));
 	ADD_SIGNAL(MethodInfo("load_game_requested", PropertyInfo(Variant::DICTIONARY, "data")));
+	ADD_SIGNAL(MethodInfo("status_text_changed", PropertyInfo(Variant::STRING, "text")));
+	ADD_SIGNAL(MethodInfo("active_verb_changed", PropertyInfo(Variant::STRING, "verb")));
 }
 
 // --------------------------------------------------------------------------
@@ -392,6 +402,30 @@ void AGSRuntime::load_game(int p_slot) {
 
 bool AGSRuntime::game_saved(int p_slot) const {
 	return FileAccess::exists(_save_path(p_slot));
+}
+
+// --------------------------------------------------------------------------
+// GUI state — status text and active verb
+// --------------------------------------------------------------------------
+
+void AGSRuntime::set_status_text(const String &p_text) {
+	AGS_TRACE("AGSRuntime", "set_status_text", vformat("text=%s", p_text))
+	_status_text = p_text;
+	emit_signal("status_text_changed", p_text);
+}
+
+String AGSRuntime::get_status_text() const {
+	return _status_text;
+}
+
+void AGSRuntime::set_active_verb(const String &p_verb) {
+	AGS_TRACE("AGSRuntime", "set_active_verb", vformat("verb=%s", p_verb))
+	_active_verb = p_verb;
+	emit_signal("active_verb_changed", p_verb);
+}
+
+String AGSRuntime::get_active_verb() const {
+	return _active_verb;
 }
 
 Vector3 AGSRuntime::get_point(const String &p_room_name, const String &p_point_name) const {

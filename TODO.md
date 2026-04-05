@@ -12,7 +12,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M10 — Game Systems (Finish)
 
-- [ ] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine` AutoLoad nodes driven by generated `.agui` scene *(depends on T-GS13)*
+- [x] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine` AutoLoad nodes driven by generated `.agui` scene *(depends on T-GS13)*
 - [ ] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb` *(depends on T-GS14)*
 
 ## M-DLG — Dialogue System (Batch 1)
