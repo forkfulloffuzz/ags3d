@@ -91,6 +91,23 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL05 — Coordinate system conversion + bounding-box extraction
+
+**Setup:** Blender 4.2+ with AGS3D add-on. Create a scene with:
+- A cube at Blender location `(1, 2, 3)` tagged as `BLOCKER`
+- A second cube scaled to 2×4×6 (Blender XYZ) tagged as `WALKABLE`
+- A third cube rotated 45° on Z tagged as `HOTSPOT`
+
+- [ ] Export → AGS3D Room. In the `.agroom`, the BlockerVolume `position` should be `(1.0, 3.0, -2.0)` (Godot: x=1, y=bl.z=3, z=-bl.y=-2).
+- [ ] The BlockerVolume `size` should match the cube's world-space bbox in Godot axes (not just the raw Blender scale).
+- [ ] WalkableSurface `size` tuple has 2 components (XZ plane); the values match Godot X and Z (no Y component).
+- [ ] A cube at the origin with Blender scale (2, 4, 6) has Godot size `(2.0, 6.0, 4.0)` (x=bl.x=2, y=bl.z=6, z=bl.y=4).
+- [ ] A rotated HOTSPOT: its `size` and `position` are computed from the **world-space** bounding box of all 8 corners — not from the local bbox — so rotation is properly accounted for (a 45°-rotated cube will have a larger world bbox than an aligned cube of the same size).
+- [ ] A TRIGGER at `(0, 0, 5)` in Blender → `position = (0.0, 0.0, -5.0)` in `.agroom`.
+- [ ] `position` for volume types (BlockerVolume, Hotspot, TriggerRegion) is the **bounding box centre**, not the object origin — move the object origin off-centre and confirm the exported position is the bbox midpoint.
+
+---
+
 ### T-BL10 — Character export operator
 
 **Setup:** Blender 4.2+ with AGS3D add-on. A scene with an `Armature` object parented to a `Mesh` object. NLA editor has tracks named `Idle`, `Walk`, `Talk` with at least one strip each.

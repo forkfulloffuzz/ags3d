@@ -370,31 +370,26 @@ class AGS3D_OT_ImportRoom(bpy.types.Operator):
 
 
 # ------------------------------------------------------------------ #
-# Coordinate conversion: Blender → Godot                              #
+# Coordinate conversion: Blender → Godot (delegates to coords.py)    #
 # ------------------------------------------------------------------ #
 
 def _blender_to_godot(bx: float, by: float, bz: float) -> tuple[float, float, float]:
-    """Convert Blender (Y-up, right-handed) to Godot (Y-up, left-handed)."""
-    return bx, by, -bz
+    """Convert Blender world-space position to Godot world-space position."""
+    from . import coords as _coords
+    from mathutils import Vector as _V
+    return _coords.blender_to_godot_pos(_V((bx, by, bz)))
 
 
 def _bbox_size_godot(obj: bpy.types.Object) -> tuple[float, float, float]:
-    """Return the object's axis-aligned bounding box size in Godot coordinates.
+    """Return the object's world-space bounding box size in Godot coordinates."""
+    from . import coords as _coords
+    return _coords.bbox_size_godot(obj)
 
-    Reads the 8 bbox corners in local space, applies the object's scale
-    (not rotation) to get approximate world-space extents, then converts.
-    T-BL05 will refine this to use the full world-space bounding box.
-    """
-    bb = obj.bound_box  # 8 corners in local space
-    xs = [c[0] for c in bb]
-    ys = [c[1] for c in bb]
-    zs = [c[2] for c in bb]
-    # Local-space extents × object scale = world-space extents (approx).
-    sx = (max(xs) - min(xs)) * abs(obj.scale.x)
-    sy = (max(ys) - min(ys)) * abs(obj.scale.y)
-    sz = (max(zs) - min(zs)) * abs(obj.scale.z)
-    # In Godot, Y is up and Z is depth, same as Blender — no axis swap for size.
-    return sx, sy, sz
+
+def _bbox_center_godot(obj: bpy.types.Object) -> tuple[float, float, float]:
+    """Return the object's world-space bounding box centre in Godot coordinates."""
+    from . import coords as _coords
+    return _coords.bbox_center_godot(obj)
 
 
 # ------------------------------------------------------------------ #
@@ -478,24 +473,22 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
     # WalkableSurface
     for obj in walkable:
         name = obj.get("AGS_name", obj.name)
-        sx, sy, sz = _bbox_size_godot(obj)
-        bx, by, bz = obj.matrix_world.translation
-        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        gsx, _gsy, gsz = _bbox_size_godot(obj)  # Godot XZ plane for WalkableSurface
+        gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    WalkableSurface "{name}" {{')
-        lines.append(f'        size   = ({_fmt(sx)}, {_fmt(sz)})')  # XZ plane
-        lines.append(f'        offset = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append(f'        size   = ({_fmt(gsx)}, {_fmt(gsz)})')  # XZ plane (no Y)
+        lines.append(f'        offset = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
 
     # BlockerVolume
     for obj in blockers:
         name = obj.get("AGS_name", obj.name)
-        sx, sy, sz = _bbox_size_godot(obj)
-        bx, by, bz = obj.matrix_world.translation
-        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        gsx, gsy, gsz = _bbox_size_godot(obj)
+        gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    BlockerVolume "{name}" {{')
-        lines.append(f'        size     = ({_fmt(sx)}, {_fmt(sy)}, {_fmt(sz)})')
-        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append(f'        size     = ({_fmt(gsx)}, {_fmt(gsy)}, {_fmt(gsz)})')
+        lines.append(f'        position = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
 
@@ -515,24 +508,22 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
     # Hotspot
     for obj in hotspots:
         name = obj.get("AGS_name", obj.name)
-        sx, sy, sz = _bbox_size_godot(obj)
-        bx, by, bz = obj.matrix_world.translation
-        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        gsx, gsy, gsz = _bbox_size_godot(obj)
+        gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    Hotspot "{name}" {{')
-        lines.append(f'        size     = ({_fmt(sx)}, {_fmt(sy)}, {_fmt(sz)})')
-        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append(f'        size     = ({_fmt(gsx)}, {_fmt(gsy)}, {_fmt(gsz)})')
+        lines.append(f'        position = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
 
     # TriggerRegion
     for obj in triggers:
         name = obj.get("AGS_name", obj.name)
-        sx, sy, sz = _bbox_size_godot(obj)
-        bx, by, bz = obj.matrix_world.translation
-        gx, gy, gz = _blender_to_godot(bx, by, bz)
+        gsx, gsy, gsz = _bbox_size_godot(obj)
+        gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    TriggerRegion "{name}" {{')
-        lines.append(f'        size     = ({_fmt(sx)}, {_fmt(sy)}, {_fmt(sz)})')
-        lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
+        lines.append(f'        size     = ({_fmt(gsx)}, {_fmt(gsy)}, {_fmt(gsz)})')
+        lines.append(f'        position = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
 
