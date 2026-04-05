@@ -1,7 +1,16 @@
 extends AGSCharacter3D
 
+## Animation clip name for the idle state (set by ag build from .agchar animations block).
+@export var anim_idle: String = ""
+## Animation clip name for the walk state.
+@export var anim_walk: String = ""
+## Animation clip name for the talk state.
+@export var anim_talk: String = ""
+
 var _nav_agent: NavigationAgent3D
 var _navigating: bool = false
+var _anim_player: AnimationPlayer = null
+var _anim_state: String = ""
 
 func _ready() -> void:
 	_nav_agent = NavigationAgent3D.new()
@@ -19,6 +28,7 @@ func _physics_process(_delta: float) -> void:
 
 func navigate_to(target: Vector3) -> void:
 	_navigating = true
+	_play_anim_state("walk")
 	await get_tree().physics_frame  # Frame-0: nav map syncs on first physics frame
 	_nav_agent.target_position = target
 
@@ -50,8 +60,10 @@ func face_to(point_name: String) -> void:
 ## then emit say_completed. Awaiting this method blocks until the line finishes.
 func say(text: String, duration: float = 2.0) -> void:
 	say_text = text
+	_play_anim_state("talk")
 	await get_tree().create_timer(duration).timeout
 	say_text = ""
+	_play_anim_state("idle")
 	emit_signal("say_completed")
 
 ## Display [param text] as a thought (same mechanic as say, different visual intent).
@@ -61,7 +73,39 @@ func think(text: String, duration: float = 2.0) -> void:
 func _on_navigation_finished() -> void:
 	_navigating = false
 	velocity = Vector3.ZERO
+	_play_anim_state("idle")
 	emit_signal("walk_completed")
+
+## Drive the AnimationPlayer to the clip mapped to [param state].
+## No-ops when no AnimationPlayer is present or the state is already active.
+func _play_anim_state(state: String) -> void:
+	if _anim_player == null:
+		_anim_player = _find_anim_player(self)
+	if _anim_player == null or state == _anim_state:
+		return
+	_anim_state = state
+	var clip := ""
+	match state:
+		"idle": clip = anim_idle
+		"walk": clip = anim_walk
+		"talk": clip = anim_talk
+	if clip.is_empty():
+		return
+	if _anim_player.has_animation(clip):
+		_anim_player.play(clip)
+	else:
+		push_warning("ags_character: clip '%s' not found in AnimationPlayer" % clip)
+
+## Recursively search the subtree for an AnimationPlayer.
+## Unlike find_child(), this works regardless of node ownership.
+func _find_anim_player(node: Node) -> AnimationPlayer:
+	for child in node.get_children():
+		if child is AnimationPlayer:
+			return child as AnimationPlayer
+		var found := _find_anim_player(child)
+		if found != null:
+			return found
+	return null
 
 ## Inventory management — backing store for AddInventory/LoseInventory/HasInventory.
 var _inventory: Array[StringName] = []

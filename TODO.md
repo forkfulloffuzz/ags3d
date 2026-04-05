@@ -7,7 +7,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 - [x] **T-BL11** — Go: `ag build` — detect `.glb` in room directory; embed as sub-scene node in generated `.tscn`
 - [x] **T-BL12** — Go: `.agchar` — parse `mesh` + `animations` fields; embed character `.glb` in `.tscn`; wire `AnimationPlayer` clips *(depends on T-BL10)*
-- [ ] **T-BL13** — GDScript: `ags_character.gd` — drive `AnimationPlayer` clips: idle/walk/talk from character state *(depends on T-BL12)*
+- [x] **T-BL13** — GDScript: `ags_character.gd` — drive `AnimationPlayer` clips: idle/walk/talk from character state *(depends on T-BL12)*
 - [ ] **T-BL09** — Python: NavMesh baking — auto-bake from `WalkableSurface` objects; tag result as `AGS_NavMesh`; include in GLTF export
 
 ## M10 — Game Systems (Finish)

@@ -49,6 +49,7 @@ const ASYNC_SUITES: Array[String] = [
 	"m6_integration/test_end_to_end.gd",
 	"m10_game_systems/test_say.gd",       # T-GS01: say() / think() use SceneTree timers
 	"m10_game_systems/test_cutscene.gd",  # T-GS18 (async subset: wait, fade_in, fade_out)
+	"m10_game_systems/test_char_animation.gd",  # T-BL13 (async subset: say() drives anim)
 ]
 
 func _init() -> void:

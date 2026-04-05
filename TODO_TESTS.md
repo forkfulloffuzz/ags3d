@@ -27,6 +27,16 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] A `.agchar` with no `animations` block generates a `.tscn` with no `anim_` properties.
 - [ ] Open the generated `.tscn` in Godot — the `AGSCharacter3D` root node Inspector shows `anim_idle`, `anim_walk`, `anim_talk` fields with the correct clip name strings.
 
+### T-BL13 — `ags_character.gd` drives AnimationPlayer on state transitions
+
+**Setup:** Generate a character `.tscn` from a `.agchar` that has `mesh` + `animations` (T-BL12). Open in Godot with a playable room.
+
+- [ ] Run the game. Place the character in a room. Trigger `walk_to()` — the character should play the `walk` animation clip immediately.
+- [ ] When the character reaches the destination, it should switch back to the `idle` clip.
+- [ ] Trigger `say()` — the character should play the `talk` clip while the dialogue line is displayed, then return to `idle` after it finishes.
+- [ ] A character with no `animations` block in `.agchar` (no `anim_*` properties in `.tscn`) should navigate and speak without errors — no AnimationPlayer driven, no warnings.
+- [ ] A character with `anim_walk = "Walk"` but the `.glb` AnimationPlayer missing a "Walk" clip should log a warning (`ags_character: clip 'Walk' not found`) but not crash.
+
 ### T-BL01 — Blender add-on scaffold
 
 **Setup:** Blender 4.2+ installed.
