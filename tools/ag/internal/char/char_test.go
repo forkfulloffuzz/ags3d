@@ -236,6 +236,24 @@ func TestErrInvalidType(t *testing.T) {
 	mustFail(t, `Character "x" { type = "puppet" }`, `type must be "3d" or "2d"`)
 }
 
+func TestVisualModeMesh(t *testing.T) {
+	cd := mustParse(t, `Character "hero" { visual_mode = "mesh" }`)
+	if cd.Type != "3d" {
+		t.Errorf("visual_mode=\"mesh\" should set Type=\"3d\", got %q", cd.Type)
+	}
+}
+
+func TestVisualModeBillboard(t *testing.T) {
+	cd := mustParse(t, `Character "guard" { visual_mode = "billboard" }`)
+	if cd.Type != "2d" {
+		t.Errorf("visual_mode=\"billboard\" should set Type=\"2d\", got %q", cd.Type)
+	}
+}
+
+func TestErrInvalidVisualMode(t *testing.T) {
+	mustFail(t, `Character "x" { visual_mode = "puppet" }`, `visual_mode must be "mesh" or "billboard"`)
+}
+
 func TestErrSpriteAnglesInvalid(t *testing.T) {
 	mustFail(t, `Character "x" { sprite_angles = 3 }`, `sprite_angles must be 1, 4, or 8`)
 }

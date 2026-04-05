@@ -309,6 +309,20 @@ func (p *agparser) parseChar() (*CharData, error) {
 			}
 			cd.Type = v
 
+		case "visual_mode":
+			v, err := p.str()
+			if err != nil {
+				return nil, err
+			}
+			switch v {
+			case "mesh":
+				cd.Type = "3d"
+			case "billboard":
+				cd.Type = "2d"
+			default:
+				return nil, p.errorf("visual_mode must be \"mesh\" or \"billboard\", got %q", v)
+			}
+
 		case "mesh":
 			v, err := p.str()
 			if err != nil {

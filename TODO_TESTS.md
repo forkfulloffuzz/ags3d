@@ -4,6 +4,22 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+## M10 — Game Systems (Batch 2)
+
+### T-GS25 — Billboard `.agchar` properties + `ag build` Sprite3D scene
+
+**Setup:** Have `ag` CLI built (`go build ./cmd/ag`). Create a test `.agchar` file.
+
+- [ ] `Character "guard" { visual_mode = "billboard" }` — `ag build` outputs a `.tscn` with root node `type="AGSCharacter2D"` and `visual_mode = "billboard"`.
+- [ ] `Character "guard" { type = "2d" }` — same result as above (existing syntax still works).
+- [ ] `Character "guard" { visual_mode = "billboard" sprite_sheet = "assets/sprites/guard.png" sprite_angles = 8 frames_per_angle = 6 }` — generated `.tscn` contains `[ext_resource type="Texture2D" path="res://assets/sprites/guard.png"]`, `hframes = 6`, `vframes = 8`, and a `Sprite3D` child.
+- [ ] `Character "hero" { visual_mode = "mesh" }` — `ag build` outputs root node `type="AGSCharacter3D"` and `visual_mode = "mesh"`.
+- [ ] `Character "hero" {}` (no visual_mode) — same as above (default is 3D/mesh).
+- [ ] `Character "x" { visual_mode = "puppet" }` — `ag validate` / parse reports error `visual_mode must be "mesh" or "billboard"`.
+- [ ] Open the generated billboard `.tscn` in Godot. The `AGSCharacter2D` node should appear in the scene tree; `visual_mode` property shows `billboard` in the Inspector.
+
+---
+
 ## M9 — AG Studio Editor (Batch 2)
 
 ### #94 T-E11 — AGS Inspector plugin

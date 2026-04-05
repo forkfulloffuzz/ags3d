@@ -57,8 +57,9 @@ func generate3DCharScene(cd *char.CharData) string {
 
 	// Root node
 	rootUID := nodeUID("/" + rootName)
-	fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter\" unique_id=%d]\n", rootName, rootUID)
+	fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter3D\" unique_id=%d]\n", rootName, rootUID)
 	fmt.Fprintf(&out, "character_name = %q\n", cd.Name)
+	fmt.Fprintln(&out, `visual_mode = "mesh"`)
 	if cd.DisplayName != "" {
 		fmt.Fprintf(&out, "display_name = %q\n", cd.DisplayName)
 	}
@@ -115,8 +116,9 @@ func generate2DCharScene(cd *char.CharData) string {
 
 	// Root node
 	rootUID := nodeUID("/" + rootName)
-	fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter\" unique_id=%d]\n", rootName, rootUID)
+	fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter2D\" unique_id=%d]\n", rootName, rootUID)
 	fmt.Fprintf(&out, "character_name = %q\n", cd.Name)
+	fmt.Fprintln(&out, `visual_mode = "billboard"`)
 	if cd.DisplayName != "" {
 		fmt.Fprintf(&out, "display_name = %q\n", cd.DisplayName)
 	}

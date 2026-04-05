@@ -33,8 +33,9 @@ func TestChar3DDefaultCapsule(t *testing.T) {
 	assertContains(t, out, `[sub_resource type="CapsuleShape3D" id="BodyShape"]`)
 	assertContains(t, out, `[sub_resource type="CapsuleMesh" id="BodyMesh"]`)
 
-	assertContains(t, out, `[node name="Player" type="AGSCharacter"`)
+	assertContains(t, out, `[node name="Player" type="AGSCharacter3D"`)
 	assertContains(t, out, `character_name = "player"`)
+	assertContains(t, out, `visual_mode = "mesh"`)
 	assertContains(t, out, `display_name = "Player"`)
 	assertContains(t, out, `script = ExtResource("CharScript")`)
 
@@ -96,8 +97,9 @@ func TestChar2DFull(t *testing.T) {
 	assertContains(t, out, `type="Texture2D" path="res://assets/sprites/guard.png"`)
 	assertContains(t, out, `[sub_resource type="CapsuleShape3D" id="BodyShape"]`)
 
-	assertContains(t, out, `[node name="Guard" type="AGSCharacter"`)
+	assertContains(t, out, `[node name="Guard" type="AGSCharacter2D"`)
 	assertContains(t, out, `character_name = "guard"`)
+	assertContains(t, out, `visual_mode = "billboard"`)
 	assertContains(t, out, `display_name = "Guard"`)
 
 	assertContains(t, out, `[node name="Sprite3D" type="Sprite3D" parent="Guard"`)

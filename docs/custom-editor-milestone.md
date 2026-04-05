@@ -134,6 +134,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI18 | Cutscene support (T-GS18/T-GS19) | Cutscene panel in script editor: fade-in/out preview button, player-control toggle indicator; `Wait`, `FadeIn`, `FadeOut`, `SetPlayerControl` shown as blocking call annotations |
 | T-CE-UI19 | Audio system (T-GS11/T-GS12) | Project panel "Audio" section: lists files in `audio/music/` and `audio/sfx/`; drag-to-assign into script editor; `PlayMusic`/`PlaySound` calls show the file icon inline |
 | T-CE-UI20 | Save / Load (T-GS16/T-GS17) | Save slot manager panel: list of used slots, slot names/timestamps, delete button; `SaveGame`/`LoadGame` autocomplete in script editor |
+| T-CE-UI21 | Billboard char scene gen (T-GS25) | Character editor 2D tab: visual_mode selector (mesh/billboard); sprite_sheet file picker; sprite_angles, frame_size, frames_per_angle fields; `ag build` preview shows Sprite3D tree |
 
 ---
 
