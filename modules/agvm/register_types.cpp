@@ -80,6 +80,9 @@ void uninitialize_agvm_module(ModuleInitializationLevel p_level) {
 	ags_saver.unref();
 
 	if (ags_runtime) {
+		// Remove from Engine's singleton list before freeing — otherwise Engine's
+		// destructor walks the list after the object is freed, corrupting the heap.
+		Engine::get_singleton()->remove_singleton("AGSRuntime");
 		memdelete(ags_runtime);
 		ags_runtime = nullptr;
 	}

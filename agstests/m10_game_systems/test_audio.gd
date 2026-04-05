@@ -78,12 +78,17 @@ func test_64_multiple_play_music_calls() -> void:
 func test_65_sound_and_music_independent() -> void:
 	var music_fired := [false]
 	var sound_fired := [false]
-	AGSRuntime.play_music_requested.connect(func(_n: String) -> void:
-		music_fired[0] = true
-	, CONNECT_ONE_SHOT)
-	AGSRuntime.play_sound_requested.connect(func(_n: String) -> void:
-		sound_fired[0] = true
-	, CONNECT_ONE_SHOT)
+	# Use named vars + explicit disconnect so lambdas connected to the persistent
+	# AGSRuntime singleton are always removed before the test exits.  CONNECT_ONE_SHOT
+	# is intentionally avoided here: play_music_requested never fires in this test,
+	# so a one-shot connection would outlive the function, keeping a dangling GDScript
+	# closure attached to the singleton and corrupting the heap during shutdown.
+	var music_handler := func(_n: String) -> void: music_fired[0] = true
+	var sound_handler := func(_n: String) -> void: sound_fired[0] = true
+	AGSRuntime.play_music_requested.connect(music_handler)
+	AGSRuntime.play_sound_requested.connect(sound_handler)
 	AGSRuntime.play_sound("click")
+	AGSRuntime.play_music_requested.disconnect(music_handler)
+	AGSRuntime.play_sound_requested.disconnect(sound_handler)
 	assert_false(music_fired[0], "play_music_requested should not fire on play_sound")
 	assert_true(sound_fired[0], "play_sound_requested should fire on play_sound")
