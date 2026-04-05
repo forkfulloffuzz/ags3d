@@ -49,7 +49,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-BL04** — Python: Export operator (`File → Export → AGS3D Room`) — extract tagged gameplay objects → `.agroom`; call GLTF exporter → `.glb` *(depends on T-BL02; unlocks T-BL05/06/07)*
 - [x] **T-BL05** — Python: Export — coordinate system conversion (Blender Y-up → Godot Z-up) + bounding-box size extraction for volume types *(depends on T-BL04)*
 - [x] **T-BL06** — Python: Export — Camera look_at: auto-compute from forward vector OR use eyedropper-picked Empty *(depends on T-BL04)*
-- [ ] **T-BL07** — Python: Export — merge mode: read existing `.agroom`, overwrite geometry-derived fields only, preserve non-geometry fields *(depends on T-BL04)*
+- [x] **T-BL07** — Python: Export — merge mode: read existing `.agroom`, overwrite geometry-derived fields only, preserve non-geometry fields *(depends on T-BL04)*
 
 ## Notes
 

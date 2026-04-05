@@ -148,7 +148,7 @@ def _extract_block(text: str, brace_pos: int) -> str:
 
 
 def _parse_block(rd: _RoomData, btype: str, bname: str, body: str) -> None:
-    props: dict = {"name": bname}
+    props: dict = {"name": bname, "_type": btype}
 
     for line in body.splitlines():
         line = line.strip()
@@ -402,13 +402,55 @@ def _fmt(v: float) -> str:
     return s if s else "0"
 
 
-def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
+def _append_existing_blocks(
+    lines: list[str],
+    existing_list: list[dict],
+    bl_names: set[str],
+) -> None:
+    """Append blocks from *existing_list* whose name is NOT in *bl_names*.
+
+    Used for merge mode (T-BL07): preserves blocks that exist in the .agroom
+    file but have no corresponding tagged object in the Blender scene.
+    """
+    for blk in existing_list:
+        name = blk.get("name", "")
+        if name in bl_names:
+            continue  # covered by Blender; already written
+        # Re-serialise the parsed block verbatim.
+        btype = blk.get("_type", "")
+        lines.append(f'    {btype} "{name}" {{')
+        if "position" in blk:
+            p = blk["position"]
+            lines.append(f'        position = ({_fmt(p[0])}, {_fmt(p[1])}, {_fmt(p[2])})')
+        if "look_at" in blk:
+            la = blk["look_at"]
+            lines.append(f'        look_at  = ({_fmt(la[0])}, {_fmt(la[1])}, {_fmt(la[2])})')
+        if "size" in blk:
+            s = blk["size"]
+            if btype == "WalkableSurface":
+                lines.append(f'        size   = ({_fmt(s[0])}, {_fmt(s[2])})')
+            else:
+                lines.append(f'        size     = ({_fmt(s[0])}, {_fmt(s[1])}, {_fmt(s[2])})')
+        if "offset" in blk:
+            o = blk["offset"]
+            lines.append(f'        offset = ({_fmt(o[0])}, {_fmt(o[1])}, {_fmt(o[2])})')
+        if "character" in blk:
+            lines.append(f'        character = "{blk["character"]}"')
+        lines.append("    }")
+        lines.append("")
+
+
+def _write_agroom(
+    room_name: str,
+    objects: list[bpy.types.Object],
+    existing: "_RoomData | None" = None,
+) -> str:
     """Serialise AGS-tagged Blender objects to .agroom text.
 
-    Coordinate conversion: Blender → Godot (_blender_to_godot).
-    Camera look_at: auto-computed from the camera's -Z forward vector × 5 m.
-    T-BL05 (full bounding-box extraction) and T-BL06 (eyedropper look_at)
-    will refine these two aspects.
+    If *existing* is supplied (merge mode, T-BL07), blocks present in the
+    existing file but absent from the Blender scene are preserved verbatim.
+    Geometry-derived fields (position, size, look_at) for blocks that DO
+    appear in Blender are always overwritten.
     """
     from .panels import _get_ags_type
 
@@ -447,8 +489,10 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append("")
 
     # Cameras
+    cam_names: set[str] = set()
     for obj in cameras:
         name = obj.get("AGS_name", obj.name)
+        cam_names.add(name)
         bx, by, bz = obj.matrix_world.translation
         gx, gy, gz = _blender_to_godot(bx, by, bz)
         # look_at: use eyedropper-picked Empty if set, else auto-compute from
@@ -466,20 +510,28 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append(f'        look_at  = ({_fmt(lax)}, {_fmt(lay)}, {_fmt(laz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.cameras, cam_names)
 
     # Points
+    pt_names: set[str] = set()
     for obj in points:
         name = obj.get("AGS_name", obj.name)
+        pt_names.add(name)
         bx, by, bz = obj.matrix_world.translation
         gx, gy, gz = _blender_to_godot(bx, by, bz)
         lines.append(f'    Point "{name}" {{')
         lines.append(f'        position = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.points, pt_names)
 
     # WalkableSurface
+    wk_names: set[str] = set()
     for obj in walkable:
         name = obj.get("AGS_name", obj.name)
+        wk_names.add(name)
         gsx, _gsy, gsz = _bbox_size_godot(obj)  # Godot XZ plane for WalkableSurface
         gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    WalkableSurface "{name}" {{')
@@ -487,10 +539,14 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append(f'        offset = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.walkable, wk_names)
 
     # BlockerVolume
+    bl_names: set[str] = set()
     for obj in blockers:
         name = obj.get("AGS_name", obj.name)
+        bl_names.add(name)
         gsx, gsy, gsz = _bbox_size_godot(obj)
         gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    BlockerVolume "{name}" {{')
@@ -498,10 +554,14 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append(f'        position = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.blockers, bl_names)
 
     # SpawnPoint
+    sp_names: set[str] = set()
     for obj in spawns:
         name = obj.get("AGS_name", obj.name)
+        sp_names.add(name)
         bx, by, bz = obj.matrix_world.translation
         gx, gy, gz = _blender_to_godot(bx, by, bz)
         char = obj.get("AGS_character", "")
@@ -511,10 +571,14 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append(f'        position  = ({_fmt(gx)}, {_fmt(gy)}, {_fmt(gz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.spawns, sp_names)
 
     # Hotspot
+    hs_names: set[str] = set()
     for obj in hotspots:
         name = obj.get("AGS_name", obj.name)
+        hs_names.add(name)
         gsx, gsy, gsz = _bbox_size_godot(obj)
         gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    Hotspot "{name}" {{')
@@ -522,10 +586,14 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append(f'        position = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.hotspots, hs_names)
 
     # TriggerRegion
+    tr_names: set[str] = set()
     for obj in triggers:
         name = obj.get("AGS_name", obj.name)
+        tr_names.add(name)
         gsx, gsy, gsz = _bbox_size_godot(obj)
         gcx, gcy, gcz = _bbox_center_godot(obj)
         lines.append(f'    TriggerRegion "{name}" {{')
@@ -533,6 +601,8 @@ def _write_agroom(room_name: str, objects: list[bpy.types.Object]) -> str:
         lines.append(f'        position = ({_fmt(gcx)}, {_fmt(gcy)}, {_fmt(gcz)})')
         lines.append("    }")
         lines.append("")
+    if existing:
+        _append_existing_blocks(lines, existing.triggers, tr_names)
 
     lines.append("}")
     return "\n".join(lines) + "\n"
@@ -581,6 +651,16 @@ class AGS3D_OT_ExportRoom(bpy.types.Operator):
         default=True,
     )  # type: ignore[assignment]
 
+    merge_mode: bpy.props.BoolProperty(
+        name="Merge (preserve non-geometry fields)",
+        description=(
+            "Read the existing .agroom before exporting and preserve any blocks "
+            "that have no corresponding tagged Blender object (non-geometry fields "
+            "edited manually are kept; geometry-derived fields are overwritten)"
+        ),
+        default=True,
+    )  # type: ignore[assignment]
+
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set:
         # Pre-fill filepath from blend file name.
         blend = bpy.data.filepath
@@ -607,7 +687,17 @@ class AGS3D_OT_ExportRoom(bpy.types.Operator):
 
         # --- write .agroom ---
         if self.export_gameplay:
-            agroom_text = _write_agroom(room_name, all_objects)
+            # Merge mode: read and parse the existing file (if any) so that
+            # blocks absent from Blender are preserved verbatim (T-BL07).
+            existing: "_RoomData | None" = None
+            if self.merge_mode and _os.path.isfile(agroom_path):
+                try:
+                    with open(agroom_path, "r", encoding="utf-8") as fh:
+                        existing = _parse_agroom(fh.read())
+                except (OSError, ValueError):
+                    existing = None  # parse failure → full overwrite
+
+            agroom_text = _write_agroom(room_name, all_objects, existing)
             try:
                 with open(agroom_path, "w", encoding="utf-8") as fh:
                     fh.write(agroom_text)

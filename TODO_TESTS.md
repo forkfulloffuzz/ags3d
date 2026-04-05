@@ -123,6 +123,21 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL07 — Export merge mode
+
+**Setup:** Blender 4.2+ with AGS3D add-on. A Blender scene with two Camera objects, one WalkableSurface, and one Point tagged and named. An existing `.agroom` on disk that contains those same names **plus** an extra `SpawnPoint "old_start"` block not present as a Blender object.
+
+- [ ] `File → Export → AGS3D Room`. The export dialog shows a **Merge** checkbox, enabled by default.
+- [ ] Export with **Merge = on**: the written `.agroom` contains the blocks from Blender (with updated positions/sizes) **and** the `SpawnPoint "old_start"` block from the existing file (preserved verbatim).
+- [ ] Export with **Merge = off**: the written `.agroom` contains only Blender-derived blocks; `SpawnPoint "old_start"` is gone.
+- [ ] Add a new Camera to Blender and re-export with Merge = on. The new camera appears in the file; the existing cameras have their positions updated; the old_start spawn is still present.
+- [ ] Delete a Camera from Blender and re-export with Merge = on. That camera block is absent from the file (Blender is authoritative for Blender objects); old_start spawn is still present.
+- [ ] If the existing `.agroom` is malformed/unreadable, export falls back to full overwrite (no crash).
+- [ ] If no existing `.agroom` exists (first export), Merge = on behaves identically to Merge = off.
+- [ ] Generated `.agroom` passes `ag validate` without errors.
+
+---
+
 ### T-BL10 — Character export operator
 
 **Setup:** Blender 4.2+ with AGS3D add-on. A scene with an `Armature` object parented to a `Mesh` object. NLA editor has tracks named `Idle`, `Walk`, `Talk` with at least one strip each.
