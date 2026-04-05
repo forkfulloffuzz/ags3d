@@ -28,6 +28,20 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Disable the add-on → no errors in the Blender console (`unregister()` called silently).
 - [ ] Re-enable the add-on after a Blender restart — it stays enabled across restarts.
 
+### T-GS29 — AGSAnimationPlayer2D
+
+**Setup:** An `AGSCharacter2D` node with a `Sprite3D` child (hframes=18: 6 idle + 6 walk + 6 talk per row, vframes=4 for 4 directions), an `AGSBillboardController` child (`sprite_angles=4`, `frames_per_angle=6`), and an `AGSAnimationPlayer2D` child (`frames_per_state=6`, `fps=8`).
+
+- [ ] `set_state("idle")` → Sprite3D cycles through frames 0–5 of the current direction row.
+- [ ] `set_state("walk")` → Sprite3D cycles through frames 6–11 of the current direction row.
+- [ ] `set_state("talk")` → Sprite3D cycles through frames 12–17 of the current direction row.
+- [ ] Calling `set_state("walk")` twice in a row does not reset the frame counter (frame continues from where it was).
+- [ ] `stop()` freezes the Sprite3D on the current frame (no further cycling).
+- [ ] After `stop()`, calling `set_state("walk")` resumes cycling from frame 0 of walk state.
+- [ ] Direction changes (from `AGSBillboardController`) correctly shift the row while keeping the state column offset intact.
+
+---
+
 ### T-GS26 — Billboard direction selection runtime
 
 **Setup:** A Godot project with an `AGSCharacter2D` node, a `Sprite3D` child with `vframes = 8` (8 directions), and an `AGSBillboardController` child (`sprite_angles = 8`, `frames_per_angle = 1`).

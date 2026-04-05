@@ -38,6 +38,11 @@ extends Node
 ## Use for single-angle sprites in rooms with a locked camera.
 @export var sprite_locked: bool = false
 
+## Column offset within each direction row.  Used by AGSAnimationPlayer2D to
+## select which animation state (idle/walk/talk) is active.  The active frame
+## cycles from frame_offset to frame_offset + frames_per_angle - 1.
+var frame_offset: int = 0
+
 var _sprite: Sprite3D = null
 var _frame_timer: float = 0.0
 var _current_anim_frame: int = 0
@@ -79,7 +84,9 @@ func _physics_process(delta: float) -> void:
 					vel_xz = vel_xz.normalized()
 				_current_row = velocity_to_row(vel_xz, cam_fwd, sprite_angles)
 
-	_sprite.frame = _current_row * frames_per_angle + _current_anim_frame
+	# hframes = total columns in sprite sheet.  Row width = hframes.
+	var row_width: int = _sprite.hframes if _sprite.hframes > 0 else frames_per_angle
+	_sprite.frame = _current_row * row_width + frame_offset + _current_anim_frame
 
 
 ## Compute the sprite sheet row for [param vel_xz] (normalised character

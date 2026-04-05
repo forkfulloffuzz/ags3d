@@ -138,6 +138,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI22 | Blender add-on scaffold (T-BL01) | No AG Studio UI needed for scaffold; once panels exist (T-BL02+), AG Studio "Open in Blender" button launches Blender with the room's .blend file |
 | T-CE-UI23 | AGS3D object type panel (T-BL02) | No AG Studio UI; the panel lives in Blender. AG Studio docs/tooltip should mention tagging workflow |
 | T-CE-UI24 | Billboard direction runtime (T-GS26) | Character editor 2D tab: live preview of direction/frame selection based on simulated camera angle; sprite_locked toggle |
+| T-CE-UI25 | AGSAnimationPlayer2D (T-GS29) | Character editor 2D animation section: frames_per_state spinbox, fps spinbox; state preview buttons (Idle/Walk/Talk) |
 
 ---
 
