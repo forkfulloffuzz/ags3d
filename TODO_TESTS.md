@@ -18,6 +18,15 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] `Character "x" { visual_mode = "puppet" }` — `ag validate` / parse reports error `visual_mode must be "mesh" or "billboard"`.
 - [ ] Open the generated billboard `.tscn` in Godot. The `AGSCharacter2D` node should appear in the scene tree; `visual_mode` property shows `billboard` in the Inspector.
 
+### T-BL12 — `.agchar` animation clip wiring in generated `.tscn`
+
+**Setup:** Have `ag` CLI built. Create a test `.agchar` with a `mesh` + `animations` block.
+
+- [ ] `Character "player" { mesh = "characters/player/player.glb" animations = { idle = "Idle" walk = "Walk" talk = "Talk" } }` — `ag build` generates a `.tscn` containing `anim_idle = "Idle"`, `anim_walk = "Walk"`, `anim_talk = "Talk"` as properties on the root `AGSCharacter3D` node.
+- [ ] Animation properties are emitted in sorted order (idle < talk < walk alphabetically) — regenerating the same `.agchar` twice produces identical `.tscn` output.
+- [ ] A `.agchar` with no `animations` block generates a `.tscn` with no `anim_` properties.
+- [ ] Open the generated `.tscn` in Godot — the `AGSCharacter3D` root node Inspector shows `anim_idle`, `anim_walk`, `anim_talk` fields with the correct clip name strings.
+
 ### T-BL01 — Blender add-on scaffold
 
 **Setup:** Blender 4.2+ installed.

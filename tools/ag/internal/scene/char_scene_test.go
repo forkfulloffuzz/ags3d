@@ -74,9 +74,39 @@ func TestChar3DWithMesh(t *testing.T) {
 	assertNotContains(t, out, `CapsuleMesh`)
 	// Instances the sub-scene
 	assertContains(t, out, `instance=ExtResource("CharMesh")`)
+	// Animation props emitted
+	assertContains(t, out, `anim_idle = "Idle"`)
+	assertContains(t, out, `anim_walk = "Walk"`)
 	// CollisionShape still present
 	assertContains(t, out, `[sub_resource type="CapsuleShape3D" id="BodyShape"]`)
 	assertContains(t, out, `[node name="CollisionShape3D"`)
+}
+
+func TestChar3DAnimationsSorted(t *testing.T) {
+	src := `Character "player" {
+		mesh = "characters/player/player.glb"
+		animations = {
+			talk = "Talk"
+			idle = "Idle"
+			walk = "Walk"
+		}
+	}`
+	out := genChar(t, src)
+	idlePos := strings.Index(out, `anim_idle`)
+	talkPos := strings.Index(out, `anim_talk`)
+	walkPos := strings.Index(out, `anim_walk`)
+	if idlePos < 0 || talkPos < 0 || walkPos < 0 {
+		t.Fatal("expected anim_idle, anim_talk, anim_walk in output")
+	}
+	// sorted: idle < talk < walk
+	if !(idlePos < talkPos && talkPos < walkPos) {
+		t.Error("animation properties not emitted in sorted order")
+	}
+}
+
+func TestChar3DNoAnimationsWhenEmpty(t *testing.T) {
+	out := genChar(t, `Character "npc" { mesh = "npc.glb" }`)
+	assertNotContains(t, out, "anim_")
 }
 
 // --------------------------------------------------------------------------

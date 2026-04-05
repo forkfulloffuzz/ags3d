@@ -2,6 +2,7 @@ package scene
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/ags3d/ag/internal/char"
@@ -60,6 +61,16 @@ func generate3DCharScene(cd *char.CharData) string {
 	fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter3D\" unique_id=%d]\n", rootName, rootUID)
 	fmt.Fprintf(&out, "character_name = %q\n", cd.Name)
 	fmt.Fprintln(&out, `visual_mode = "mesh"`)
+	if len(cd.Animations) > 0 {
+		keys := make([]string, 0, len(cd.Animations))
+		for k := range cd.Animations {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Fprintf(&out, "anim_%s = %q\n", k, cd.Animations[k])
+		}
+	}
 	if cd.DisplayName != "" {
 		fmt.Fprintf(&out, "display_name = %q\n", cd.DisplayName)
 	}

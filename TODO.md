@@ -3,60 +3,27 @@
 This file tracks the active batch of tasks. Update status as work progresses.
 When all tasks are done, ask Claude to pick the next 10.
 
-## M9 — Scene Generator & Runtime Core
+## M11 — Blender Integration (Batch 2)
 
-- [x] **T-E01** — Go: `.agroom` parser → `RoomData` struct
-- [x] **T-E02** — Go: `RoomData` → `.tscn` serialiser
-- [x] **T-E03** — Go: `.agchar` parser + `CharData` → `.tscn`
-- [x] **T-E04** — Go: wire scene gen into `ag build` pipeline
-- [x] **T-E18** — Integration: prototype migration
-- [x] **T-E05** — Go: `ag validate` cross-reference checks (SpawnPoint→agchar, initial_camera, point names, game.agp paths)
+- [x] **T-BL11** — Go: `ag build` — detect `.glb` in room directory; embed as sub-scene node in generated `.tscn`
+- [x] **T-BL12** — Go: `.agchar` — parse `mesh` + `animations` fields; embed character `.glb` in `.tscn`; wire `AnimationPlayer` clips *(depends on T-BL10)*
+- [ ] **T-BL13** — GDScript: `ags_character.gd` — drive `AnimationPlayer` clips: idle/walk/talk from character state *(depends on T-BL12)*
+- [ ] **T-BL09** — Python: NavMesh baking — auto-bake from `WalkableSurface` objects; tag result as `AGS_NavMesh`; include in GLTF export
 
-## M10 — Game Systems (Batch 1)
+## M10 — Game Systems (Finish)
 
-- [x] **T-GS07** — Go: grammar + emitter — `global.NAME` read/write; `[globals]` section in `game.agp`
-- [x] **T-GS08** — C++: `AGSRuntime` — global variable store (init from `game.agp`, get/set API, include in save data)
-- [x] **T-GS09** — Go: grammar + emitter — `GoToRoom("room")` blocking call *(T-GS10 already done; this wires the emitter)*
-- [x] **T-GS02** — C++: `AGSItem` node + `AGSRuntime.get_item()`
-- [x] **T-GS03** — C++: `AGSRoomItem` node — `item_clicked` signal, room wiring
-- [x] **T-GS04** — Go: `ag build` — `.agitem` parser + inventory/item validation in `ag validate`
-- [x] **T-GS05** — Go: grammar + emitter — `Say`, `Think`, `AddInventory`, `LoseInventory`, `HasInventory`
-- [x] **T-GS06** — Go: grammar + emitter — `HideRoomItem`, `ShowRoomItem`, `item_interact` handler
-- [x] **T-GS18** — GDScript/C++: cutscene support — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
-- [x] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
+- [ ] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine` AutoLoad nodes driven by generated `.agui` scene *(depends on T-GS13)*
+- [ ] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb` *(depends on T-GS14)*
 
-## M10 — Game Systems (Batch 2)
+## M-DLG — Dialogue System (Batch 1)
 
-- [x] **T-GS11** — Go: grammar + emitter — `PlayMusic`, `StopMusic`, `PlaySound` (non-blocking; map to `AGSRuntime.play_music`, `stop_music`, `play_sound`)
-- [x] **T-GS12** — GDScript: `AGSRuntime` — audio manager (`AudioStreamPlayer` for music + sfx pool; `play_music(name)`, `stop_music()`, `play_sound(name)`; audio files in `audio/music/` and `audio/sfx/`)
-- [x] **T-GS16** — GDScript: `AGSRuntime` — `save_game(slot)` / `load_game(slot)` (serialise globals, room name, character inventories, room item visibility to `user://save_<slot>.json`)
-- [x] **T-GS17** — Go: grammar + emitter — `SaveGame`, `LoadGame`, `GameSaved` (non-blocking; map to `AGSRuntime.save_game`, `load_game`, `game_saved`)
-- [x] **T-GS27** — C++: split `AGSCharacter` → `AGSCharacterBase` (signals + shared props) + `AGSCharacter3D` + `AGSCharacter2D`; preserve all existing signal/property interface
-- [x] **T-GS28** — GDScript: `AGSAnimationPlayerBase` (common API: `play_clip`, `stop`, `set_state`, `on_anim_event`) + `AGSAnimationPlayer3D` wrapping existing `AnimationPlayer` *(depends on T-GS27)*
-- [x] **T-GS24** — C++: `AGSCharacter` — add `visual_mode` property (`"mesh"` | `"billboard"`); no scene gen change yet
-- [x] **T-GS25** — Go: `.agchar` billboard properties (`visual_mode`, `sprite_sheet`, `sprite_angles`, `frame_size`, `frames_per_angle`); `ag build` outputs `Sprite3D`-rooted `.tscn` when `visual_mode = "billboard"` *(depends on T-GS24)*
-- [x] **T-BL01** — Python: Blender add-on scaffold — `tools/blender_addon/`, `blender_manifest.toml`, register/unregister hooks, installable in Blender 4.x; no UI yet
-- [x] **T-BL02** — Python: AGS3D object type panel — Object Properties sidebar + N-panel; type dropdown (None/WalkableSurface/BlockerVolume/Point/Camera/Hotspot/TriggerRegion/SpawnPoint/NavMesh); stores `AGS_type`/`AGS_name` as custom properties on the Blender object *(depends on T-BL01)*
-
-## M10 — Game Systems (Batch 3) / M11 — Blender Integration (Batch 1)
-
-- [x] **T-GS26** — GDScript: billboard direction selection runtime — angle quantization (4/8-way snap from velocity→camera angle), per-angle frame cycling, `sprite_locked` camera support *(depends on T-GS24, T-GS25)*
-- [x] **T-GS29** — GDScript: `AGSAnimationPlayer2D` — billboard direction + frame cycling; implements `AGSAnimationPlayerBase` API *(depends on T-GS27, T-GS28)*
-- [x] **T-GS13** — Go: `.agui` parser + `ag build` GUI scene generator (`InventoryBar`, `VerbBar`, `StatusLine` → `CanvasLayer` `.tscn`) *(no blockers)*
-- [x] **T-BL03** — Python: Viewport overlay — colored wireframes per AGS type drawn via `SpaceView3D.draw_handler_add`; toggled from View → Overlays *(depends on T-BL02)*
-- [x] **T-BL08** — Python: Import operator (`File → Import → AGS3D Room`) — reads `.agroom` → creates Blender empties/meshes in `AGS_Gameplay` collection *(depends on T-BL02)*
-- [x] **T-BL10** — Python: Character export operator (`File → Export → AGS3D Character`) — exports armature + mesh + NLA actions → `.glb` *(depends on T-BL01)*
-- [x] **T-BL04** — Python: Export operator (`File → Export → AGS3D Room`) — extract tagged gameplay objects → `.agroom`; call GLTF exporter → `.glb` *(depends on T-BL02; unlocks T-BL05/06/07)*
-- [x] **T-BL05** — Python: Export — coordinate system conversion (Blender Y-up → Godot Z-up) + bounding-box size extraction for volume types *(depends on T-BL04)*
-- [x] **T-BL06** — Python: Export — Camera look_at: auto-compute from forward vector OR use eyedropper-picked Empty *(depends on T-BL04)*
-- [x] **T-BL07** — Python: Export — merge mode: read existing `.agroom`, overwrite geometry-derived fields only, preserve non-geometry fields *(depends on T-BL04)*
+- [ ] **T-DLG01** — Go: `.agdlg` lexer — token types: `HEADER_KEY`, `HEADER_VALUE`, `SEPARATOR`, `NODE_END`, `SPEAKER`, `LINE`, `OPTION`, `COMMAND`, `COMMENT`, `TAG`, `LOC_KEY`
+- [ ] **T-DLG02** — Go: `.agdlg` parser — stages 1–3 (scan, lex, parse); produces `DialogueFile` → `DialogueNode[]` AST *(depends on T-DLG01)*
+- [ ] **T-DLG03** — Go: link stage — resolve all `<<jump>>` targets, `$character` placeholders, global option inheritance across all files *(depends on T-DLG02)*
+- [ ] **T-DLG13** — Go: `game.agp` `[locales]` + `[localisation]` blocks — locale declarations (`name`, `rtl`), `base_locale`, `fallback_chain`
 
 ## Notes
 
-- T-GS11 + T-GS12: audio pair — do T-GS11 (emitter) before T-GS12 (runtime).
-- T-GS16 + T-GS17: save/load pair — T-GS07/T-GS08 (globals) already done, no other blockers.
-- T-GS27 → T-GS28: character split must come before animation player refactor.
-- T-GS24 → T-GS25: visual_mode C++ property must exist before Go scene gen can branch on it.
-- T-BL01 → T-BL02: add-on must be installable before any panels are built.
-- T-GS30 (ag build char type routing) is fully covered by T-GS25 — no separate work needed.
-- T-BL04 is the critical-path unlocker: T-BL05/06/07/09/11 all depend on it.
+- T-BL14/T-BL15 are deferred to M12 (Custom Editor). T-BL16 remains a stub.
+- T-DLG13 has no blockers — can proceed in parallel with T-DLG01–03.
+- T-GS14 + T-GS15 complete M10 entirely.
