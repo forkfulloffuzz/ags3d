@@ -50,10 +50,7 @@ if [[ $VERBOSE -eq 1 ]]; then
 fi
 
 # Suppress Godot engine noise; only show AGS3D test output.
-TMPOUT="$(mktemp)"
-STATUS=0
-"$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT" >"$TMPOUT" 2>&1 || STATUS=$?
-
+# Output is streamed live (--line-buffered) so progress is visible while running.
 NOISE_PATTERN="Godot Engine|godotengine\.org|nvidia|Gtk|Adwaita|Thread|libpulse|libvulkan|libVk|^Xlib|^$"
 # Engine noise: warning/error boilerplate lines (at:, GDScript backtrace, bracketed entries,
 # tab-indented continuation lines) and known expected warnings from specific tests.
@@ -75,11 +72,17 @@ NOISE_PATTERN+="|Parameter.*get_viewport.*is null|Condition.*is_inside_tree.*Ret
 # Godot resource-leak warnings at exit — harmless cleanup noise
 NOISE_PATTERN+="|RID allocations.*were leaked|ObjectDB instances were leaked|resources still in use"
 
+# Pipe output through the noise filter in real-time.
+# set -e is suspended for the pipe so grep's exit code doesn't abort the script.
+set +e
 if [[ -n "$FILTER" ]]; then
-  grep -v -E "$NOISE_PATTERN" "$TMPOUT" | grep -i "$FILTER" || true
+  "$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT" 2>&1 | \
+    grep --line-buffered -v -E "$NOISE_PATTERN" | \
+    grep --line-buffered -i "$FILTER"
 else
-  grep -v -E "$NOISE_PATTERN" "$TMPOUT" || true
+  "$GODOT" --headless --path "$TEST_PROJECT" --script "$SCRIPT" 2>&1 | \
+    grep --line-buffered -v -E "$NOISE_PATTERN"
 fi
-
-rm -f "$TMPOUT"
+STATUS=${PIPESTATUS[0]}
+set -e
 exit $STATUS
