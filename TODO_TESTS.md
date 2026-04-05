@@ -60,6 +60,15 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Losing an item (via `LoseInventory`) removes its button from the InventoryBar.
 - [ ] The CanvasLayer persists across room transitions (since it is an AutoLoad).
 
+### T-GS15 — Emitter: `SetStatusText`, `SetActiveVerb`, `GetActiveVerb`
+
+**Setup:** Build `ag` CLI. Write a `.agscript` file using these calls.
+
+- [ ] `SetStatusText("Look at the chest")` compiles to `AGSRuntime.set_status_text("Look at the chest")` with no `await`.
+- [ ] `SetActiveVerb("Look")` compiles to `AGSRuntime.set_active_verb("Look")` with no `await`.
+- [ ] `var v = GetActiveVerb()` compiles to `var v = AGSRuntime.get_active_verb()` with no `await`.
+- [ ] Using these calls inside a longer script with blocking calls (Say, WalkTo) does not incorrectly mark them as blocking.
+
 ### T-BL01 — Blender add-on scaffold
 
 **Setup:** Blender 4.2+ installed.

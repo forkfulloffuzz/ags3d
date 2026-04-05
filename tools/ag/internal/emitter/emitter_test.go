@@ -756,3 +756,49 @@ func TestEmitter_CutsceneSequence(t *testing.T) {
 	// SetPlayerControl is not blocking — no await before it.
 	assertNotContains(t, got, `await AGSRuntime.set_player_control`)
 }
+
+// -------------------------------------------------------------------
+// T-GS15 — SetStatusText, SetActiveVerb, GetActiveVerb
+// -------------------------------------------------------------------
+
+func TestEmitter_SetStatusText_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { SetStatusText("Look at the door"); }`)
+	assertContains(t, got, `AGSRuntime.set_status_text("Look at the door")`)
+}
+
+func TestEmitter_SetStatusText_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { SetStatusText("Hello"); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_SetActiveVerb_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { SetActiveVerb("Look"); }`)
+	assertContains(t, got, `AGSRuntime.set_active_verb("Look")`)
+}
+
+func TestEmitter_SetActiveVerb_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { SetActiveVerb("Look"); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_GetActiveVerb_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { var v = GetActiveVerb(); }`)
+	assertContains(t, got, `AGSRuntime.get_active_verb()`)
+}
+
+func TestEmitter_GetActiveVerb_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { var v = GetActiveVerb(); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_GUISequence(t *testing.T) {
+	// Typical GUI interaction: show status text, set verb.
+	src := `function hotspot_Look() {
+    SetStatusText("You see an old chest.");
+    SetActiveVerb("Look");
+}`
+	got := emit(t, src)
+	assertContains(t, got, `AGSRuntime.set_status_text("You see an old chest.")`)
+	assertContains(t, got, `AGSRuntime.set_active_verb("Look")`)
+	assertNotContains(t, got, "await ")
+}
