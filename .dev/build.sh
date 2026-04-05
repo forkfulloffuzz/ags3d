@@ -54,3 +54,16 @@ scons platform=linuxbsd target="${TARGET}" dev_build="${DEV_BUILD}" -j"$JOBS"
 
 echo ""
 echo "✓ Build complete: bin/godot.linuxbsd.editor.x86_64"
+
+# --- Package Blender add-on -------------------------------------------------
+echo ""
+echo "→ Packaging Blender add-on…"
+ADDON_DIR="$REPO_ROOT/tools/blender_addon"
+ADDON_ZIP="$ADDON_DIR/blender_addon.zip"
+# Remove any existing zip(s) inside the add-on directory first so they are
+# not included in the new archive.
+find "$ADDON_DIR" -maxdepth 1 -name "*.zip" -delete
+# Zip the directory contents (not the directory itself) so Blender sees the
+# Python files at the root of the archive when installing from disk.
+(cd "$ADDON_DIR" && zip -r "$ADDON_ZIP" . -x "*.pyc" -x "__pycache__/*")
+echo "✓ Blender add-on packaged: tools/blender_addon/blender_addon.zip"
