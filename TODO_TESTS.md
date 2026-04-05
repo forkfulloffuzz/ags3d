@@ -28,6 +28,20 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Disable the add-on → no errors in the Blender console (`unregister()` called silently).
 - [ ] Re-enable the add-on after a Blender restart — it stays enabled across restarts.
 
+### T-GS13 — `.agui` parser + GUI scene generator
+
+**Setup:** `ag` CLI built. Create a `main_hud.agui` file and run `ag build`.
+
+- [ ] `GUI "main_hud" { layer = 10 }` → generates `main_hud.tscn` containing a `CanvasLayer` node named `MainHud` with `layer = 10` and `metadata/ags_gui_name = "main_hud"`.
+- [ ] `InventoryBar "inv_bar" { position = (0, 0, bottom) item_size = (64, 64) columns = 6 }` → `main_hud.tscn` contains a `GridContainer` child with `anchors_preset = 12`, `columns = 6`, `metadata/ags_widget = "InventoryBar"`, `metadata/item_size = Vector2i(64, 64)`.
+- [ ] `VerbBar "verbs" { position = (0, 0, bottom_right) verbs = ["Look", "Use", "Pick up"] }` → `HBoxContainer` child with three `Button` children; `text = "Look"`, `text = "Use"`, `text = "Pick up"`; each button has `metadata/ags_verb`.
+- [ ] `StatusLine "status" { position = (0, 0, top) font = "assets/fonts/main.ttf" }` → `Label` child with `anchors_preset = 10` and font ext_resource.
+- [ ] `StatusLine "status" { position = (0, 0, top) }` (no font) → `Label` child with no font ext_resource.
+- [ ] Invalid syntax (e.g. `GUI "hud" { bad_prop = 1 }`) → `ag build` prints a parse error and exits non-zero.
+- [ ] Open the generated `.tscn` in Godot. The `CanvasLayer` node and its children appear in the scene tree.
+
+---
+
 ### T-GS29 — AGSAnimationPlayer2D
 
 **Setup:** An `AGSCharacter2D` node with a `Sprite3D` child (hframes=18: 6 idle + 6 walk + 6 talk per row, vframes=4 for 4 directions), an `AGSBillboardController` child (`sprite_angles=4`, `frames_per_angle=6`), and an `AGSAnimationPlayer2D` child (`frames_per_state=6`, `fps=8`).

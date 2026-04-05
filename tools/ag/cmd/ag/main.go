@@ -26,6 +26,7 @@ import (
 
 	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/emitter"
+	"github.com/ags3d/ag/internal/gui"
 	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
@@ -179,7 +180,7 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var scripts, rooms, chars, items []project.SourceFile
+	var scripts, rooms, chars, items, guis []project.SourceFile
 	for _, f := range all {
 		switch f.Ext {
 		case ".agscript":
@@ -190,6 +191,8 @@ func build(root string, force bool, trace bool) error {
 			chars = append(chars, f)
 		case ".agitem":
 			items = append(items, f)
+		case ".agui":
+			guis = append(guis, f)
 		}
 	}
 
@@ -198,17 +201,18 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var changedScripts, changedRooms, changedChars, changedItems []project.SourceFile
+	var changedScripts, changedRooms, changedChars, changedItems, changedGUIs []project.SourceFile
 	if force {
-		changedScripts, changedRooms, changedChars, changedItems = scripts, rooms, chars, items
+		changedScripts, changedRooms, changedChars, changedItems, changedGUIs = scripts, rooms, chars, items, guis
 	} else {
 		changedScripts = project.Changed(scripts, manifest)
 		changedRooms = project.Changed(rooms, manifest)
 		changedChars = project.Changed(chars, manifest)
 		changedItems = project.Changed(items, manifest)
+		changedGUIs = project.Changed(guis, manifest)
 	}
 
-	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems)
+	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems) + len(changedGUIs)
 	if total == 0 {
 		fmt.Println("ag build: nothing to do (no changed source files)")
 		return nil
@@ -322,6 +326,32 @@ func build(root string, force bool, trace bool) error {
 
 		project.RecordMtimes([]project.SourceFile{src}, manifest)
 		outRel := strings.TrimSuffix(src.Rel, ".agchar") + ".tscn"
+		fmt.Printf("  %s → %s\n", src.Rel, outRel)
+	}
+
+	// --- .agui → .tscn (GUI CanvasLayer scene generation) ---
+	for _, src := range changedGUIs {
+		data, err := os.ReadFile(src.Path)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		gd, err := gui.ParseGUI(src.Rel, string(data))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			errs = append(errs, err)
+			continue
+		}
+		tscnText := scene.GenerateGUIScene(gd)
+
+		outPath := strings.TrimSuffix(src.Path, ".agui") + ".tscn"
+		if err := os.WriteFile(outPath, []byte(tscnText), 0644); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		project.RecordMtimes([]project.SourceFile{src}, manifest)
+		outRel := strings.TrimSuffix(src.Rel, ".agui") + ".tscn"
 		fmt.Printf("  %s → %s\n", src.Rel, outRel)
 	}
 
