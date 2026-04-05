@@ -68,6 +68,10 @@ NOISE_PATTERN+="|Nonexistent function '(walk_to|face_to)' in base 'AGSCharacter'
 NOISE_PATTERN+="|Nonexistent function 'connect' in base 'Callable'"
 # AGSRuntime trace output (enabled by default in all builds; verbose mode shows it)
 NOISE_PATTERN+="|\[AGS/"
+# M10: Cutscene — CanvasLayer/ColorRect have no viewport in headless mode; the overlay
+#     is visual-only so this is harmless. Also suppress the is_inside_tree guard that
+#     fires when Godot checks layout for a node freed before its deferred _ready runs.
+NOISE_PATTERN+="|Parameter.*get_viewport.*is null|Condition.*is_inside_tree.*Returning"
 # Godot resource-leak warnings at exit — harmless cleanup noise
 NOISE_PATTERN+="|RID allocations.*were leaked|ObjectDB instances were leaked|resources still in use"
 

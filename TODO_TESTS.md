@@ -191,3 +191,29 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Inside `item_interact`, `HideRoomItem("old_chest")` emits the runtime call correctly
 - [ ] Inside `item_interact`, `global.player.AddInventory("rusty_key")` emits the character runtime call correctly
 - [ ] In-game: place an `AGSRoomItem` in a room; clicking it calls `item_interact` on the room script with the item name
+
+---
+
+### T-GS18 — Cutscene support: `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`
+
+**Setup:** Add an `AGSCutscene` AutoLoad pointing to `.engine/runtime/ags_cutscene.gd`. Write a room script that triggers a cutscene sequence.
+
+#### Player control
+- [ ] `AGSRuntime.set_player_control(false)` in the console (Remote inspector during play) → clicking the floor does not move the player
+- [ ] `AGSRuntime.set_player_control(true)` → clicking the floor moves the player again
+- [ ] `AGSRuntime.player_control_changed` signal fires on each toggle (verify with a print connection)
+
+#### Fade
+- [ ] `await AGSCutscene.fade_out()` — screen fades to black over 0.5 s, execution resumes after
+- [ ] `await AGSCutscene.fade_in()` — screen fades from black to clear over 0.5 s
+- [ ] `fade_out(2.0)` / `fade_in(2.0)` — custom duration is respected
+- [ ] The fade overlay (CanvasLayer layer=100) renders on top of all 3D content
+
+#### Wait
+- [ ] `await AGSCutscene.wait(1.0)` — pauses execution for 1 second, then resumes
+- [ ] `await AGSCutscene.wait(0.0)` — returns on the next frame (no hang)
+
+#### Hide / show room items
+- [ ] `AGSRuntime.hide_room_item("chest")` sets the `AGSRoomItem` named "chest" invisible
+- [ ] `AGSRuntime.show_room_item("chest")` makes it visible again
+- [ ] Calling `hide_room_item` for a name not in the scene prints a warning and does not crash

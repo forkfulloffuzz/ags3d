@@ -4,6 +4,7 @@
 #include "ags_character.h"
 #include "ags_item.h"
 #include "ags_room.h"
+#include "ags_room_item.h"
 #include "ags_trace.h"
 #include "core/object/class_db.h"
 
@@ -52,11 +53,19 @@ void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_global", "name", "value"), &AGSRuntime::set_global);
 	ClassDB::bind_method(D_METHOD("init_globals", "defaults"), &AGSRuntime::init_globals);
 
+	ClassDB::bind_method(D_METHOD("hide_room_item", "name"), &AGSRuntime::hide_room_item);
+	ClassDB::bind_method(D_METHOD("show_room_item", "name"), &AGSRuntime::show_room_item);
+
+	ClassDB::bind_method(D_METHOD("set_player_control", "enabled"), &AGSRuntime::set_player_control);
+	ClassDB::bind_method(D_METHOD("is_player_control_enabled"), &AGSRuntime::is_player_control_enabled);
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "player_control_enabled"), "set_player_control", "is_player_control_enabled");
+
 	ClassDB::bind_method(D_METHOD("set_trace_enabled", "enabled"), &AGSRuntime::set_trace_enabled);
 	ClassDB::bind_method(D_METHOD("get_trace_enabled"), &AGSRuntime::get_trace_enabled);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "trace_enabled"), "set_trace_enabled", "get_trace_enabled");
 
 	ADD_SIGNAL(MethodInfo("room_change_requested", PropertyInfo(Variant::STRING, "room_name")));
+	ADD_SIGNAL(MethodInfo("player_control_changed", PropertyInfo(Variant::BOOL, "enabled")));
 }
 
 // --------------------------------------------------------------------------
@@ -68,7 +77,7 @@ Variant AGSRuntime::get_global(const String &p_name) const {
 	if (_globals.has(p_name)) {
 		return _globals[p_name];
 	}
-	WARN_PRINT(vformat("AGSRuntime.get_global: unknown global %q", p_name));
+	WARN_PRINT(vformat("AGSRuntime.get_global: unknown global '%s'", p_name));
 	return Variant();
 }
 
@@ -179,6 +188,57 @@ AGSRoom *AGSRuntime::get_room(const String &p_name) const {
 	}
 	return const_cast<AGSRoom *>(*found);
 }
+
+// --------------------------------------------------------------------------
+// RoomItem global registry
+// --------------------------------------------------------------------------
+
+void AGSRuntime::register_room_item(AGSRoomItem *p_item) {
+	ERR_FAIL_NULL(p_item);
+	AGS_TRACE("AGSRuntime", "register_room_item", vformat("name=%s", p_item->get_item_name()))
+	room_items[p_item->get_item_name()] = p_item;
+}
+
+void AGSRuntime::unregister_room_item(AGSRoomItem *p_item) {
+	ERR_FAIL_NULL(p_item);
+	room_items.erase(p_item->get_item_name());
+}
+
+void AGSRuntime::hide_room_item(const String &p_name) {
+	AGS_TRACE("AGSRuntime", "hide_room_item", vformat("name=%s", p_name))
+	const AGSRoomItem *const *found = room_items.getptr(StringName(p_name));
+	if (!found) {
+		WARN_PRINT(vformat("AGSRuntime.hide_room_item: room item '%s' not found.", p_name));
+		return;
+	}
+	const_cast<AGSRoomItem *>(*found)->set_visible(false);
+}
+
+void AGSRuntime::show_room_item(const String &p_name) {
+	AGS_TRACE("AGSRuntime", "show_room_item", vformat("name=%s", p_name))
+	const AGSRoomItem *const *found = room_items.getptr(StringName(p_name));
+	if (!found) {
+		WARN_PRINT(vformat("AGSRuntime.show_room_item: room item '%s' not found.", p_name));
+		return;
+	}
+	const_cast<AGSRoomItem *>(*found)->set_visible(true);
+}
+
+// --------------------------------------------------------------------------
+// Player control
+// --------------------------------------------------------------------------
+
+void AGSRuntime::set_player_control(bool p_enabled) {
+	AGS_TRACE("AGSRuntime", "set_player_control", vformat("enabled=%s", p_enabled ? "true" : "false"))
+	_player_control_enabled = p_enabled;
+	emit_signal("player_control_changed", p_enabled);
+}
+
+bool AGSRuntime::is_player_control_enabled() const {
+	return _player_control_enabled;
+}
+
+// --------------------------------------------------------------------------
 
 void AGSRuntime::load_room(const String &p_room_name) {
 	AGS_TRACE("AGSRuntime", "load_room", vformat("room_name=%s", p_room_name))

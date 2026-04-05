@@ -1,6 +1,7 @@
 #include "ags_room_item.h"
 
 #include "ags_room.h"
+#include "ags_runtime.h"
 #include "core/input/input_event.h"
 #include "core/object/class_db.h"
 #include "scene/main/node.h"
@@ -29,6 +30,10 @@ void AGSRoomItem::_notification(int p_what) {
 				}
 				parent = parent->get_parent();
 			}
+			// Also register globally with AGSRuntime for hide/show_room_item().
+			if (AGSRuntime::get_singleton()) {
+				AGSRuntime::get_singleton()->register_room_item(this);
+			}
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			Node *parent = get_parent();
@@ -39,6 +44,9 @@ void AGSRoomItem::_notification(int p_what) {
 					break;
 				}
 				parent = parent->get_parent();
+			}
+			if (AGSRuntime::get_singleton()) {
+				AGSRuntime::get_singleton()->unregister_room_item(this);
 			}
 		} break;
 	}

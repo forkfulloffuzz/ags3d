@@ -8,6 +8,7 @@ class AGSCamera;
 class AGSCharacter;
 class AGSItem;
 class AGSRoom;
+class AGSRoomItem;
 
 // SourceMapEntry maps one GDScript line back to the originating AGS-spirit
 // source file and line, as recorded in the .agmap sidecar produced by ag build.
@@ -33,6 +34,10 @@ class AGSRuntime : public Object {
 	HashMap<StringName, AGSCharacter *> characters;
 	HashMap<StringName, AGSItem *> items;
 	HashMap<StringName, AGSRoom *> rooms;
+	HashMap<StringName, AGSRoomItem *> room_items;
+
+	// Whether the player can walk by clicking. Scripts toggle this during cutscenes.
+	bool _player_control_enabled = true;
 
 	// Source maps keyed by the res:// path of the generated .gd file.
 	HashMap<String, Vector<SourceMapEntry>> _source_maps;
@@ -78,6 +83,17 @@ public:
 	void register_room(AGSRoom *p_room);
 	void unregister_room(AGSRoom *p_room);
 	AGSRoom *get_room(const String &p_name) const;
+
+	// RoomItem global registry — called by AGSRoomItem on NOTIFICATION_READY / EXIT_TREE.
+	// Enables AGSRuntime.hide_room_item / show_room_item from any script.
+	void register_room_item(AGSRoomItem *p_item);
+	void unregister_room_item(AGSRoomItem *p_item);
+	void hide_room_item(const String &p_name);
+	void show_room_item(const String &p_name);
+
+	// Player control — disabled during cutscenes so click-to-walk is suppressed.
+	void set_player_control(bool p_enabled);
+	bool is_player_control_enabled() const;
 
 	// Cross-room point lookup — delegates to AGSRoom::get_point().
 	Vector3 get_point(const String &p_room_name, const String &p_point_name) const;
