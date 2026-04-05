@@ -641,6 +641,54 @@ func TestEmitter_SetPlayerControl_NotBlocking(t *testing.T) {
 	assertNotContains(t, got, "await ")
 }
 
+// -------------------------------------------------------------------
+// T-GS11 — PlayMusic, StopMusic, PlaySound
+// -------------------------------------------------------------------
+
+func TestEmitter_PlayMusic_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { PlayMusic("theme_main"); }`)
+	assertContains(t, got, `AGSRuntime.play_music("theme_main")`)
+}
+
+func TestEmitter_PlayMusic_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { PlayMusic("theme_main"); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_StopMusic_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { StopMusic(); }`)
+	assertContains(t, got, `AGSRuntime.stop_music()`)
+}
+
+func TestEmitter_StopMusic_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { StopMusic(); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_PlaySound_MapsToAGSRuntime(t *testing.T) {
+	got := emit(t, `function f() { PlaySound("door_creak"); }`)
+	assertContains(t, got, `AGSRuntime.play_sound("door_creak")`)
+}
+
+func TestEmitter_PlaySound_NotBlocking(t *testing.T) {
+	got := emit(t, `function f() { PlaySound("door_creak"); }`)
+	assertNotContains(t, got, "await ")
+}
+
+func TestEmitter_AudioSequence(t *testing.T) {
+	// Typical room-load: start music, play a sound effect, stop music at end.
+	src := `function room_Load() {
+    PlayMusic("theme_main");
+    PlaySound("door_creak");
+    StopMusic();
+}`
+	got := emit(t, src)
+	assertContains(t, got, `AGSRuntime.play_music("theme_main")`)
+	assertContains(t, got, `AGSRuntime.play_sound("door_creak")`)
+	assertContains(t, got, `AGSRuntime.stop_music()`)
+	assertNotContains(t, got, "await ")
+}
+
 func TestEmitter_CutsceneSequence(t *testing.T) {
 	// Full cutscene pattern: disable control → fade out → action → fade in → re-enable.
 	src := `function room_Enter() {

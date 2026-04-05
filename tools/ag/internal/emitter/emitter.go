@@ -713,6 +713,9 @@ var builtinGlobalFunctions = map[string]string{
 	"FadeOut":           "AGSCutscene.fade_out",
 	"FadeIn":            "AGSCutscene.fade_in",
 	"Wait":              "AGSCutscene.wait",
+	"PlayMusic":         "AGSRuntime.play_music",
+	"StopMusic":         "AGSRuntime.stop_music",
+	"PlaySound":         "AGSRuntime.play_sound",
 }
 
 // builtinCharacterMethods maps AGS-spirit PascalCase character method names
