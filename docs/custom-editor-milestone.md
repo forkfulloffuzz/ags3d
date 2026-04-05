@@ -140,6 +140,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI24 | Billboard direction runtime (T-GS26) | Character editor 2D tab: live preview of direction/frame selection based on simulated camera angle; sprite_locked toggle |
 | T-CE-UI25 | AGSAnimationPlayer2D (T-GS29) | Character editor 2D animation section: frames_per_state spinbox, fps spinbox; state preview buttons (Idle/Walk/Talk) |
 | T-CE-UI26 | GUI scene generator (T-GS13) | GUI editor: .agui file list in Project panel; layout canvas showing InventoryBar/VerbBar/StatusLine at their anchors; property inspector for each widget |
+| T-CE-UI27 | .agroom import operator (T-BL08) | No AG Studio UI needed; round-trip is Blender→AG Studio; AG Studio "Re-import from Blender" button (T-CE08) uses the export operator (T-BL04), not the import |
 
 ---
 

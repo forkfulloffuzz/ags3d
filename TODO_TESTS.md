@@ -71,6 +71,25 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-BL08 — Import operator
+
+**Setup:** Blender 4.2+ with AGS3D add-on. Have a sample `.agroom` file with Camera, WalkableSurface, BlockerVolume, Point, SpawnPoint, Hotspot, and TriggerRegion blocks.
+
+- [ ] `File → Import → AGS3D Room (.agroom)` appears in the Import menu.
+- [ ] Select the `.agroom` file → import completes without errors; info bar shows "AGS3D: imported N gameplay objects from 'room_name'".
+- [ ] An **AGS_Gameplay** collection appears in the Outliner containing the imported objects.
+- [ ] Cameras → `ARROWS` empties named `AGS_Cam_<name>`; custom property `AGS_type = "CAMERA"`, `AGS_name = "<name>"`.
+- [ ] Points → `SINGLE_ARROW` empties; `AGS_type = "POINT"`.
+- [ ] WalkableSurface → thin wire box with `AGS_type = "WALKABLE"`; scale matches `size` from `.agroom`.
+- [ ] BlockerVolume → wire box with `AGS_type = "BLOCKER"`.
+- [ ] SpawnPoint → `CIRCLE` empty; `AGS_type = "SPAWN"`, `AGS_character` set if specified.
+- [ ] Hotspot / TriggerRegion → wire boxes with correct types.
+- [ ] Running the import again on the same file clears the old objects and re-creates them (no duplicates).
+- [ ] Imported positions are converted from Godot coords (Z negated): an object at `position = (1, 0, 2)` in `.agroom` lands at Blender location `(1, 0, -2)`.
+- [ ] Non-.agroom files or malformed files report an error and do not crash Blender.
+
+---
+
 ### T-BL03 — Viewport overlay
 
 **Setup:** Blender 4.2+ with AGS3D add-on enabled. A scene with several mesh objects tagged as different AGS types.

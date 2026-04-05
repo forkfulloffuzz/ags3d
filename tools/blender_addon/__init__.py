@@ -20,9 +20,9 @@ bl_info = {
     "category": "Game Engine",
 }
 
-from . import panels, overlay  # noqa: E402
+from . import panels, overlay, operators  # noqa: E402
 
-_modules = [panels, overlay]
+_modules = [panels, overlay, operators]
 
 
 def register() -> None:
