@@ -28,7 +28,7 @@ When all tasks are done, ask Claude to pick the next 10.
 ## M10 — Game Systems (Batch 2)
 
 - [x] **T-GS11** — Go: grammar + emitter — `PlayMusic`, `StopMusic`, `PlaySound` (non-blocking; map to `AGSRuntime.play_music`, `stop_music`, `play_sound`)
-- [ ] **T-GS12** — GDScript: `AGSRuntime` — audio manager (`AudioStreamPlayer` for music + sfx pool; `play_music(name)`, `stop_music()`, `play_sound(name)`; audio files in `audio/music/` and `audio/sfx/`)
+- [x] **T-GS12** — GDScript: `AGSRuntime` — audio manager (`AudioStreamPlayer` for music + sfx pool; `play_music(name)`, `stop_music()`, `play_sound(name)`; audio files in `audio/music/` and `audio/sfx/`)
 - [ ] **T-GS16** — GDScript: `AGSRuntime` — `save_game(slot)` / `load_game(slot)` (serialise globals, room name, character inventories, room item visibility to `user://save_<slot>.json`)
 - [ ] **T-GS17** — Go: grammar + emitter — `SaveGame`, `LoadGame`, `GameSaved` (non-blocking; map to `AGSRuntime.save_game`, `load_game`, `game_saved`)
 - [ ] **T-GS27** — C++: split `AGSCharacter` → `AGSCharacterBase` (signals + shared props) + `AGSCharacter3D` + `AGSCharacter2D`; preserve all existing signal/property interface

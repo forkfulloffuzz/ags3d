@@ -217,3 +217,29 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] `AGSRuntime.hide_room_item("chest")` sets the `AGSRoomItem` named "chest" invisible
 - [ ] `AGSRuntime.show_room_item("chest")` makes it visible again
 - [ ] Calling `hide_room_item` for a name not in the scene prints a warning and does not crash
+
+---
+
+### T-GS11 — Go: grammar + emitter — `PlayMusic`, `StopMusic`, `PlaySound`
+
+**Setup:** Write an `.agscript` file and run `ag build`; inspect the emitted `.gd`.
+
+- [ ] `PlayMusic("theme_main")` in a room script emits `AGSRuntime.play_music("theme_main")` — no `await`
+- [ ] `StopMusic()` emits `AGSRuntime.stop_music()` — no `await`
+- [ ] `PlaySound("door_creak")` emits `AGSRuntime.play_sound("door_creak")` — no `await`
+- [ ] A function that only calls `PlayMusic` is **not** treated as blocking — calling it from another function does **not** emit `await`
+
+---
+
+### T-GS12 — GDScript: `AGSRuntime` audio manager
+
+**Setup:** Add `AGSAudio` AutoLoad pointing to `.engine/runtime/ags_audio.gd`. Place audio files in `audio/music/` and `audio/sfx/`. Write a room script that calls `PlayMusic` and `PlaySound`.
+
+- [ ] `AGSRuntime.play_music("theme_main")` — `audio/music/theme_main.ogg` begins playing (looping)
+- [ ] `AGSRuntime.play_music("track_b")` while music is playing — previous track stops, new track starts
+- [ ] `AGSRuntime.stop_music()` — music stops immediately
+- [ ] `AGSRuntime.play_sound("door_creak")` — `audio/sfx/door_creak.ogg` plays once and stops on its own
+- [ ] Calling `play_sound` 8 times rapidly (>pool size limit) does not crash — oldest playing slot is reused
+- [ ] Calling `play_music` with a name that has no file in `audio/music/` prints a warning and does not crash
+- [ ] Calling `play_sound` with a name that has no file in `audio/sfx/` prints a warning and does not crash
+- [ ] `play_music_requested`, `stop_music_requested`, `play_sound_requested` signals appear in the Node panel's Signals tab on `AGSRuntime` (requires Godot rebuild)

@@ -95,6 +95,13 @@ public:
 	void set_player_control(bool p_enabled);
 	bool is_player_control_enabled() const;
 
+	// Audio — emit signals for the AGSAudio AutoLoad to handle.
+	// AGSRuntime is an Object, not a Node, so AudioStreamPlayer nodes live in
+	// AGSAudio; these methods are the AGS-spirit API surface.
+	void play_music(const String &p_name);
+	void stop_music();
+	void play_sound(const String &p_name);
+
 	// Cross-room point lookup — delegates to AGSRoom::get_point().
 	Vector3 get_point(const String &p_room_name, const String &p_point_name) const;
 

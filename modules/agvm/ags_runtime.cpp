@@ -64,8 +64,15 @@ void AGSRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_trace_enabled"), &AGSRuntime::get_trace_enabled);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "trace_enabled"), "set_trace_enabled", "get_trace_enabled");
 
+	ClassDB::bind_method(D_METHOD("play_music", "name"), &AGSRuntime::play_music);
+	ClassDB::bind_method(D_METHOD("stop_music"), &AGSRuntime::stop_music);
+	ClassDB::bind_method(D_METHOD("play_sound", "name"), &AGSRuntime::play_sound);
+
 	ADD_SIGNAL(MethodInfo("room_change_requested", PropertyInfo(Variant::STRING, "room_name")));
 	ADD_SIGNAL(MethodInfo("player_control_changed", PropertyInfo(Variant::BOOL, "enabled")));
+	ADD_SIGNAL(MethodInfo("play_music_requested", PropertyInfo(Variant::STRING, "name")));
+	ADD_SIGNAL(MethodInfo("stop_music_requested"));
+	ADD_SIGNAL(MethodInfo("play_sound_requested", PropertyInfo(Variant::STRING, "name")));
 }
 
 // --------------------------------------------------------------------------
@@ -243,6 +250,25 @@ bool AGSRuntime::is_player_control_enabled() const {
 void AGSRuntime::load_room(const String &p_room_name) {
 	AGS_TRACE("AGSRuntime", "load_room", vformat("room_name=%s", p_room_name))
 	emit_signal("room_change_requested", p_room_name);
+}
+
+// --------------------------------------------------------------------------
+// Audio — emit signals; AGSAudio AutoLoad handles actual playback
+// --------------------------------------------------------------------------
+
+void AGSRuntime::play_music(const String &p_name) {
+	AGS_TRACE("AGSRuntime", "play_music", vformat("name=%s", p_name))
+	emit_signal("play_music_requested", p_name);
+}
+
+void AGSRuntime::stop_music() {
+	AGS_TRACE("AGSRuntime", "stop_music", "")
+	emit_signal("stop_music_requested");
+}
+
+void AGSRuntime::play_sound(const String &p_name) {
+	AGS_TRACE("AGSRuntime", "play_sound", vformat("name=%s", p_name))
+	emit_signal("play_sound_requested", p_name);
 }
 
 Vector3 AGSRuntime::get_point(const String &p_room_name, const String &p_point_name) const {
