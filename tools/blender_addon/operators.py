@@ -633,14 +633,38 @@ def _top_quad_verts(obj: bpy.types.Object) -> list:
     ]
 
 
-def _bake_navmesh(scene: bpy.types.Scene) -> "bpy.types.Object | None":
+def _count_navmesh_islands(bm: bmesh.types.BMesh) -> int:
+    """Count disconnected face islands in *bm* via flood-fill over shared edges."""
+    visited: set = set()
+    islands = 0
+    for start_face in bm.faces:
+        if start_face in visited:
+            continue
+        islands += 1
+        stack = [start_face]
+        while stack:
+            face = stack.pop()
+            if face in visited:
+                continue
+            visited.add(face)
+            for edge in face.edges:
+                for linked in edge.link_faces:
+                    if linked not in visited:
+                        stack.append(linked)
+    return islands
+
+
+def _bake_navmesh(scene: bpy.types.Scene) -> "tuple[bpy.types.Object | None, int]":
     """Bake a navigation mesh from all WalkableSurface objects in *scene*.
 
     Creates (or replaces) a single Blender mesh object named "AGS_NavMesh"
     containing one quad per WalkableSurface.  The object is tagged with
     AGS_type = "NAVMESH" so Godot's importer can identify it.
 
-    Returns the baked object, or None if no WalkableSurface objects exist.
+    Returns (nav_obj, island_count).  nav_obj is None if no WalkableSurface
+    objects exist.  island_count > 1 means the navmesh has disconnected
+    islands (a warning, not an error — WalkTo() navigates to the closest
+    reachable point on the current island).
     """
     from .panels import _get_ags_type
 
@@ -649,7 +673,7 @@ def _bake_navmesh(scene: bpy.types.Scene) -> "bpy.types.Object | None":
         if _get_ags_type(obj) == "WALKABLE" and obj.type == "MESH"
     ]
     if not walkable:
-        return None
+        return None, 0
 
     # Remove stale AGS_NavMesh object/mesh if present.
     old_obj = bpy.data.objects.get(_NAVMESH_OBJ_NAME)
@@ -666,6 +690,8 @@ def _bake_navmesh(scene: bpy.types.Scene) -> "bpy.types.Object | None":
         verts = _top_quad_verts(ws_obj)
         bm_verts = [bm.verts.new(v) for v in verts]
         bm.faces.new(bm_verts)
+
+    island_count = _count_navmesh_islands(bm)
     bm.to_mesh(mesh)
     bm.free()
 
@@ -681,7 +707,7 @@ def _bake_navmesh(scene: bpy.types.Scene) -> "bpy.types.Object | None":
         scene.collection.children.link(col)
     col.objects.link(nav_obj)
 
-    return nav_obj
+    return nav_obj, island_count
 
 
 class AGS3D_OT_BakeNavMesh(bpy.types.Operator):
@@ -696,11 +722,19 @@ class AGS3D_OT_BakeNavMesh(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context) -> set:
-        nav_obj = _bake_navmesh(context.scene)
+        nav_obj, islands = _bake_navmesh(context.scene)
         if nav_obj is None:
             self.report({"WARNING"}, "AGS3D: no WalkableSurface objects found — nothing baked")
             return {"CANCELLED"}
-        self.report({"INFO"}, f"AGS3D: baked {_NAVMESH_OBJ_NAME} from WalkableSurface objects")
+        if islands > 1:
+            self.report(
+                {"WARNING"},
+                f"AGS3D: NavMesh has {islands} disconnected islands. "
+                "WalkTo() will navigate to the closest reachable point — "
+                "characters cannot cross gaps unless custom movement is used.",
+            )
+        else:
+            self.report({"INFO"}, f"AGS3D: baked {_NAVMESH_OBJ_NAME} from WalkableSurface objects")
         return {"FINISHED"}
 
 
@@ -807,7 +841,14 @@ class AGS3D_OT_ExportRoom(bpy.types.Operator):
             from .panels import _get_ags_type
 
             # Auto-bake navmesh from WalkableSurface objects before export.
-            nav_obj = _bake_navmesh(context.scene)
+            nav_obj, nav_islands = _bake_navmesh(context.scene)
+            if nav_islands > 1:
+                self.report(
+                    {"WARNING"},
+                    f"AGS3D: NavMesh has {nav_islands} disconnected islands. "
+                    "WalkTo() navigates to the closest reachable point — "
+                    "characters cannot cross gaps unless custom movement is used.",
+                )
 
             # Select only visual objects (non-gameplay-only, non-camera, non-none-type)
             # PLUS the freshly baked NavMesh (AGS_type = "NAVMESH").

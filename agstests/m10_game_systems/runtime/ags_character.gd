@@ -30,7 +30,12 @@ func navigate_to(target: Vector3) -> void:
 	_navigating = true
 	_play_anim_state("walk")
 	await get_tree().physics_frame  # Frame-0: nav map syncs on first physics frame
-	_nav_agent.target_position = target
+	# Snap target to the closest point on the active navmesh so the character
+	# always moves as close as possible, even when the target is unreachable
+	# (e.g. on a disconnected navmesh island). Never silently fails.
+	var map_rid := get_world_3d().navigation_map
+	var snapped := NavigationServer3D.map_get_closest_point(map_rid, target)
+	_nav_agent.target_position = snapped
 
 func walk_to(point_name: String) -> void:
 	var room := _find_parent_room()
