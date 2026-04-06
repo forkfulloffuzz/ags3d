@@ -57,6 +57,13 @@ type Vec3 struct{ X, Y, Z float64 }
 // Vec2 is a 2-component XZ-plane size (used for WalkableSurface.Size).
 type Vec2 struct{ X, Z float64 }
 
+// RoomDialogue holds the parsed content of a `dialogue { ... }` block inside
+// a .agroom file.
+type RoomDialogue struct {
+	OnEnter       string // node title to trigger on first room enter
+	OnEnterRepeat string // node title to trigger on subsequent room enters
+}
+
 // RoomData is the fully parsed representation of one .agroom file.
 type RoomData struct {
 	Name             string
@@ -68,6 +75,24 @@ type RoomData struct {
 	SpawnPoints      []SpawnPointData
 	Hotspots         []HotspotData
 	TriggerRegions   []TriggerRegionData
+	Dialogue         *RoomDialogue // nil if no dialogue block present
+}
+
+// ValidateDialogueRefs checks that all node titles listed in the dialogue block
+// exist in knownTitles. Returns one error per unknown title.
+func (rd *RoomData) ValidateDialogueRefs(knownTitles map[string]bool) []error {
+	if rd.Dialogue == nil {
+		return nil
+	}
+	var errs []error
+	check := func(field, title string) {
+		if title != "" && !knownTitles[title] {
+			errs = append(errs, fmt.Errorf("%s: dialogue.%s: node title %q not found", rd.Name, field, title))
+		}
+	}
+	check("on_enter", rd.Dialogue.OnEnter)
+	check("on_enter_repeat", rd.Dialogue.OnEnterRepeat)
+	return errs
 }
 
 // TriggerRegionData holds the parsed data for a TriggerRegion block.
@@ -379,7 +404,15 @@ func (p *agparser) parseRoom() (*RoomData, error) {
 		}
 
 		p.skipWS()
-		if p.peek() == '=' {
+		if tok == "dialogue" && p.peek() == '{' {
+			// dialogue { ... } — unnamed block
+			p.advance() // consume '{'
+			dlg, err := p.parseRoomDialogue()
+			if err != nil {
+				return nil, err
+			}
+			rd.Dialogue = dlg
+		} else if p.peek() == '=' {
 			// key = value
 			p.advance()
 			switch tok {
@@ -745,4 +778,38 @@ func (p *agparser) parseHotspot(name string) (HotspotData, error) {
 		}
 	}
 	return hd, nil
+}
+
+// parseRoomDialogue reads the dialogue { ... } block fields.
+func (p *agparser) parseRoomDialogue() (*RoomDialogue, error) {
+	dlg := &RoomDialogue{}
+	for {
+		p.skipWS()
+		if p.eof() {
+			return nil, p.errorf("unterminated dialogue block — missing '}'")
+		}
+		if p.peek() == '}' {
+			p.advance()
+			return dlg, nil
+		}
+		key, err := p.ident()
+		if err != nil {
+			return nil, err
+		}
+		if err := p.expect('='); err != nil {
+			return nil, err
+		}
+		v, err := p.str()
+		if err != nil {
+			return nil, err
+		}
+		switch key {
+		case "on_enter":
+			dlg.OnEnter = v
+		case "on_enter_repeat":
+			dlg.OnEnterRepeat = v
+		default:
+			return nil, p.errorf("unknown dialogue field %q", key)
+		}
+	}
 }

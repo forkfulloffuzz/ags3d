@@ -367,3 +367,60 @@ func TestErrLineNumbers(t *testing.T) {
 		t.Errorf("error line = %d, want 4", pe.Line)
 	}
 }
+
+// --------------------------------------------------------------------------
+// [dialogue] block — T-DLG11
+// --------------------------------------------------------------------------
+
+func TestRoomDialogue_OnEnter(t *testing.T) {
+	rd := mustParse(t, `Room "start" {
+		dialogue {
+			on_enter = "room_start_enter"
+		}
+	}`)
+	if rd.Dialogue == nil {
+		t.Fatal("Dialogue is nil")
+	}
+	if rd.Dialogue.OnEnter != "room_start_enter" {
+		t.Errorf("OnEnter = %q", rd.Dialogue.OnEnter)
+	}
+}
+
+func TestRoomDialogue_OnEnterRepeat(t *testing.T) {
+	rd := mustParse(t, `Room "start" {
+		dialogue {
+			on_enter        = "room_start_enter"
+			on_enter_repeat = "room_start_revisit"
+		}
+	}`)
+	if rd.Dialogue.OnEnterRepeat != "room_start_revisit" {
+		t.Errorf("OnEnterRepeat = %q", rd.Dialogue.OnEnterRepeat)
+	}
+}
+
+func TestRoomDialogue_NilWhenAbsent(t *testing.T) {
+	rd := mustParse(t, `Room "start" {}`)
+	if rd.Dialogue != nil {
+		t.Error("Dialogue should be nil when block is absent")
+	}
+}
+
+func TestRoomDialogue_ValidateRefsOK(t *testing.T) {
+	rd := mustParse(t, `Room "start" { dialogue { on_enter = "start_greet" } }`)
+	errs := rd.ValidateDialogueRefs(map[string]bool{"start_greet": true})
+	if len(errs) != 0 {
+		t.Errorf("expected no errors, got %v", errs)
+	}
+}
+
+func TestRoomDialogue_ValidateRefsMissing(t *testing.T) {
+	rd := mustParse(t, `Room "start" { dialogue { on_enter = "start_greet" } }`)
+	errs := rd.ValidateDialogueRefs(map[string]bool{})
+	if len(errs) != 1 {
+		t.Errorf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+}
+
+func TestRoomDialogue_UnknownField(t *testing.T) {
+	mustFail(t, `Room "x" { dialogue { bad = "v" } }`, `unknown dialogue field`)
+}

@@ -288,3 +288,69 @@ func TestErrLineNumbers(t *testing.T) {
 func TestErrTrailingContent(t *testing.T) {
 	mustFail(t, `Character "x" {} extra`, `unexpected content after Character block`)
 }
+
+// --------------------------------------------------------------------------
+// [dialogue] block — T-DLG10
+// --------------------------------------------------------------------------
+
+func TestDialogue_Roots(t *testing.T) {
+	cd := mustParse(t, `Character "guard" {
+		dialogue {
+			roots = ["guard_greeting", "guard_farewell"]
+		}
+	}`)
+	if cd.Dialogue == nil {
+		t.Fatal("Dialogue is nil")
+	}
+	if len(cd.Dialogue.Roots) != 2 || cd.Dialogue.Roots[0] != "guard_greeting" || cd.Dialogue.Roots[1] != "guard_farewell" {
+		t.Errorf("Roots = %v", cd.Dialogue.Roots)
+	}
+}
+
+func TestDialogue_InheritsGlobalsDefault(t *testing.T) {
+	cd := mustParse(t, `Character "guard" { dialogue {} }`)
+	if !cd.Dialogue.InheritsGlobals {
+		t.Error("InheritsGlobals should default to true")
+	}
+}
+
+func TestDialogue_InheritsGlobalsFalse(t *testing.T) {
+	cd := mustParse(t, `Character "guard" { dialogue { inherits_globals = false } }`)
+	if cd.Dialogue.InheritsGlobals {
+		t.Error("InheritsGlobals should be false")
+	}
+}
+
+func TestDialogue_SuppressGlobals(t *testing.T) {
+	cd := mustParse(t, `Character "guard" { dialogue { suppress_globals = ["global_help"] } }`)
+	if len(cd.Dialogue.SuppressGlobals) != 1 || cd.Dialogue.SuppressGlobals[0] != "global_help" {
+		t.Errorf("SuppressGlobals = %v", cd.Dialogue.SuppressGlobals)
+	}
+}
+
+func TestDialogue_NilWhenAbsent(t *testing.T) {
+	cd := mustParse(t, `Character "guard" {}`)
+	if cd.Dialogue != nil {
+		t.Error("Dialogue should be nil when block is absent")
+	}
+}
+
+func TestDialogue_ValidateRefsOK(t *testing.T) {
+	cd := mustParse(t, `Character "guard" { dialogue { roots = ["guard_greeting"] } }`)
+	errs := cd.ValidateDialogueRefs(map[string]bool{"guard_greeting": true})
+	if len(errs) != 0 {
+		t.Errorf("expected no errors, got %v", errs)
+	}
+}
+
+func TestDialogue_ValidateRefsMissing(t *testing.T) {
+	cd := mustParse(t, `Character "guard" { dialogue { roots = ["guard_greeting"] } }`)
+	errs := cd.ValidateDialogueRefs(map[string]bool{})
+	if len(errs) != 1 {
+		t.Errorf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+}
+
+func TestDialogue_UnknownField(t *testing.T) {
+	mustFail(t, `Character "x" { dialogue { unknown_field = "v" } }`, `unknown dialogue field`)
+}

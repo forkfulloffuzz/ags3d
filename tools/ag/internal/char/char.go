@@ -42,6 +42,14 @@ import (
 // Data types
 // --------------------------------------------------------------------------
 
+// CharDialogue holds the parsed content of a `dialogue { ... }` block inside
+// a .agchar file.
+type CharDialogue struct {
+	Roots           []string // entry-point node titles for this character
+	InheritsGlobals bool     // whether to inherit [global] nodes (default true)
+	SuppressGlobals []string // [global] node titles to suppress for this character
+}
+
 // CharData is the fully parsed representation of one .agchar file.
 type CharData struct {
 	Name        string
@@ -57,6 +65,29 @@ type CharData struct {
 	SpriteAngles   int    // number of direction variants (1, 4, or 8)
 	FrameSize      [2]int // [width, height] in pixels
 	FramesPerAngle int    // number of frames per direction
+
+	// Dialogue integration (optional)
+	Dialogue *CharDialogue // nil if no dialogue block present
+}
+
+// ValidateDialogueRefs checks that all node titles listed in the dialogue block
+// exist in knownTitles. Returns one error per unknown title.
+func (cd *CharData) ValidateDialogueRefs(knownTitles map[string]bool) []error {
+	if cd.Dialogue == nil {
+		return nil
+	}
+	var errs []error
+	for _, title := range cd.Dialogue.Roots {
+		if !knownTitles[title] {
+			errs = append(errs, fmt.Errorf("%s: dialogue.roots: node title %q not found", cd.Name, title))
+		}
+	}
+	for _, title := range cd.Dialogue.SuppressGlobals {
+		if !knownTitles[title] {
+			errs = append(errs, fmt.Errorf("%s: dialogue.suppress_globals: node title %q not found", cd.Name, title))
+		}
+	}
+	return errs
 }
 
 // --------------------------------------------------------------------------
@@ -287,6 +318,21 @@ func (p *agparser) parseChar() (*CharData, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// dialogue { ... } has no '=' — handle before the generic key=value path.
+		if key == "dialogue" {
+			p.skipWS()
+			if err := p.expect('{'); err != nil {
+				return nil, err
+			}
+			dlg, err := p.parseCharDialogue()
+			if err != nil {
+				return nil, err
+			}
+			cd.Dialogue = dlg
+			continue
+		}
+
 		if err := p.expect('='); err != nil {
 			return nil, err
 		}
@@ -379,6 +425,97 @@ func (p *agparser) parseChar() (*CharData, error) {
 		return nil, p.errorf("unexpected content after Character block")
 	}
 	return cd, nil
+}
+
+// parseCharDialogue reads the dialogue { ... } block fields.
+func (p *agparser) parseCharDialogue() (*CharDialogue, error) {
+	dlg := &CharDialogue{InheritsGlobals: true}
+	for {
+		p.skipWS()
+		if p.eof() {
+			return nil, p.errorf("unterminated dialogue block — missing '}'")
+		}
+		if p.peek() == '}' {
+			p.advance()
+			return dlg, nil
+		}
+		key, err := p.ident()
+		if err != nil {
+			return nil, err
+		}
+		if err := p.expect('='); err != nil {
+			return nil, err
+		}
+		switch key {
+		case "roots":
+			vals, err := p.stringList()
+			if err != nil {
+				return nil, err
+			}
+			dlg.Roots = vals
+		case "inherits_globals":
+			v, err := p.boolean()
+			if err != nil {
+				return nil, err
+			}
+			dlg.InheritsGlobals = v
+		case "suppress_globals":
+			vals, err := p.stringList()
+			if err != nil {
+				return nil, err
+			}
+			dlg.SuppressGlobals = vals
+		default:
+			return nil, p.errorf("unknown dialogue field %q", key)
+		}
+	}
+}
+
+// stringList parses ["a", "b", ...] or a single "value".
+func (p *agparser) stringList() ([]string, error) {
+	p.skipWS()
+	if p.peek() == '[' {
+		p.advance()
+		var out []string
+		for {
+			p.skipWS()
+			if p.peek() == ']' {
+				p.advance()
+				return out, nil
+			}
+			v, err := p.str()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, v)
+			p.skipWS()
+			if p.peek() == ',' {
+				p.advance()
+			}
+		}
+	}
+	v, err := p.str()
+	if err != nil {
+		return nil, err
+	}
+	return []string{v}, nil
+}
+
+// boolean parses true or false.
+func (p *agparser) boolean() (bool, error) {
+	p.skipWS()
+	id, err := p.ident()
+	if err != nil {
+		return false, err
+	}
+	switch id {
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	default:
+		return false, p.errorf("expected true or false, got %q", id)
+	}
 }
 
 // parseAnimations reads key = "value" pairs until '}'.

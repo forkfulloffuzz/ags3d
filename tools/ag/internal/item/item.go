@@ -18,12 +18,38 @@ import (
 	"unicode"
 )
 
+
+// ItemDialogue holds the parsed content of a `dialogue { ... }` block inside
+// a .agitem file.
+type ItemDialogue struct {
+	OnExamine  string // node title triggered when player examines this item
+	OnUseFailed string // node title triggered when item use has no valid target
+}
+
 // ItemData is the fully parsed representation of one .agitem file.
 type ItemData struct {
 	Name        string
 	DisplayName string
 	Description string
-	Sprite      string // optional: relative path to a sprite image
+	Sprite      string        // optional: relative path to a sprite image
+	Dialogue    *ItemDialogue // nil if no dialogue block present
+}
+
+// ValidateDialogueRefs checks that all node titles listed in the dialogue block
+// exist in knownTitles. Returns one error per unknown title.
+func (id *ItemData) ValidateDialogueRefs(knownTitles map[string]bool) []error {
+	if id.Dialogue == nil {
+		return nil
+	}
+	var errs []error
+	check := func(field, title string) {
+		if title != "" && !knownTitles[title] {
+			errs = append(errs, fmt.Errorf("%s: dialogue.%s: node title %q not found", id.Name, field, title))
+		}
+	}
+	check("on_examine", id.Dialogue.OnExamine)
+	check("on_use_failed", id.Dialogue.OnUseFailed)
+	return errs
 }
 
 // ParseItem parses src (the text content of a .agitem file) and returns
@@ -78,6 +104,15 @@ func (p *itemParser) parse() (*ItemData, error) {
 			return nil, fmt.Errorf("%s:%d: %w", p.file, p.line, err)
 		}
 		p.skipWS()
+		if key == "dialogue" && p.peek() == '{' {
+			p.pos++ // consume '{'
+			dlg, err := p.parseItemDialogue()
+			if err != nil {
+				return nil, err
+			}
+			item.Dialogue = dlg
+			continue
+		}
 		if err := p.expectChar('='); err != nil {
 			return nil, err
 		}
@@ -96,6 +131,41 @@ func (p *itemParser) parse() (*ItemData, error) {
 		}
 	}
 	return item, nil
+}
+
+func (p *itemParser) parseItemDialogue() (*ItemDialogue, error) {
+	dlg := &ItemDialogue{}
+	for {
+		p.skipWS()
+		if p.pos >= len(p.src) {
+			return nil, fmt.Errorf("%s:%d: unterminated dialogue block — missing '}'", p.file, p.line)
+		}
+		if p.peek() == '}' {
+			p.pos++
+			return dlg, nil
+		}
+		key, err := p.readIdent()
+		if err != nil {
+			return nil, fmt.Errorf("%s:%d: %w", p.file, p.line, err)
+		}
+		p.skipWS()
+		if err := p.expectChar('='); err != nil {
+			return nil, err
+		}
+		p.skipWS()
+		val, err := p.readValue()
+		if err != nil {
+			return nil, fmt.Errorf("%s:%d: %w", p.file, p.line, err)
+		}
+		switch key {
+		case "on_examine":
+			dlg.OnExamine = val
+		case "on_use_failed":
+			dlg.OnUseFailed = val
+		default:
+			return nil, fmt.Errorf("%s:%d: unknown dialogue field %q", p.file, p.line, key)
+		}
+	}
 }
 
 // --------------------------------------------------------------------------
