@@ -533,3 +533,9 @@ All tests are automated (`go test ./internal/project/...`). Manual verification:
 - [ ] Add a `[locale.en]` / `[locale.fr]` / `[locale.ar]` block to a real `game.agp`; run `ag build` — build does not crash and no error is printed
 - [ ] Add `[localisation]\nbase_locale = "zz"` (undeclared locale) to `game.agp`; run `ag validate` — error message references `base_locale "zz"` not declared
 - [ ] Add `[locale.INVALID]` to `game.agp`; run `ag validate` — error message references invalid locale code
+
+---
+
+### T-DLG02 — Go: `.agdlg` parser
+
+All tests are automated (`go test ./internal/dlg/...`). No manual test required.
