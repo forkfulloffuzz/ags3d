@@ -1,0 +1,14 @@
+// Exercises every character command variant.
+title: character_showcase
+skip: always
+sequence:
+	<<character player spawn_at point.alley_entrance>>
+	<<character player walk_to point.market_centre speed:1.5 timeout:10.0>>
+	<<character player run_to point.rooftop>>
+	<<character player animation play:look_around loop:false blend:0.2>>
+	<<character player face_to point.stage_left duration:0.5>>
+	<<character player expression sad>>
+	<<character player move_speed value:2.0>>
+	<<character player hide>>
+	<<character player show>>
+	<<end>>

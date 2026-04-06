@@ -1,0 +1,10 @@
+// EXPECT_ERROR: CUT-E006 — skip_to target 'act2' does not exist as a <<label>>
+title: skip_to_nowhere
+skip: author_controlled
+sequence:
+	<<fade_in duration:0.5>>
+	<<label act1>>
+	<<line narrator "Act one.">>
+	<<skip_to act2>>
+	<<fade_out duration:0.5>>
+	<<end>>

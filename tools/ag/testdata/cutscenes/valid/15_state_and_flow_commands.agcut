@@ -1,0 +1,15 @@
+// Exercises action, set, wait, title_card, subtitle, line variants.
+title: state_flow_showcase
+skip: always
+save_block: true
+sequence:
+	<<title_card "Prologue" duration:3.0 fade_in:0.5 fade_out:0.5>>
+	<<subtitle "A long time ago..." duration:2.5>>
+	<<line narrator "Words that echo.">>
+	<<line player "Is anyone there?" loc_key:player_question skip:advance>>
+	<<wait seconds:1.5 skip:skip_wait>>
+	<<action flag.prologue_shown = true>>
+	<<action room.transition("market")>>
+	<<set player.has_key = true>>
+	<<fade_out duration:1.0>>
+	<<end>>

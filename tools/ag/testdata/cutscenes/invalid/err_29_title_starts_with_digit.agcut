@@ -1,0 +1,5 @@
+// EXPECT_ERROR: CUT-E013 — title '1st_scene' starts with a digit
+title: 1st_scene
+sequence:
+	<<fade_in duration:1.0>>
+	<<end>>

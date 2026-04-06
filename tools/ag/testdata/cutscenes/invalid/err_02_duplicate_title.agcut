@@ -1,0 +1,6 @@
+// EXPECT_ERROR: CUT-E001 — title 'intro' already declared in 01_minimal.agcut
+// This file must be validated together with 01_minimal.agcut to trigger the error.
+title: intro
+sequence:
+	<<fade_in duration:0.5>>
+	<<end>>

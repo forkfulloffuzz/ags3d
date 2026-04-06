@@ -1,0 +1,21 @@
+// auto_duck:false — ducking only fires on explicit per-call duck: arguments.
+title: mixed_duck_lines
+skip:          always
+audio_scope:   keep
+duck_channels: room_music room_ambient
+duck_level:    0.25
+duck_fade:     0.3
+duck_restore:  0.5
+auto_duck:     false
+sequence:
+	<<fade_in duration:0.5>>
+	// This line plays over full music — no duck
+	<<line narrator "The city never sleeps.">>
+	// This line ducks both channels explicitly
+	<<line player "Do you hear that?" duck:room_music,room_ambient duck_level:0.1 duck_fade:0.1>>
+	// Suppress auto-duck for an intentionally stark moment
+	<<line narrator "Silence." duck:none>>
+	// Duck into a full dialogue sequence, slower restore
+	<<dialogue node:alley_witness duck:room_music duck_level:0.2 duck_restore:1.0>>
+	<<fade_out duration:0.5>>
+	<<end>>

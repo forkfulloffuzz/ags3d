@@ -1,0 +1,10 @@
+// Nested cutscene reference (file:name form).
+// References intro which is declared in 01_minimal.agcut.
+title: outer_cutscene
+skip: always
+sequence:
+	<<fade_in duration:0.5>>
+	<<cutscene file:intro>>
+	<<line narrator "The intro has finished.">>
+	<<fade_out duration:0.5>>
+	<<end>>

@@ -1,0 +1,6 @@
+// EXPECT_ERROR: DLG-E011 — jump target 'Guard.CheckPass' contains a dot and uppercase
+title: guard_greeting
+---
+Guard: Papers, please.
+<<jump Guard.CheckPass>>
+===

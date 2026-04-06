@@ -1,0 +1,6 @@
+// EXPECT_ERROR: parser — malformed header line missing colon separator
+title: malformed_header
+not_a_valid_header_line
+sequence:
+	<<fade_in duration:1.0>>
+	<<end>>

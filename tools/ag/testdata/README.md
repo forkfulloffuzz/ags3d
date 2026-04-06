@@ -146,9 +146,20 @@ Each invalid file has a header comment:
 | `err_02_unclosed_command.agdlg` | `<<command` without closing `>>` | Lexer |
 | `err_03_missing_separator.agdlg` | No `---` between header and body | Parser |
 
+#### Identifier naming errors (DLG-E011)
+
+| File | Error |
+|------|-------|
+| `err_04_invalid_title_uppercase.agdlg` | Node `title:` contains uppercase letters |
+| `err_05_invalid_title_hyphen.agdlg` | Node `title:` contains a hyphen |
+| `err_06_invalid_jump_target.agdlg` | `<<jump>>` target contains uppercase and dot |
+| `err_07_title_starts_with_digit.agdlg` | Node `title:` starts with a digit |
+
 ---
 
 ## cutscenes/
+
+Sequence body lines are indented with tabs for readability; the parser ignores all leading/trailing whitespace.
 
 ### Valid
 
@@ -157,17 +168,85 @@ Each invalid file has a header comment:
 | `01_minimal.agcut` | Title + sequence with `<<fade_in>>` and `<<end>>` |
 | `02_full_cutscene.agcut` | Camera, music, title card, character, sync, action, skip policy |
 | `03_parallel_and_if.agcut` | `<<parallel>>` block and `<<if flag>>` conditional |
+| `04_all_header_fields.agcut` | Every optional header field: `skip`, `tags`, `fallback`, `loc_group`, `voice_session` |
+| `05_skip_policies.agcut` | `author_controlled` skip with multiple `<<label>>` and `<<skip_to>>` |
+| `06_background_steps_and_sync.agcut` | Named `bg:id` steps, `<<sync id1 id2>>`, and bare `<<sync>>` |
+| `07_if_else_chain.agcut` | `<<if>>` / `<<else_if>>` / `<<else>>` / `<<end_if>>` nested chain |
+| `08_on_event_block.agcut` | `<<on event:char:tag>>` reactive handler block with `<<end_on>>` |
+| `09_nested_cutscene.agcut` | `<<cutscene file:name>>` reference to an existing title |
+| `10_inline_cutscene.agcut` | `<<cutscene skip:policy>>` ... `<<end_cutscene>>` inline block |
+| `11_all_camera_commands.agcut` | All camera sub-commands: `set`, `move_to`, `look_at`, `follow`, `shake`, `fov`, `return` |
+| `12_all_character_commands.agcut` | All character sub-commands: `spawn_at`, `walk_to`, `run_to`, `animation`, `face_to`, `expression`, `move_speed`, `hide`, `show` |
+| `13_all_audio_commands.agcut` | All audio commands: `music`, `sound`, `ambient`, `voice`, stops |
+| `14_all_visual_commands.agcut` | All visual commands: `fade_in/out`, `letterbox`, `vignette`, `flash`, `overlay`, `video` |
+| `15_state_and_flow_commands.agcut` | `title_card`, `subtitle`, `line`, `wait`, `action`, `set` |
+| `16_save_block_false_ambient.agcut` | `save_block:false` with no state-change commands (valid) |
+| `17_audio_scope_pause.agcut` | `audio_scope:pause` — room audio paused at start, auto-resumed on end |
+| `18_audio_scope_keep_with_room_channels.agcut` | `audio_scope:keep` with manual `channel:room_music` crossfade |
+| `19_duck_header_defaults.agcut` | `auto_duck:true` with header duck config; per-call `duck_level:` override |
+| `20_duck_per_call_overrides.agcut` | `auto_duck:false`; explicit `duck:channels` per line, `duck:none` suppression, `<<dialogue>>` duck |
+| `21_duck_room_ambient_volume.agcut` | Manual `<<ambient volume channel:room_ambient>>` duck/restore without auto_duck |
 
 ### Invalid
 
 Each invalid file has a header comment:
 ```
-// EXPECT_ERROR: <description>
+// EXPECT_ERROR: <error code> — description
 ```
 
-| File | Error | Layer |
-|------|-------|-------|
-| `err_01_missing_title.agcut` | Header has no `title:` field | Parser |
+#### Parser errors
+
+| File | Error | Code |
+|------|-------|------|
+| `err_01_missing_title.agcut` | Header has no `title:` field | — |
+| `err_13_empty_command.agcut` | `<<>>` empty command body | Parser |
+| `err_14_bare_body_line.agcut` | Sequence body line is not a `<<command>>` | Parser |
+| `err_15_malformed_header.agcut` | Header line missing `:` separator | Parser |
+
+#### Cutscene format errors (CUT-E)
+
+| File | Error | Code |
+|------|-------|------|
+| `err_02_duplicate_title.agcut` | Title already declared in another file | CUT-E001 |
+| `err_03_unknown_named_point.agcut` | `point.nowhere` does not exist in any room | CUT-E002 |
+| `err_04_unknown_character.agcut` | Character `ghost_npc` not defined | CUT-E003 |
+| `err_05_unknown_audio.agcut` | Audio file `nonexistent_track` not found | CUT-E004 |
+| `err_06_unknown_video.agcut` | Video file `missing_video` not found | CUT-E005 |
+| `err_07_skip_to_missing_label.agcut` | `<<skip_to act2>>` — no `<<label act2>>` in sequence | CUT-E006 |
+| `err_08_choice_in_parallel.agcut` | `<<choice>>` inside `<<parallel>>` block | CUT-E007 |
+| `err_09_nested_cutscene_not_found.agcut` | `<<cutscene file:does_not_exist>>` — title unknown | CUT-E008 |
+| `err_10_circular_nested_cutscene.agcut` | Cutscene references itself | CUT-E009 |
+| `err_11_save_block_false_with_action.agcut` | `save_block:false` with `<<action>>` state change | CUT-E012 |
+| `err_12_save_block_false_with_set.agcut` | `save_block:false` with `<<set>>` state change | CUT-E012 |
+
+#### Sequencing errors (SEQ-E)
+
+| File | Error | Code |
+|------|-------|------|
+| `err_16_seq_sync_undeclared_id.agcut` | `<<sync ghost_step>>` — id never declared as `bg:` | SEQ-E001 |
+| `err_17_seq_sync_foreground_id.agcut` | `<<sync main_step>>` — id is a foreground step | SEQ-E002 |
+| `err_18_seq_leaked_bg_step.agcut` | Background step `music_bg` has no eventual `<<sync>>` | SEQ-E003 |
+| `err_19_seq_on_fail_jump_missing_label.agcut` | `on_fail:jump_to:fallback_scene` — label not in sequence | SEQ-E004 |
+| `err_20_seq_duplicate_step_id.agcut` | Two steps both declare `bg:step_a` | SEQ-E007 |
+
+#### Cutscene format warnings (CUT-W)
+
+| File | Warning | Code |
+|------|---------|------|
+| `err_21_leaked_audio_music.agcut` | `<<music>>` started with no reachable stop | CUT-W009 |
+| `err_22_leaked_audio_ambient.agcut` | `<<ambient>>` started with no reachable stop | CUT-W009 |
+| `err_23_duck_all.agcut` | `duck:all` — channel set unverifiable at build time | CUT-W010 |
+| `err_24_auto_duck_no_channels.agcut` | `auto_duck:true` with no `duck_channels` declared | CUT-W011 |
+
+#### Identifier naming errors (CUT-E013)
+
+| File | Error |
+|------|-------|
+| `err_25_invalid_title_uppercase.agcut` | `title:` contains uppercase letters |
+| `err_26_invalid_title_spaces.agcut` | `title:` contains spaces |
+| `err_27_invalid_label_name.agcut` | `<<label>>` name contains a hyphen |
+| `err_28_invalid_bg_id.agcut` | `bg:` step id contains uppercase and dot |
+| `err_29_title_starts_with_digit.agcut` | `title:` starts with a digit |
 
 ---
 

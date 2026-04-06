@@ -2,13 +2,13 @@ title: ambient_weather
 skip: always
 save_block: false
 sequence:
-<<parallel>>
-<<music rain_loop fade_in:2.0>>
-<<fade_in duration:1.0>>
-<<end_parallel>>
-<<if flag.storm_active>>
-<<camera shake intensity:0.3 duration:5.0>>
-<<end_if>>
-<<label after_weather>>
-<<fade_out duration:1.0>>
-<<end>>
+	<<parallel>>
+		<<music rain_loop fade_in:2.0>>
+		<<fade_in duration:1.0>>
+	<<end_parallel>>
+	<<if flag.storm_active>>
+		<<camera shake intensity:0.3 duration:5.0>>
+	<<end_if>>
+	<<label after_weather>>
+	<<fade_out duration:1.0>>
+	<<end>>

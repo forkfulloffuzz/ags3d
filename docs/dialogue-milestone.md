@@ -53,6 +53,22 @@ Guard: You can go through.
 ===
 ```
 
+### Identifier naming rule
+
+All author-assigned identifiers must match `^[a-z][a-z0-9_]*$` — lowercase letters,
+digits, and underscores only; must start with a letter. This applies to:
+
+- `title:` value (node title)
+- `<<jump target>>` arguments
+- `character:` header value
+- `loc_id:` header value
+- Node titles referenced in `inherits:` and `suppress:` lists
+
+Tags (`chapter:1`, `global`) are metadata and are not subject to this rule.
+Locale codes follow BCP 47 and are also exempt.
+
+Violations are a hard build error (DLG-E011).
+
 ### Key format features
 
 - Node titles unique across the **entire project** (not just per file).
@@ -101,7 +117,7 @@ GDScript runtime
 
 | Task | Description | Depends on |
 |---|---|---|
-| T-DLG04 | Go: Structural validator — errors DLG-E001..E010: duplicate node titles, jump target missing, node with no reachable end, character not defined, global placeholder unresolvable, suppress of non-global, malformed command expression, option with no content/jump, circular jump, loc_id collision. Blocks build. | T-DLG03 |
+| T-DLG04 | Go: Structural validator — errors DLG-E001..E011: duplicate node titles, jump target missing, node with no reachable end, character not defined, global placeholder unresolvable, suppress of non-global, malformed command expression, option with no content/jump, circular jump, loc_id collision, identifier naming rule (`^[a-z][a-z0-9_]*$`). Blocks build. | T-DLG03 |
 | T-DLG05 | Go: Cross-system validator — errors DLG-E020..E025: inventory item referenced does not exist, room referenced does not exist, character property not defined, flag never set anywhere, named point not in room, knowledge flag never granted. Requires full project symbol table from ag validate pass. | T-DLG04 |
 | T-DLG06 | Go: Static analysis warnings — DLG-W001..W012: orphaned node, dead end option, condition always false/true, one-shot with no state change, global never suppressed, modified line missing loc annotation, character missing portrait, node only reachable via always-false condition, deep nesting, empty node, duplicate manual loc key. Reachability graph traversal from root nodes. Warning suppression via `// @suppress DLG-Wxxx` annotation. | T-DLG05 |
 
@@ -161,6 +177,7 @@ GDScript runtime
 | DLG-E008 | Option with no content and no jump |
 | DLG-E009 | Circular jump with no exit |
 | DLG-E010 | `loc_id` collision between nodes |
+| DLG-E011 | Identifier does not match `^[a-z][a-z0-9_]*$` — applies to node `title`, `<<jump>>` targets, `character:`, `loc_id:`, and names in `inherits:`/`suppress:` lists |
 
 ### Cross-System Errors (block build)
 

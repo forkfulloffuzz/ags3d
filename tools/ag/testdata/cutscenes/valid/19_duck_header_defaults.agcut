@@ -1,0 +1,16 @@
+// auto_duck:true with header defaults — every <<line>> auto-ducks room_music.
+title: narrated_reveal
+skip:          always
+audio_scope:   keep
+duck_channels: room_music
+duck_level:    0.2
+duck_fade:     0.3
+duck_restore:  0.6
+auto_duck:     true
+sequence:
+	<<fade_in duration:1.0>>
+	<<line narrator "The door had been open all along.">>
+	<<line narrator "Someone had been here recently.">>
+	<<line player "Who would do this?" duck_level:0.1>>
+	<<fade_out duration:1.0>>
+	<<end>>

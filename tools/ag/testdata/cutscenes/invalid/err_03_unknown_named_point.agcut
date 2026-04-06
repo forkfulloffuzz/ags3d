@@ -1,0 +1,5 @@
+// EXPECT_ERROR: CUT-E002 — named point 'point.nowhere' does not exist in any room
+title: bad_point_ref
+sequence:
+	<<camera set point.nowhere fov:60>>
+	<<end>>

@@ -1,0 +1,9 @@
+// EXPECT_WARNING: CUT-W009 — music 'theme_main' started but never stopped; runtime will hard-stop at sequence end
+title: leaked_music
+skip: always
+sequence:
+	<<fade_in duration:1.0>>
+	<<music theme_main fade_in:2.0>>
+	<<line narrator "The music plays on forever.">>
+	<<fade_out duration:1.0>>
+	<<end>>

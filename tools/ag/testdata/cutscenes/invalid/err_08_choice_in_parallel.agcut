@@ -1,0 +1,11 @@
+// EXPECT_ERROR: CUT-E007 — <<choice>> is not allowed inside a <<parallel>> block
+title: choice_inside_parallel
+sequence:
+	<<parallel>>
+		<<music rain_loop fade_in:1.0>>
+		<<choice>>
+			-> Option A
+			-> Option B
+		<<end_choice>>
+	<<end_parallel>>
+	<<end>>

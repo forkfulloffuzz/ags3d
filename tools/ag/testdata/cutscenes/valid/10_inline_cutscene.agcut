@@ -1,0 +1,14 @@
+// Inline <<cutscene>> block (same command vocabulary as .agcut, embedded).
+title: dialogue_with_inline_cut
+skip: always
+sequence:
+	<<line narrator "Before the flashback.">>
+	<<cutscene skip:always>>
+		<<fade_in duration:0.5>>
+		<<music memory_theme fade_in:1.0>>
+		<<line narrator "A memory surfaces.">>
+		<<music stop fade_out:1.0>>
+		<<fade_out duration:0.5>>
+	<<end_cutscene>>
+	<<line narrator "Back to the present.">>
+	<<end>>

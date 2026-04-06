@@ -1,0 +1,9 @@
+// EXPECT_WARNING: CUT-W010 — duck:all used; active channel set is runtime-only, cannot validate at build time
+title: duck_all_warning
+skip:        always
+audio_scope: keep
+sequence:
+	<<fade_in duration:0.5>>
+	<<line narrator "Everything goes quiet." duck:all duck_level:0.0>>
+	<<fade_out duration:0.5>>
+	<<end>>

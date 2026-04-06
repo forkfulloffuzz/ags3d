@@ -1,0 +1,9 @@
+// EXPECT_ERROR: CUT-E013 — label 'Act-Two' contains a hyphen (not allowed)
+title: bad_label_name
+skip: author_controlled
+sequence:
+	<<fade_in duration:1.0>>
+	<<label Act-Two>>
+	<<line narrator "Act two.">>
+	<<skip_to Act-Two>>
+	<<end>>

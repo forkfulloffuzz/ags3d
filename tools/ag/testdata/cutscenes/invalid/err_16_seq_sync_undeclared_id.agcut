@@ -1,0 +1,6 @@
+// EXPECT_ERROR: SEQ-E001 — <<sync>> references id 'ghost_step' never declared as bg:
+title: sync_undeclared_id
+sequence:
+	<<fade_in duration:1.0 bg:fade_bg>>
+	<<sync ghost_step>>
+	<<end>>

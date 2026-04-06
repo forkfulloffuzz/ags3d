@@ -1,0 +1,13 @@
+// bg: named background steps + <<sync>> waiting.
+title: bg_sync_demo
+skip: always
+sequence:
+	<<fade_in duration:1.0>>
+	<<music theme_main fade_in:3.0 bg:music_fade>>
+	<<camera move_to point.street_level duration:4.0 ease:out bg:cam_move>>
+	<<character player walk_to point.alley_entrance bg:player_walk>>
+	<<sync music_fade cam_move player_walk>>
+	<<line narrator "Everything arrived at once.">>
+	<<sync>>
+	<<fade_out duration:1.0>>
+	<<end>>

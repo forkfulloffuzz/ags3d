@@ -1,0 +1,9 @@
+// EXPECT_WARNING: CUT-W009 — ambient 'rain_loop' started but never stopped; runtime will hard-stop at sequence end
+title: leaked_ambient
+skip: always
+sequence:
+	<<fade_in duration:0.5>>
+	<<ambient rain_loop fade_in:1.0>>
+	<<wait seconds:3.0>>
+	<<fade_out duration:0.5>>
+	<<end>>

@@ -1,0 +1,7 @@
+// EXPECT_ERROR: SEQ-E007 — duplicate step id 'step_a' in same sequence
+title: duplicate_step_id
+sequence:
+	<<fade_in duration:1.0 bg:step_a>>
+	<<music theme_main fade_in:2.0 bg:step_a>>
+	<<sync step_a>>
+	<<end>>

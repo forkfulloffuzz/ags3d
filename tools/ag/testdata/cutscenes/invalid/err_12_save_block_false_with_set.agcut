@@ -1,0 +1,7 @@
+// EXPECT_ERROR: CUT-E012 — save_block:false cutscene contains <<set>> state change
+title: ambient_with_set
+save_block: false
+sequence:
+	<<camera shake intensity:0.05 duration:10.0>>
+	<<set player.seen_intro = true>>
+	<<end>>

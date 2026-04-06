@@ -1,0 +1,7 @@
+// EXPECT_ERROR: CUT-E012 — save_block:false cutscene contains <<action>> state change
+title: ambient_with_state_change
+save_block: false
+sequence:
+	<<music ambient_wind fade_in:2.0 loop:true>>
+	<<action flag.ambient_played = true>>
+	<<end>>

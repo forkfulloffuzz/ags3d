@@ -1,0 +1,8 @@
+// save_block:false is valid when there are NO state-change commands.
+title: ambient_loop
+skip: always
+save_block: false
+sequence:
+	<<music ambient_wind fade_in:2.0 loop:true>>
+	<<camera shake intensity:0.05 duration:30.0>>
+	<<end>>

@@ -1,0 +1,11 @@
+// All optional header fields populated.
+title: header_kitchen_sink
+skip: never
+save_block: true
+tags: [chapter:2, cinematic, debug]
+fallback: skip_and_continue
+loc_group: chapter2
+voice_session: vs_chapter2
+sequence:
+	<<fade_in duration:1.0>>
+	<<end>>

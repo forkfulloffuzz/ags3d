@@ -1,5 +1,5 @@
 // EXPECT_ERROR: cutscene missing required 'title' field
 skip: always
 sequence:
-<<fade_in duration:1.0>>
-<<end>>
+	<<fade_in duration:1.0>>
+	<<end>>

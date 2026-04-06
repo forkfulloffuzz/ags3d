@@ -30,24 +30,51 @@ At milestone end an author can:
 ```
 // cutscenes/chapter1_opening.agcut
 title: chapter1_opening
-skip: after_first_view
-save_block: true
-tags: [chapter:1, cinematic]
-fallback: halt
+skip:         after_first_view
+save_block:   true
+tags:         [chapter:1, cinematic]
+fallback:     halt
+audio_scope:  stop
+
+// Dialogue ducking — applied automatically to every <<line>> and <<dialogue>> call
+duck_channels: room_music room_ambient
+duck_level:    0.25
+duck_fade:     0.3
+duck_restore:  0.5
+auto_duck:     true
+
 sequence:
-<<fade_in duration:2.0>>
-<<camera set point.rooftop_wide fov:60>>
-<<music theme_main fade_in:3.0>>
-<<title_card "Chapter One: The Market District" duration:2.0>>
-<<camera move_to point.street_level duration:4.0 ease:out bg:cam_move>>
-<<character player spawn_at point.alley_entrance>>
-<<sync cam_move>>
-<<character player animation play:look_around>>
-<<line narrator "Three years. And it still felt foreign.">>
-<<action flag.chapter1_started = true>>
-<<action room.transition("market")>>
-<<fade_out duration:1.0>>
+	<<fade_in duration:2.0>>
+	<<camera set point.rooftop_wide fov:60>>
+	<<music theme_main fade_in:3.0>>
+	<<title_card "Chapter One: The Market District" duration:2.0>>
+	<<camera move_to point.street_level duration:4.0 ease:out bg:cam_move>>
+	<<character player spawn_at point.alley_entrance>>
+	<<sync cam_move>>
+	<<character player animation play:look_around>>
+	<<line narrator "Three years. And it still felt foreign.">>
+	<<action flag.chapter1_started = true>>
+	<<action room.transition("market")>>
+	<<fade_out duration:1.0>>
 ```
+
+### Identifier naming rule
+
+All author-assigned identifiers must match `^[a-z][a-z0-9_]*$` — lowercase letters,
+digits, and underscores only; must start with a letter. This applies to:
+
+- `title:` value
+- `<<label name>>` and `<<skip_to name>>` arguments
+- `bg:id` / `id:` step identifiers referenced by `<<sync>>`
+- `<<cutscene file:name>>` nested reference
+- `loc_group:` and `voice_session:` header values
+- Named audio channels (other than the reserved `room_music` / `room_ambient`)
+
+Reserved identifiers (`room_music`, `room_ambient`, `all`) are exempt. Tags
+(`chapter:1`, `cinematic`) are metadata and are not subject to this rule.
+Locale codes follow BCP 47 and are also exempt.
+
+Violations are a hard build error (CUT-E013).
 
 ### Key format features
 
@@ -60,6 +87,90 @@ sequence:
 - `<<label name>>` / `<<skip_to name>>` — author-defined skip targets.
 - `<<on event:char:tag>>` / `<<end_on>>` — react to event bus events mid-sequence.
 - Inline mode: `<<cutscene skip:always>>` ... `<<end_cutscene>>` inside `.agdlg`.
+- `audio_scope:` — controls room audio at cutscene boundaries (see below).
+- `duck_channels` / `duck_level` / `duck_fade` / `duck_restore` / `auto_duck` — dialogue ducking defaults (see below).
+
+---
+
+### Audio scope — room audio at cutscene boundaries
+
+The cutscene is the score that joins all active elements. Room music and ambient audio
+are started outside the cutscene by the room script, so the sequencer cannot track them
+as normal channels. `audio_scope:` declares the relationship at the boundary:
+
+| Value | Behaviour |
+|-------|-----------|
+| `keep` *(default)* | Room audio continues uninterrupted. Cutscene layers on top. No auto-restore on end. |
+| `pause` | Room music + ambient are paused at cutscene start; resumed (with `duck_restore` fade) on any end path — normal `<<end>>`, room transition, skip, or fallback halt. |
+| `stop` | Room music + ambient are stopped (with optional `fade_out:` on the header) at cutscene start. Not restored — the room's `on_enter` handler is expected to set new audio state. |
+
+Authors can also reference live room audio directly in commands using the reserved channel
+identifiers `room_music` and `room_ambient`:
+
+```
+// Manually crossfade room music into cutscene music
+<<music stop channel:room_music fade_out:2.0 bg:fade_room>>
+<<music cinematic_theme fade_in:2.0 bg:fade_cut>>
+<<sync fade_room fade_cut>>
+
+// Duck room ambient for a tense line, then restore it
+<<ambient volume channel:room_ambient value:0.15 duration:0.3>>
+<<line player "Did you hear that?">>
+<<ambient volume channel:room_ambient value:1.0 duration:0.5>>
+```
+
+`channel:room_music` and `channel:room_ambient` are resolved at runtime to whatever the room's
+audio slots currently hold. CUT-W009 (leaked audio) does **not** fire for these channels — the
+room owns them.
+
+---
+
+### Dialogue ducking
+
+The cutscene header can declare default ducking behaviour that applies automatically to every
+`<<line>>` and `<<dialogue>>` command in the sequence. This is a score-level concern: the
+`.agdlg` file has no knowledge of what audio is active, so ducking configuration belongs in
+`.agcut` where the layers are composed.
+
+**Header fields:**
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `duck_channels` | *(none)* | Space-separated list of channels to duck. Accepts `room_music`, `room_ambient`, any named `bg:id` started earlier, or `all` for every active channel. Required when `auto_duck: true`. |
+| `duck_level` | `0.25` | Target volume multiplier (0.0–1.0) during the line. |
+| `duck_fade` | `0.3` | Ramp duration into duck (seconds). Completes before the line begins. |
+| `duck_restore` | `0.5` | Ramp duration out of duck (seconds). Runs as background after line completes. |
+| `auto_duck` | `true` if `duck_channels` set, else `false` | When `true`, every `<<line>>` and `<<dialogue>>` auto-ducks. When `false`, ducking only fires on explicit per-call `duck:` arguments. |
+
+**Per-call override on `<<line>>` and `<<dialogue>>`:**
+
+```
+// Uses header defaults (auto_duck: true)
+<<line narrator "The rain hammers the roof.">>
+
+// Override channels and level for this line only
+<<line player "I can barely hear you." duck:room_ambient duck_level:0.1>>
+
+// Silence the room during this line — override fade timings too
+<<line narrator "Listen." duck:room_music,room_ambient duck_level:0.0 duck_fade:0.1>>
+
+// Suppress auto-duck — music stays full (intentional, story beat)
+<<line narrator "The silence was deafening." duck:none>>
+
+// Carry defaults into a full dialogue sequence
+<<dialogue node:guard_confrontation duck:room_music,room_ambient duck_level:0.2 duck_restore:1.0>>
+```
+
+**`duck:all` shorthand** ducks every channel currently active (including mid-cutscene started
+tracks). It is allowed but triggers CUT-W010 at build time because the set of active channels
+depends on runtime state — the validator cannot verify the intent is correct.
+
+**Runtime execution order (T-CUT32):**
+1. Ramp listed channels from current volume → `duck_level × current_volume` over `duck_fade` s (foreground — line waits until ramp completes).
+2. Fire `<<line>>` or `<<dialogue>>` to completion.
+3. Ramp channels back to pre-duck volume over `duck_restore` s (background — next step starts immediately).
+
+Duck ramps are internal operations and do not count as stopping a channel for CUT-W009 purposes.
 
 ---
 
@@ -105,7 +216,7 @@ Command executors
 
 | Task | Description | Depends on |
 |---|---|---|
-| T-CUT01 | Go: `.agcut` file parser — header fields (`title`, `skip`, `save_block`, `tags`, `fallback`, `loc_group`, `voice_session`), `sequence:` body start. Token types for command vocabulary: `COMMAND_OPEN` (`<<`), `COMMAND_CLOSE` (`>>`), `COMMAND_NAME`, `NAMED_PARAM`, `STRING_VALUE`, `IDENTIFIER`, `BLOCK_OPEN` (parallel/if/on), `BLOCK_CLOSE`. | — |
+| T-CUT01 | Go: `.agcut` file parser — header fields (`title`, `skip`, `save_block`, `tags`, `fallback`, `loc_group`, `voice_session`, `audio_scope`, `duck_channels`, `duck_level`, `duck_fade`, `duck_restore`, `auto_duck`), `sequence:` body start. Token types for command vocabulary: `COMMAND_OPEN` (`<<`), `COMMAND_CLOSE` (`>>`), `COMMAND_NAME`, `NAMED_PARAM`, `STRING_VALUE`, `IDENTIFIER`, `BLOCK_OPEN` (parallel/if/on), `BLOCK_CLOSE`. | — |
 | T-CUT02 | Go: Full command vocabulary parser — all command types (camera, character, dialogue/text, audio, visual, flow/state), named parameters, `bg:id` / `id:` / `timeout:` / `on_fail:` modifiers. Parse `<<parallel>>` / `<<end_parallel>>`, `<<if>>` / `<<else>>` / `<<end_if>>`, `<<label>>` / `<<skip_to>>`, `<<on event:>>` / `<<end_on>>` blocks. | T-CUT01 |
 | T-CUT03 | Go: Inline cutscene parser — extend `.agdlg` parser (T-DLG02) to recognise `<<cutscene skip:policy>>` ... `<<end_cutscene>>` blocks. Extract inline sequence as embedded `CutsceneSequence` node in the dialogue AST. | T-CUT01, T-DLG02 |
 | T-CUT04 | Go: `game.agp` `[cutscenes]` block — `fallback_debug`, `fallback_release`, `fallback_qa`, `step_timeout_default`. `[input]` block — `dialogue_advance`, `cutscene_skip`, `dialogue_hold_advance` input action bindings. | — |
@@ -114,8 +225,8 @@ Command executors
 
 | Task | Description | Depends on |
 |---|---|---|
-| T-CUT05 | Go: Cutscene format validator — errors CUT-E001..E012 (see reference below): title uniqueness, named point existence, character existence, audio file existence, video file existence, skip_to label existence, `<<choice>>` in parallel, nested cutscene existence, circular nesting, animation name on character, room transition with dialogue after, `save_block:false` with state changes. | T-CUT02, T-DLG07 |
-| T-CUT06 | Go: Cutscene format warnings — CUT-W001..W008: cutscene never triggered, very long with `skip:never`, state change after room transition, parallel with very different durations, voice line with no audio file, cutscene has no `<<end>>` or room transition, label never used as skip target, `author_controlled` with no labels. | T-CUT05 |
+| T-CUT05 | Go: Cutscene format validator — errors CUT-E001..E013 (see reference below): title uniqueness, named point existence, character existence, audio file existence, video file existence, skip_to label existence, `<<choice>>` in parallel, nested cutscene existence, circular nesting, animation name on character, room transition with dialogue after, `save_block:false` with state changes, identifier naming rule (`^[a-z][a-z0-9_]*$`). | T-CUT02, T-DLG07 |
+| T-CUT06 | Go: Cutscene format warnings — CUT-W001..W010: cutscene never triggered, very long with `skip:never`, state change after room transition, parallel with very different durations, voice line with no audio file, cutscene has no `<<end>>` or room transition, label never used as skip target, `author_controlled` with no labels, audio started with no reachable stop (leaked audio), `duck:all` used (unverifiable channel set), `auto_duck:true` with no `duck_channels` declared. | T-CUT05 |
 | T-CUT07 | Go: Sequencing validator — errors SEQ-E001..E007: sync references undeclared id, sync references foreground id, background step with no eventual sync, `on_fail:jump_to` references missing label, `wait_for` event never emitted in project, circular `wait_for`, duplicate step id. | T-CUT02 |
 | T-CUT08 | Go: Sequencing warnings — SEQ-W001..W006: background step with long duration before sync, foreground step with no timeout on long-running operation, sync-all with already-completed backgrounds, Blender frame tag with no registered handler, `on_fail:skip` on step with critical state change, `wait_for` event may never fire in context. | T-CUT07 |
 | T-CUT09 | Go: Emit validated cutscene data to `.engine/generated/cutscenes/` (JSON). Integrate into `ag build` pipeline. Integrate CUT/SEQ validators into `ag validate` report. | T-CUT06, T-CUT08 |
@@ -142,10 +253,12 @@ Command executors
 |---|---|---|
 | T-CUT16 | GDScript: Camera commands — `<<camera set point fov? rotation?>>` (instant), `<<camera move_to point duration ease?>>` (tween), `<<camera look_at target duration? ease?>>`, `<<camera follow character offset? duration?>>`, `<<camera shake intensity duration falloff?>>`, `<<camera fov value duration? ease?>>`, `<<camera return duration? ease?>>`. Each emits `camera_complete` on finish. Delegates to `AGSCamera` C++ node. | T-CUT12 |
 | T-CUT17 | GDScript: Character commands — `<<character X walk_to point speed? timeout?>>`, `<<character X run_to point>>`, `<<character X animation play:name loop? blend?>>`, `<<character X face_to target duration?>>`, `<<character X spawn_at point>>`, `<<character X hide>>`, `<<character X show>>`, `<<character X expression name>>`, `<<character X move_speed value>>`. Completion signals: `walk_complete(X)`, `run_complete(X)`, `animation_complete(X, name)`, `face_complete(X)`. Resolves character name via `AGSRuntime.get_character()`. | T-CUT12 |
-| T-CUT18 | GDScript: Audio commands — `<<music name fade_in? volume? loop?>>`, `<<music stop fade_out?>>`, `<<sound name volume? fade_in? position?>>` (optional spatial), `<<ambient name fade_in? volume?>>`, `<<ambient stop name fade_out?>>`, `<<voice character file loc_key?>>`. On skip: audio fades out in 0.3s rather than cutting. Delegates to `AGSRuntime` audio signals. | T-CUT12 |
+| T-CUT18 | GDScript: Audio commands — `<<music name fade_in? volume? loop?>>`, `<<music stop fade_out?>>`, `<<music stop channel:room_music fade_out?>>`, `<<sound name volume? fade_in? position?>>` (optional spatial), `<<ambient name fade_in? volume?>>`, `<<ambient stop name fade_out?>>`, `<<ambient stop channel:room_ambient fade_out?>>`, `<<ambient volume channel:name value duration?>>`, `<<voice character file loc_key?>>`. Sequencer tracks every channel started by name at dispatch time for T-CUT31 leak cleanup. `channel:room_music` and `channel:room_ambient` resolve at runtime to the room's live audio slots; CUT-W009 does not fire for these. On skip: cutscene-owned audio fades out in 0.3s; room channels respect `audio_scope:` boundary. | T-CUT12 |
 | T-CUT19 | GDScript: Visual commands — `<<fade_in duration? color?>>`, `<<fade_out duration? color?>>`, `<<flash color? duration?>>`, `<<vignette intensity duration?>>`, `<<letterbox enable duration?>>`, `<<overlay image fade_in? fade_out? duration?>>`, `<<video file skip:end_video?>>`. Each emits typed completion signal. `CanvasLayer`-based overlays. | T-CUT12 |
 | T-CUT20 | GDScript: Flow and state commands — `<<wait seconds skip:skip_wait?>>`, `<<action expression>>` (evaluates AGS-spirit expression; always fires, cannot be skipped), `<<set variable=value>>`, `<<parallel>>` / `<<end_parallel>>` block executor (all enclosed steps fire simultaneously; block completes when longest completes unless `<<parallel_end_on_first>>`), `<<if>>` / `<<else>>` / `<<end_if>>` evaluator, `<<cutscene file:name>>` nested playback, `<<label name>>`, `<<skip_to name>>`, `<<end>>`, `<<on event:>>` / `<<end_on>>` reactive handler registration. | T-CUT12, T-CUT11 |
-| T-CUT21 | GDScript: Dialogue commands — `<<line character "text" loc_key? skip:advance?>>`, `<<line narrator "text" loc_key?>>`, `<<title_card "text" duration? fade_in? fade_out?>>`, `<<subtitle "text" duration?>>`, `<<choice options[] skip:skip_choices?>>` inline choice. Delegates to dialogue presenter (T-DLG16). `dialogue_complete` signal when player advances. `<<dialogue node:title>>` and `<<dialogue file:name>>` trigger full dialogue sequences via dialogue runtime (T-DLG14). | T-CUT12, T-DLG16 |
+| T-CUT21 | GDScript: Dialogue commands — `<<line character "text" loc_key? skip:advance? duck:channels? duck_level? duck_fade? duck_restore?>>`, `<<line narrator "text" loc_key?>>`, `<<title_card "text" duration? fade_in? fade_out?>>`, `<<subtitle "text" duration?>>`, `<<choice options[] skip:skip_choices?>>` inline choice, `<<dialogue node:title duck:channels? duck_level? duck_restore?>>`, `<<dialogue file:name>>`. Per-call `duck:` args override header duck defaults; `duck:none` suppresses auto-duck for that call. Delegates to dialogue presenter (T-DLG16). `dialogue_complete` signal when player advances. | T-CUT12, T-CUT32, T-DLG16 |
+| T-CUT31 | GDScript: Audio leak cleanup — the sequencer tracks every audio channel started by the cutscene (`music`, `ambient`, `sound`) at step dispatch time. On sequence completion (normal `<<end>>`, room transition, skip, or fallback halt) any channel that was started but never explicitly stopped by a matching `stop` command is stopped **immediately with no fade**. The hard cut is intentional: it makes leaked audio noticeable during development rather than silently persisting into gameplay. The validator issues CUT-W009 at build time for each reachable sequence path where a channel is started with no stop, so authors can fix leaks before shipping. Cleanup fires after the last `<<action>>`/`<<set>>` dry-run pass so state is always consistent before audio is silenced. `audio_scope: pause` additionally resumes room channels (with `duck_restore` fade) on the same completion path. | T-CUT18 |
+| T-CUT32 | GDScript: Dialogue ducking — reads `duck_channels`, `duck_level`, `duck_fade`, `duck_restore`, `auto_duck` from the parsed cutscene header. When `auto_duck: true` (or per-call `duck:` is set), wraps every `<<line>>` and `<<dialogue>>` execution in a duck/restore cycle: (1) ramp listed channels to `duck_level × current_volume` over `duck_fade` s (foreground; line waits for ramp completion); (2) play line/dialogue to completion; (3) ramp channels back over `duck_restore` s (background; next step starts immediately). Per-call `duck:channels duck_level? duck_fade? duck_restore?` overrides header defaults for that step. `duck:none` suppresses the ramp entirely. `duck:all` ducks every currently active channel. `channel:room_music` / `channel:room_ambient` resolved via `AGSRuntime` audio slots. Duck ramps are internal and do not affect CUT-W009 leak tracking. | T-CUT18, T-CUT21 |
 
 ### Phase 6 — Skip System
 
@@ -201,6 +314,7 @@ Command executors
 | CUT-E010 | Animation name not defined on character |
 | CUT-E011 | Room transition inside inline cutscene with dialogue after |
 | CUT-E012 | `save_block:false` on cutscene containing state changes (`<<action>>` / `<<set>>`) |
+| CUT-E013 | Identifier does not match `^[a-z][a-z0-9_]*$` — applies to `title`, `<<label>>`, `bg:id`, `<<cutscene file:>>`, `loc_group`, `voice_session`, and named channel identifiers |
 
 ### Cutscene Format Warnings
 
@@ -214,6 +328,9 @@ Command executors
 | CUT-W006 | Cutscene has no `<<end>>` or room transition |
 | CUT-W007 | `<<label>>` defined but never used as `<<skip_to>>` target |
 | CUT-W008 | `author_controlled` skip with no `<<label>>` commands |
+| CUT-W009 | Audio channel started (`<<music>>`, `<<ambient>>`, `<<sound>>`) with no reachable `stop` on at least one sequence path — channel will be hard-stopped at sequence end by the runtime |
+| CUT-W010 | `duck:all` used on a `<<line>>` or `<<dialogue>>` call — the set of active channels is determined at runtime and cannot be validated at build time |
+| CUT-W011 | `auto_duck: true` declared but `duck_channels` not set — no channels will be ducked |
 
 ### Sequencing Errors (block build)
 

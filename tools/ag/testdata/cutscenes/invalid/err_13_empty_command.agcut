@@ -1,0 +1,6 @@
+// EXPECT_ERROR: parser — empty <<>> command is not allowed
+title: empty_command
+sequence:
+	<<fade_in duration:1.0>>
+	<<>>
+	<<end>>

@@ -1,0 +1,9 @@
+// EXPECT_ERROR: SEQ-E004 — on_fail:jump_to references label 'fallback_scene' not in sequence
+title: on_fail_missing_label
+sequence:
+	<<fade_in duration:1.0>>
+	<<character player walk_to point.market timeout:5.0 on_fail:jump_to:fallback_scene>>
+	<<label safe_arrival>>
+	<<line narrator "Made it.">>
+	<<fade_out duration:0.5>>
+	<<end>>

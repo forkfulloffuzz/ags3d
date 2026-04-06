@@ -1,0 +1,5 @@
+// EXPECT_ERROR: CUT-E004 — audio file 'nonexistent_track' is not defined
+title: bad_audio_ref
+sequence:
+	<<music nonexistent_track fade_in:1.0>>
+	<<end>>

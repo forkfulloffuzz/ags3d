@@ -1,0 +1,13 @@
+// Exercises every camera command variant.
+title: camera_showcase
+skip: always
+sequence:
+	<<camera set point.rooftop_wide fov:60>>
+	<<camera move_to point.street_level duration:4.0 ease:out bg:cam1>>
+	<<camera look_at player duration:1.0 ease:in>>
+	<<camera follow player offset:0.5 duration:2.0>>
+	<<camera shake intensity:0.3 duration:5.0 falloff:ease_out>>
+	<<camera fov value:90 duration:1.0 ease:in_out>>
+	<<camera return duration:1.5 ease:out>>
+	<<sync cam1>>
+	<<end>>

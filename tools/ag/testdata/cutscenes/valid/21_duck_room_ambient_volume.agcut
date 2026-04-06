@@ -1,0 +1,12 @@
+// Manual ambient volume control using channel:room_ambient for a tense moment.
+// No auto_duck — author drives the duck/restore cycle manually around a key line.
+title: rain_tension
+skip:        always
+audio_scope: keep
+sequence:
+	<<fade_in duration:0.5>>
+	<<ambient volume channel:room_ambient value:0.15 duration:0.3>>
+	<<line player "Did you hear that?">>
+	<<ambient volume channel:room_ambient value:1.0 duration:0.5>>
+	<<character player walk_to point.window>>
+	<<end>>

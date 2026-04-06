@@ -1,0 +1,9 @@
+// EXPECT_WARNING: CUT-W011 — auto_duck:true declared but duck_channels not set; no channels will be ducked
+title: auto_duck_no_channels
+skip:     always
+auto_duck: true
+sequence:
+	<<fade_in duration:0.5>>
+	<<line narrator "This line will not duck anything.">>
+	<<fade_out duration:0.5>>
+	<<end>>

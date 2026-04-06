@@ -1,0 +1,6 @@
+// EXPECT_ERROR: parser — sequence body line is not a <<command>>
+title: bare_line_in_body
+sequence:
+	<<fade_in duration:1.0>>
+	this is not a command
+	<<end>>

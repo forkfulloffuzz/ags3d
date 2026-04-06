@@ -1,0 +1,7 @@
+// EXPECT_ERROR: CUT-E005 — video file 'missing_video' is not defined
+title: bad_video_ref
+sequence:
+	<<fade_in duration:0.5>>
+	<<video file:missing_video>>
+	<<fade_out duration:0.5>>
+	<<end>>

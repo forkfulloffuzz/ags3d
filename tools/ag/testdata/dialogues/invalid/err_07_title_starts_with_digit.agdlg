@@ -1,0 +1,6 @@
+// EXPECT_ERROR: DLG-E011 — node title '1st_meeting' starts with a digit
+title: 1st_meeting
+---
+Guard: Hello.
+<<end>>
+===

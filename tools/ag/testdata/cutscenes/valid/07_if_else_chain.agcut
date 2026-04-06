@@ -1,0 +1,18 @@
+// Nested if/else_if/else/end_if blocks.
+title: conditional_chain
+skip: always
+sequence:
+	<<fade_in duration:0.5>>
+	<<if flag.rainy_day>>
+		<<music rain_loop fade_in:1.0>>
+		<<camera shake intensity:0.1 duration:2.0>>
+	<<else_if flag.sunny_day>>
+		<<music bright_theme fade_in:1.0>>
+	<<else>>
+		<<music ambient_neutral fade_in:1.0>>
+	<<end_if>>
+	<<if player.has_umbrella>>
+		<<character player animation play:open_umbrella>>
+	<<end_if>>
+	<<fade_out duration:0.5>>
+	<<end>>

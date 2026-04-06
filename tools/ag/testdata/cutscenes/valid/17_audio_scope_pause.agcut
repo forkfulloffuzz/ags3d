@@ -1,0 +1,11 @@
+// audio_scope:pause — room music/ambient is paused at start, resumed on end.
+// Used for brief decorative sequences that should not disturb the room audio state.
+title: thunder_flash
+skip:        always
+save_block:  false
+audio_scope: pause
+sequence:
+	<<flash color:#ffffff duration:0.3>>
+	<<sound thunder volume:1.0>>
+	<<camera shake intensity:0.2 duration:0.5>>
+	<<end>>

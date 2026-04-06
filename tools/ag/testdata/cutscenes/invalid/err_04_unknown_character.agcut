@@ -1,0 +1,5 @@
+// EXPECT_ERROR: CUT-E003 — character 'ghost_npc' is not defined
+title: bad_character_ref
+sequence:
+	<<character ghost_npc walk_to point.stage_left>>
+	<<end>>

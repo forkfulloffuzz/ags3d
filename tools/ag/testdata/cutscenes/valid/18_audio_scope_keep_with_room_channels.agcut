@@ -1,0 +1,13 @@
+// audio_scope:keep (default) — room audio continues.
+// Author manually crossfades room music into cutscene music using channel:room_music.
+title: market_approach
+skip:        always
+audio_scope: keep
+sequence:
+	<<fade_in duration:1.0>>
+	<<music stop channel:room_music fade_out:2.0 bg:fade_room>>
+	<<music tense_market fade_in:2.0 bg:fade_cut>>
+	<<sync fade_room fade_cut>>
+	<<character player walk_to point.market_entrance>>
+	<<music stop fade_out:1.5>>
+	<<end>>

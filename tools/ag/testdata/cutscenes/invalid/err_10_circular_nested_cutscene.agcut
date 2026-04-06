@@ -1,0 +1,7 @@
+// EXPECT_ERROR: CUT-E009 — cutscene 'circular_self' references itself (circular nesting)
+title: circular_self
+sequence:
+	<<fade_in duration:0.5>>
+	<<cutscene file:circular_self>>
+	<<fade_out duration:0.5>>
+	<<end>>
