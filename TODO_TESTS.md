@@ -545,3 +545,9 @@ All tests are automated (`go test ./internal/dlg/...`). No manual test required.
 ### T-DLG03 — Go: `.agdlg` link stage
 
 All tests are automated (`go test ./internal/dlg/...`). No manual test required.
+
+---
+
+### T-DLG04 — Go: structural dialogue validator
+
+All tests are automated (`go test ./internal/dlg/...`). No manual test required.

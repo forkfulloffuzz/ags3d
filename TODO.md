@@ -9,7 +9,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-DLG13** — Go: `game.agp` `[locales]` + `[localisation]` blocks — locale declarations (`name`, `rtl`), `base_locale`, `fallback_chain` *(no blockers — can run in parallel with T-DLG01)*
 - [x] **T-DLG02** — Go: `.agdlg` parser — stages 1–3 (scan, lex, parse); produces `DialogueFile` → `DialogueNode[]` AST *(depends on T-DLG01)*
 - [x] **T-DLG03** — Go: link stage — resolve all `<<jump>>` targets, `$character` placeholders, global option inheritance across all files *(depends on T-DLG02)*
-- [ ] **T-DLG04** — Go: structural dialogue validator (errors DLG-E001..E0xx) — duplicate titles, missing jump targets, malformed headers *(depends on T-DLG02, T-DLG03)*
+- [x] **T-DLG04** — Go: structural dialogue validator (errors DLG-E001..E0xx) — duplicate titles, missing jump targets, malformed headers *(depends on T-DLG02, T-DLG03)*
 - [ ] **T-DLG07** — Go: dialogue emit stage + `ag build` integration — write compiled dialogue to `.engine/generated/dialogue/`; wire into `ag build` pipeline *(depends on T-DLG03, T-DLG04)*
 
 ## M-CUT — Cutscene System (Batch 1: Parser foundation)
