@@ -39,7 +39,7 @@ func emit(t *testing.T, src string) string {
 
 func emitFixture(t *testing.T, name string) string {
 	t.Helper()
-	path := filepath.Join("..", "..", "testdata", "valid", name)
+	path := filepath.Join("..", "..", "testdata", "scripts", "valid", name)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
@@ -452,7 +452,7 @@ func TestEmitter_T32_CharacterName_FromIdentifier(t *testing.T) {
 // -------------------------------------------------------------------
 
 func TestEmitter_ValidFixtures_NoPanic(t *testing.T) {
-	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "valid", "*.agscript"))
+	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "scripts", "valid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}

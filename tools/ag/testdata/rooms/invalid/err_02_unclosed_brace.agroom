@@ -1,0 +1,6 @@
+// EXPECT_ERROR: unexpected EOF, expected closing '}'
+Room "broken" {
+    Camera "main" {
+        position = (0.0, 5.0, 8.0)
+        look_at  = (0.0, 0.0, 0.0)
+    }

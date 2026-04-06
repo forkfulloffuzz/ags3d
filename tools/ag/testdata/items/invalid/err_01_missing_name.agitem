@@ -1,0 +1,4 @@
+// EXPECT_ERROR: item name string missing after 'Item' keyword
+Item {
+    display_name = "No Name"
+}

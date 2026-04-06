@@ -1,0 +1,6 @@
+// EXPECT_ERROR: unclosed '<<' command
+title: t
+---
+Guard: Hello. <<action flag.x = true
+<<end>>
+===

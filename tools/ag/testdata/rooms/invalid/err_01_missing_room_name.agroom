@@ -1,0 +1,4 @@
+// EXPECT_ERROR: room name string missing
+Room {
+    initial_camera = "main"
+}

@@ -1,0 +1,5 @@
+// EXPECT_ERROR: missing '---' separator between header and body
+title: t
+Guard: Hello.
+<<end>>
+===

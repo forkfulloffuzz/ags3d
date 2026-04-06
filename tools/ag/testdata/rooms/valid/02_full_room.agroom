@@ -1,0 +1,46 @@
+Room "market_square" {
+    initial_camera = "wide"
+
+    Camera "wide" {
+        position = (4.79, 5.52, 5.60)
+        look_at  = (0.0, 0.0, 0.0)
+    }
+
+    Camera "close" {
+        position = (1.0, 2.0, 3.0)
+        look_at  = (0.0, 1.0, 0.0)
+    }
+
+    Point "door_left" {
+        position = (3.12, 0.18, 3.43)
+    }
+
+    Point "door_right" {
+        position = (-3.12, 0.18, 3.43)
+    }
+
+    Point "fountain" {
+        position = (0.0, 0.18, 0.0)
+    }
+
+    WalkableSurface "floor" {
+        size   = (10.0, 10.0)
+        offset = (0.0, -0.05, 0.0)
+    }
+
+    BlockerVolume "south_wall" {
+        size     = (10.0, 3.0, 0.2)
+        position = (0.0, 1.5, -5.0)
+    }
+
+    Hotspot "fountain_hs" {
+        position = (0.0, 0.5, 0.0)
+        size     = (1.5, 1.5, 1.5)
+        name     = "Fountain"
+    }
+
+    Spawn "player_spawn" {
+        position = (0.0, 0.0, 4.0)
+        facing   = 180.0
+    }
+}

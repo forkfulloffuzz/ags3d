@@ -773,15 +773,15 @@ func TestExprPos_DelegatesCorrectly(t *testing.T) {
 
 const testdataDir = "../../testdata"
 
-// TestParser_ValidFixtures parses every file in testdata/valid/ and asserts
+// TestParser_ValidFixtures parses every file in testdata/scripts/valid/ and asserts
 // zero parse errors. This is the primary regression suite for the parser.
 func TestParser_ValidFixtures(t *testing.T) {
-	files, err := filepath.Glob(filepath.Join(testdataDir, "valid", "*.agscript"))
+	files, err := filepath.Glob(filepath.Join(testdataDir, "scripts", "valid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob failed: %v", err)
 	}
 	if len(files) == 0 {
-		t.Fatal("no valid fixture files found — check testdata/valid/")
+		t.Fatal("no valid fixture files found — check testdata/scripts/valid/")
 	}
 	for _, path := range files {
 		path := path
@@ -804,7 +804,7 @@ func TestParser_ValidFixtures(t *testing.T) {
 	}
 }
 
-// TestParser_InvalidFixtures_ParserErrors parses files in testdata/invalid/
+// TestParser_InvalidFixtures_ParserErrors parses files in testdata/scripts/invalid/
 // that are expected to produce parser errors and asserts at least one error.
 // Files marked "(T10)" or "(semantic)" are skipped — those require the symbol
 // table phase which is not part of T09.
@@ -826,7 +826,7 @@ func TestParser_InvalidFixtures_ParserErrors(t *testing.T) {
 	for _, name := range parserErrorFiles {
 		name := name
 		t.Run(name, func(t *testing.T) {
-			path := filepath.Join(testdataDir, "invalid", name)
+			path := filepath.Join(testdataDir, "scripts", "invalid", name)
 			src, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatalf("read file: %v", err)

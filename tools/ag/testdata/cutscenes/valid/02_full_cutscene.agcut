@@ -1,0 +1,18 @@
+title: chapter1_opening
+skip: after_first_view
+save_block: true
+tags: [chapter:1, cinematic]
+fallback: halt
+sequence:
+<<fade_in duration:2.0>>
+<<camera set point.rooftop_wide fov:60>>
+<<music theme_main fade_in:3.0>>
+<<title_card "Chapter One: The Market District" duration:2.0>>
+<<camera move_to point.street_level duration:4.0 ease:out bg:cam_move>>
+<<character player spawn_at point.alley_entrance>>
+<<sync cam_move>>
+<<character player animation play:look_around>>
+<<line narrator "Three years. And it still felt foreign.">>
+<<action flag.chapter1_started = true>>
+<<fade_out duration:1.0>>
+<<end>>

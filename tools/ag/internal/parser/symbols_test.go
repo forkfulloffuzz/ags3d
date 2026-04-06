@@ -450,7 +450,7 @@ func TestSymbols_LookupMember(t *testing.T) {
 
 func TestSymbols_ValidFixtures(t *testing.T) {
 	const testdataDir = "../../testdata"
-	paths, err := filepath.Glob(filepath.Join(testdataDir, "valid", "*.agscript"))
+	paths, err := filepath.Glob(filepath.Join(testdataDir, "scripts", "valid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}

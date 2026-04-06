@@ -1,0 +1,5 @@
+Item "rusty_key" {
+    display_name = "Rusty Key"
+    description  = "An old iron key, worn smooth with age."
+    sprite       = "assets/items/rusty_key.png"
+}

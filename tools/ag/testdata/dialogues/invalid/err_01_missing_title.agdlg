@@ -1,0 +1,6 @@
+// EXPECT_ERROR: node missing required 'title' header field
+character: guard
+---
+Guard: Hello.
+<<end>>
+===

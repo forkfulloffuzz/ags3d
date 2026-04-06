@@ -320,7 +320,7 @@ func TestIsBlockingMethod(t *testing.T) {
 // -------------------------------------------------------------------
 
 func TestBlocking_Fixture15(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "valid", "15_blocking_calls.agscript"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "scripts", "valid", "15_blocking_calls.agscript"))
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestBlocking_Fixture15(t *testing.T) {
 // -------------------------------------------------------------------
 
 func TestBlocking_ValidFixtures_NoPanic(t *testing.T) {
-	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "valid", "*.agscript"))
+	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "scripts", "valid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}

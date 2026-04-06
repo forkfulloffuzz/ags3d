@@ -1,16 +1,33 @@
 # AGS-Spirit Test Fixtures
 
-Fixture `.agscript` files used by scanner, parser, and emitter tests.
+Fixture files used by scanner, parser, emitter, dialogue, and cutscene tests.
 
 ## Structure
 
 ```
 testdata/
-  valid/     — files that must parse without errors
-  invalid/   — files that must produce at least one error
+  scripts/     — .agscript fixtures (scanner / parser / emitter)
+    valid/
+    invalid/
+  rooms/       — .agroom fixtures
+    valid/
+    invalid/
+  items/       — .agitem fixtures
+    valid/
+    invalid/
+  dialogues/   — .agdlg fixtures (dialogue lexer / parser / linker / emitter)
+    valid/
+    invalid/
+  cutscenes/   — .agcut fixtures (cutscene parser / validator)
+    valid/
+    invalid/
 ```
 
-## Valid fixtures
+---
+
+## scripts/
+
+### Valid
 
 | File | What it exercises |
 |------|-------------------|
@@ -37,15 +54,12 @@ testdata/
 | `21_realistic_global_script.agscript` | game_start, repeatedly_execute, on_key_press, on_event, namespaces |
 | `22_edge_cases.agscript` | Empty bodies, deeply nested exprs, assignment chains, postfix edge cases |
 
-## Invalid fixtures
+### Invalid
 
 Each invalid file has a header comment:
 ```
 // EXPECT_ERROR: <description>
 ```
-
-Some errors are **parser errors** (structural) and some are **semantic errors** (T10 symbol table).
-The comment indicates which layer should catch it.
 
 | File | Error | Layer |
 |------|-------|-------|
@@ -70,18 +84,103 @@ The comment indicates which layer should catch it.
 | `err_19_function_inside_function.agscript` | Nested function declaration | Parser |
 | `err_20_global_assigned.agscript` | Assignment to read-only namespace | Semantic (T10) |
 
+---
+
+## rooms/
+
+### Valid
+
+| File | What it exercises |
+|------|-------------------|
+| `01_minimal.agroom` | Bare room definition — required fields only |
+| `02_full_room.agroom` | Hotspots, walkable areas, walk-behinds, scale zones, edges |
+
+### Invalid
+
+| File | Error |
+|------|-------|
+| `err_01_missing_room_name.agroom` | Room block with no `name:` field |
+| `err_02_unclosed_brace.agroom` | Block opened but never closed |
+| `err_03_bad_vector.agroom` | Vector field with wrong component count |
+
+---
+
+## items/
+
+### Valid
+
+| File | What it exercises |
+|------|-------------------|
+| `01_minimal.agitem` | Bare item definition — required fields only |
+| `02_full_item.agitem` | All optional fields: description, sprite, combine target |
+
+### Invalid
+
+| File | Error |
+|------|-------|
+| `err_01_missing_name.agitem` | Item block with no `name:` field |
+| `err_02_missing_keyword.agitem` | Content outside any block keyword |
+
+---
+
+## dialogues/
+
+### Valid
+
+| File | What it exercises |
+|------|-------------------|
+| `01_minimal.agdlg` | Single node, one speaker line, `<<end>>` |
+| `02_options.agdlg` | `->` choice branches, nested option body |
+| `03_loc_keys.agdlg` | Explicit `#loc:key` tags and auto-loc inference |
+
+### Invalid
+
+Each invalid file has a header comment:
+```
+// EXPECT_ERROR: <description>
+```
+
+| File | Error | Layer |
+|------|-------|-------|
+| `err_01_missing_title.agdlg` | Header has no `title:` field | Parser |
+| `err_02_unclosed_command.agdlg` | `<<command` without closing `>>` | Lexer |
+| `err_03_missing_separator.agdlg` | No `---` between header and body | Parser |
+
+---
+
+## cutscenes/
+
+### Valid
+
+| File | What it exercises |
+|------|-------------------|
+| `01_minimal.agcut` | Title + sequence with `<<fade_in>>` and `<<end>>` |
+| `02_full_cutscene.agcut` | Camera, music, title card, character, sync, action, skip policy |
+| `03_parallel_and_if.agcut` | `<<parallel>>` block and `<<if flag>>` conditional |
+
+### Invalid
+
+Each invalid file has a header comment:
+```
+// EXPECT_ERROR: <description>
+```
+
+| File | Error | Layer |
+|------|-------|-------|
+| `err_01_missing_title.agcut` | Header has no `title:` field | Parser |
+
+---
+
 ## Using fixtures in tests
 
 ```go
-// Load all valid fixtures and assert no parse errors
+// Load all valid .agscript fixtures and assert no parse errors
 func TestParser_ValidFixtures(t *testing.T) {
-    paths, _ := filepath.Glob("../../testdata/valid/*.agscript")
+    paths, _ := filepath.Glob("../../testdata/scripts/valid/*.agscript")
     for _, path := range paths {
         t.Run(filepath.Base(path), func(t *testing.T) {
             src, _ := os.ReadFile(path)
-            s := scanner.New(path, string(src))
-            p := parser.New(s)
-            _, errs := p.Parse(path)
+            _, errs := parser.Parse(path, string(src))
             if len(errs) != 0 {
                 t.Errorf("unexpected errors: %v", errs)
             }
@@ -89,22 +188,15 @@ func TestParser_ValidFixtures(t *testing.T) {
     }
 }
 
-// Load parser-layer invalid fixtures and assert at least one parse error
-func TestParser_InvalidFixtures(t *testing.T) {
-    parserErrors := []string{
-        "err_02_unclosed_brace.agscript",
-        "err_03_unclosed_paren.agscript",
-        // ... add parser-layer files here
-    }
-    for _, name := range parserErrors {
-        t.Run(name, func(t *testing.T) {
-            path := filepath.Join("../../testdata/invalid", name)
+// Load invalid .agdlg fixtures and assert at least one error
+func TestDialogue_InvalidFixtures(t *testing.T) {
+    paths, _ := filepath.Glob("../../testdata/dialogues/invalid/*.agdlg")
+    for _, path := range paths {
+        t.Run(filepath.Base(path), func(t *testing.T) {
             src, _ := os.ReadFile(path)
-            s := scanner.New(path, string(src))
-            p := parser.New(s)
-            _, errs := p.Parse(path)
-            if len(errs) == 0 {
-                t.Errorf("expected parse errors, got none")
+            _, err := dlg.Parse(path, string(src))
+            if err == nil {
+                t.Errorf("expected error, got none")
             }
         })
     }

@@ -1,0 +1,11 @@
+title: merchant_hello
+character: merchant
+loc_id: merchant_ns
+---
+Merchant: Welcome to my shop. #loc:merchant_hello_000
+-> What do you sell? #loc:opt_sells_000
+   Merchant: Fine wares from across the realm. #loc:merchant_sells_000
+   <<end>>
+-> Goodbye. #loc:opt_bye_000
+   <<end>>
+===

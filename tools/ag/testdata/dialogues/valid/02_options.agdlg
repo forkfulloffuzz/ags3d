@@ -1,0 +1,24 @@
+title: guard_greeting
+character: guard
+tags: [chapter:1]
+---
+Guard: You there. Stop.
+-> I'm just passing through. <<visible_if not flag.guard_suspicious>>
+   Guard: Move along then.
+   <<action flag.guard_spoken = true>>
+   <<end>>
+-> I have a pass. <<visible_if item.gate_pass in player.inventory>>
+   Guard: Let me see that.
+   <<jump guard_checks_pass>>
+-> Never mind.
+   <<end>>
+===
+
+title: guard_checks_pass
+character: guard
+---
+Guard: Hmm. This looks legitimate.
+Guard: You can go through.
+<<action flag.gate_open = true>>
+<<end>>
+===

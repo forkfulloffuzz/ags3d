@@ -24,7 +24,7 @@ import (
 // parseInvalidFixture is a helper that reads an invalid fixture and parses it.
 func parseInvalidFixture(t *testing.T, name string) []*parser.ParseError {
 	t.Helper()
-	path := filepath.Join("..", "..", "testdata", "invalid", name)
+	path := filepath.Join("..", "..", "testdata", "scripts", "invalid", name)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read fixture %s: %v", name, err)
@@ -43,7 +43,7 @@ func parseInvalidFixture(t *testing.T, name string) []*parser.ParseError {
 // parser and asserts it returns without panicking.  This is the primary
 // no-crash guarantee required by UT-M2-14.
 func TestErrorHandling_NoPanicOnAnyInput(t *testing.T) {
-	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "invalid", "*.agscript"))
+	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "scripts", "invalid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}
@@ -129,7 +129,7 @@ func TestErrorHandling_SemanticOnly_ParseClean(t *testing.T) {
 // TestErrorHandling_LineNumbers_Positive asserts that every ParseError produced
 // by any invalid fixture has a Line field greater than zero (UT-M2-15).
 func TestErrorHandling_LineNumbers_Positive(t *testing.T) {
-	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "invalid", "*.agscript"))
+	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "scripts", "invalid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestErrorHandling_LineNumbers_Positive(t *testing.T) {
 // contain raw TokenKind integers like "expected 35" or "expected 41".
 // These would appear only if TokenKind lacks a String() method.
 func TestErrorHandling_NoRawTokenIntegers(t *testing.T) {
-	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "invalid", "*.agscript"))
+	fixtures, err := filepath.Glob(filepath.Join("..", "..", "testdata", "scripts", "invalid", "*.agscript"))
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}
