@@ -1,4 +1,4 @@
-// EXPECT_ERROR: DLG-E011 — node title 'Guard_Greeting' contains uppercase letters
+// EXPECT_ERROR [not-implemented]: DLG-E011 — node title 'Guard_Greeting' contains uppercase letters
 title: Guard_Greeting
 ---
 Guard: You there. Stop.

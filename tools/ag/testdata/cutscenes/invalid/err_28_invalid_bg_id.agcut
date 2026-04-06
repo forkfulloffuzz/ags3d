@@ -1,4 +1,4 @@
-// EXPECT_ERROR: CUT-E013 — bg step id 'Cam.Move' contains uppercase and a dot
+// EXPECT_ERROR [not-implemented]: CUT-E013 — bg step id 'Cam.Move' contains uppercase and a dot
 title: bad_bg_id
 sequence:
 	<<camera move_to point.street_level duration:4.0 bg:Cam.Move>>

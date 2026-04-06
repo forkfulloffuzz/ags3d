@@ -1,5 +1,5 @@
-// EXPECT_ERROR: CUT-E001 — title 'intro' already declared in 01_minimal.agcut
-// This file must be validated together with 01_minimal.agcut to trigger the error.
+// EXPECT_ERROR: CUT-E001 [multi-file] — title 'intro' already declared in 01_minimal.agcut
+// Requires ValidateProjectCutscenes with both files; tested in cut/validator_test.go.
 title: intro
 sequence:
 	<<fade_in duration:0.5>>

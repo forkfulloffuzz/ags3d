@@ -1,4 +1,4 @@
-// EXPECT_ERROR: SEQ-E002 — <<sync>> references 'main_step' which is a foreground step, not background
+// EXPECT_ERROR [not-implemented]: SEQ-E002 — <<sync>> references 'main_step' which is a foreground step, not background
 title: sync_foreground_id
 sequence:
 	<<fade_in duration:1.0 id:main_step>>

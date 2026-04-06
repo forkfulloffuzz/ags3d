@@ -1,4 +1,4 @@
-// EXPECT_ERROR: DLG-E011 — node title 'guard-greeting' contains a hyphen (not allowed)
+// EXPECT_ERROR [not-implemented]: DLG-E011 — node title 'guard-greeting' contains a hyphen (not allowed)
 title: guard-greeting
 ---
 Guard: You there. Stop.

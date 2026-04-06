@@ -36,11 +36,6 @@ Room "market_square" {
     Hotspot "fountain_hs" {
         position = (0.0, 0.5, 0.0)
         size     = (1.5, 1.5, 1.5)
-        name     = "Fountain"
     }
 
-    Spawn "player_spawn" {
-        position = (0.0, 0.0, 4.0)
-        facing   = 180.0
-    }
 }

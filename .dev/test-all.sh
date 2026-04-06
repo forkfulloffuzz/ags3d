@@ -3,6 +3,8 @@
 #
 # Suites:
 #   1. tools/ag/     — Go tests (transpiler, CLI, LSP)
+#                      includes internal/fixtures — data-driven harness for all
+#                      testdata/ files (scripts, rooms, items, dialogues, cutscenes)
 #   2. tools/agui/   — Go tests (AG Studio backend)
 #   3. agstests/     — GDScript tests run headlessly via Godot
 #                      (skipped with a warning if Godot binary is absent)
@@ -47,7 +49,7 @@ fail()    { FAIL+=("$*"); echo "✗ $*"; }
 
 # ── 1. tools/ag Go tests ───────────────────────────────────────────────────────
 
-section "Go — tools/ag (transpiler / CLI / LSP)"
+section "Go — tools/ag (transpiler / CLI / LSP / fixture harness)"
 
 if ! command -v go &>/dev/null; then
   fail "tools/ag — Go not found, skipping"

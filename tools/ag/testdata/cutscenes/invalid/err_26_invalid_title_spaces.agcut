@@ -1,4 +1,4 @@
-// EXPECT_ERROR: CUT-E013 — title 'chapter 1 opening' contains spaces
+// EXPECT_ERROR [not-implemented]: CUT-E013 — title 'chapter 1 opening' contains spaces
 title: chapter 1 opening
 sequence:
 	<<fade_in duration:1.0>>

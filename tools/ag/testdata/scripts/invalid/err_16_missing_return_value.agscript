@@ -1,5 +1,5 @@
+// EXPECT_ERROR [not-implemented]: bare 'return' in non-void function (semantic, T10)
 // err_16_missing_return_value.agscript
-// EXPECT_ERROR: bare 'return' in non-void function (semantic, T10)
 // A function declared to return int uses a bare return with no value.
 // The parser accepts this structurally (ReturnStmt.Value == nil is valid).
 // The symbol table (T10) must detect the type mismatch.

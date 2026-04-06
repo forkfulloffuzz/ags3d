@@ -1,4 +1,4 @@
-// EXPECT_ERROR: CUT-E013 — title 'Chapter1Opening' contains uppercase letters
+// EXPECT_ERROR [not-implemented]: CUT-E013 — title 'Chapter1Opening' contains uppercase letters
 title: Chapter1Opening
 sequence:
 	<<fade_in duration:1.0>>

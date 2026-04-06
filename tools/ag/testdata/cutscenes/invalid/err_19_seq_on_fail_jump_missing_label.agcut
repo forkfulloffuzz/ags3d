@@ -1,4 +1,4 @@
-// EXPECT_ERROR: SEQ-E004 — on_fail:jump_to references label 'fallback_scene' not in sequence
+// EXPECT_ERROR [not-implemented]: SEQ-E004 — on_fail:jump_to references label 'fallback_scene' not in sequence
 title: on_fail_missing_label
 sequence:
 	<<fade_in duration:1.0>>

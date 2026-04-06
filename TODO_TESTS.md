@@ -597,3 +597,14 @@ All tests are automated (`go test ./internal/cut/...`). Manual verification:
 - [ ] Add `<<skip_to nowhere>>` with no matching `<<label nowhere>>`; run `ag validate` — CUT-E006 error
 - [ ] Add `<<choice>>` inside `<<parallel>>`/`<<end_parallel>>`; run `ag validate` — CUT-E007 error
 - [ ] Add `<<cutscene nonexistent_title>>`; run `ag validate` — CUT-E008 error
+
+### T-FIXT01 — Fixture test harness
+
+**Setup:** From `tools/ag/`, run `go test ./internal/fixtures/...`.
+
+- [ ] All tests pass (`ok github.com/ags3d/ag/internal/fixtures`) with no failures.
+- [ ] Add a new valid fixture (e.g., copy `rooms/valid/01_minimal.agroom` with a new name) — running the tests again automatically picks it up and passes.
+- [ ] Add a new invalid fixture with a syntax error (e.g., `rooms/invalid/err_test.agroom` with a missing brace) — harness detects it and passes.
+- [ ] Add a new invalid fixture with first-line comment `// EXPECT_ERROR [not-implemented]: ...` — harness skips it with message "validator not yet implemented".
+- [ ] Add a new invalid fixture with first-line comment `// EXPECT_ERROR [multi-file]: ...` — harness skips it with "requires multi-file context".
+- [ ] Run `.dev/test-all.sh` — the section header reads "Go — tools/ag (transpiler / CLI / LSP / fixture harness)".

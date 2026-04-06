@@ -1,4 +1,4 @@
-// EXPECT_ERROR: CUT-E005 — video file 'missing_video' is not defined
+// EXPECT_ERROR: CUT-E005 [cross-system] — video file 'missing_video' is not defined
 title: bad_video_ref
 sequence:
 	<<fade_in duration:0.5>>

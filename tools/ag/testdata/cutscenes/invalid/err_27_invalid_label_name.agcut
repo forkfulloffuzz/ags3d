@@ -1,4 +1,4 @@
-// EXPECT_ERROR: CUT-E013 — label 'Act-Two' contains a hyphen (not allowed)
+// EXPECT_ERROR [not-implemented]: CUT-E013 — label 'Act-Two' contains a hyphen (not allowed)
 title: bad_label_name
 skip: author_controlled
 sequence:

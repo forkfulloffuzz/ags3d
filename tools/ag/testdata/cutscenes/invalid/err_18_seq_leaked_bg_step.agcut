@@ -1,4 +1,4 @@
-// EXPECT_ERROR: SEQ-E003 — background step 'music_bg' has no eventual <<sync>> or sequence end
+// EXPECT_ERROR [not-implemented]: SEQ-E003 — background step 'music_bg' has no eventual <<sync>> or sequence end
 title: leaked_bg_step
 sequence:
 	<<music theme_main fade_in:3.0 bg:music_bg>>

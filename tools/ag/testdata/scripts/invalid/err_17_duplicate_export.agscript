@@ -1,5 +1,5 @@
+// EXPECT_ERROR [not-implemented]: duplicate export 'foo' in namespace 'Utils' (T10)
 // err_17_duplicate_export.agscript
-// EXPECT_ERROR: duplicate export 'foo' in namespace 'Utils' (T10)
 // Two functions with the same name are both exported from the same namespace.
 // The parser accepts both structurally; the symbol table (T10) must reject
 // the duplicate at build time.

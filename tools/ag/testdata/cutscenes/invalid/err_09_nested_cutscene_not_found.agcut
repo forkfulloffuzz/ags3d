@@ -1,4 +1,4 @@
-// EXPECT_ERROR: CUT-E008 — nested cutscene 'does_not_exist' does not exist
+// EXPECT_ERROR [multi-file]: CUT-E008 — nested cutscene 'does_not_exist' does not exist
 title: bad_nested_ref
 sequence:
 	<<fade_in duration:0.5>>
