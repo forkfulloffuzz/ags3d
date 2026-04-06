@@ -551,3 +551,17 @@ All tests are automated (`go test ./internal/dlg/...`). No manual test required.
 ### T-DLG04 — Go: structural dialogue validator
 
 All tests are automated (`go test ./internal/dlg/...`). No manual test required.
+
+---
+
+### T-DLG07 — Go: dialogue emit stage + `ag build` integration
+
+Unit tests are automated (`go test ./internal/dlg/...`). Manual verification:
+
+- [ ] Create `dialogue/guard.agdlg` with two nodes (see spec example); run `ag build` — `.engine/generated/dialogue/guard.json` is created
+- [ ] Open the JSON; verify `nodes[0].title`, `character`, `body[*].type` match source
+- [ ] Verify auto loc keys are present on speaker lines and options (format `"nodeTitle:0:xxxxxxxx"`)
+- [ ] Run `ag build` again without changing the file — output prints "nothing to do" (mtime cache hit)
+- [ ] Run `ag build --force` — file is re-emitted
+- [ ] Add `<<jump missing_target>>` to a node; run `ag build` — build fails with DLG-E002 error message
+- [ ] Add duplicate `title:` in two files; run `ag build` — build fails with DLG-E001 error message

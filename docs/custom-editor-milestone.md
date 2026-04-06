@@ -146,6 +146,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI29 | Room export operator (T-BL04) | Room editor "Export to Blender" button; opens Blender with AGS_Gameplay collection pre-tagged from the .agroom |
 | T-CE-UI30 | Dialogue node graph (T-DLG01/02) | Visual dialogue node editor: shows nodes as cards, options as edges, jump targets as arrows |
 | T-CE-UI31 | Locale manager panel (T-DLG13) | Project settings panel listing declared locales; add/remove/edit name+RTL flag; base_locale picker; fallback_chain reorder list |
+| T-CE-UI32 | Dialogue build log (T-DLG07) | Build log panel showing .agdlg → .json output, DLG-E/W error codes inline |
 
 ---
 

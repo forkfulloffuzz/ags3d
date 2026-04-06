@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/ags3d/ag/internal/char"
+	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/gui"
 	"github.com/ags3d/ag/internal/item"
@@ -180,7 +181,7 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var scripts, rooms, chars, items, guis []project.SourceFile
+	var scripts, rooms, chars, items, guis, dialogues []project.SourceFile
 	for _, f := range all {
 		switch f.Ext {
 		case ".agscript":
@@ -193,6 +194,8 @@ func build(root string, force bool, trace bool) error {
 			items = append(items, f)
 		case ".agui":
 			guis = append(guis, f)
+		case ".agdlg":
+			dialogues = append(dialogues, f)
 		}
 	}
 
@@ -201,18 +204,19 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var changedScripts, changedRooms, changedChars, changedItems, changedGUIs []project.SourceFile
+	var changedScripts, changedRooms, changedChars, changedItems, changedGUIs, changedDialogues []project.SourceFile
 	if force {
-		changedScripts, changedRooms, changedChars, changedItems, changedGUIs = scripts, rooms, chars, items, guis
+		changedScripts, changedRooms, changedChars, changedItems, changedGUIs, changedDialogues = scripts, rooms, chars, items, guis, dialogues
 	} else {
 		changedScripts = project.Changed(scripts, manifest)
 		changedRooms = project.Changed(rooms, manifest)
 		changedChars = project.Changed(chars, manifest)
 		changedItems = project.Changed(items, manifest)
 		changedGUIs = project.Changed(guis, manifest)
+		changedDialogues = project.Changed(dialogues, manifest)
 	}
 
-	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems) + len(changedGUIs)
+	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems) + len(changedGUIs) + len(changedDialogues)
 	if total == 0 {
 		fmt.Println("ag build: nothing to do (no changed source files)")
 		return nil
@@ -375,6 +379,68 @@ func build(root string, force bool, trace bool) error {
 		}
 		project.RecordMtimes([]project.SourceFile{src}, manifest)
 		fmt.Printf("  %s (item — data only, no scene generated)\n", src.Rel)
+	}
+
+	// --- .agdlg → .engine/generated/dialogue/*.json (dialogue compilation) ---
+	// All changed .agdlg files are re-parsed together so cross-file jump
+	// references resolve correctly across the changed set. When --force is not
+	// set, unchanged files are not re-emitted but are still parsed for the
+	// link pass so references into them resolve correctly.
+	if len(changedDialogues) > 0 {
+		// Parse all dialogue files for the link pass.
+		var dlgFiles []*dlg.DialogueFile
+		for _, src := range dialogues {
+			df, err := dlg.ParseFile(src.Path)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				errs = append(errs, err)
+			} else {
+				dlgFiles = append(dlgFiles, df)
+			}
+		}
+		if len(errs) == 0 || len(dlgFiles) > 0 {
+			lp, linkErr := dlg.Link(dlgFiles)
+			if linkErr != nil {
+				fmt.Fprintln(os.Stderr, linkErr)
+				errs = append(errs, linkErr)
+			} else {
+				// Structural validation.
+				valErrs := dlg.Validate(lp)
+				for _, ve := range valErrs {
+					fmt.Fprintln(os.Stderr, ve)
+					errs = append(errs, ve)
+				}
+				if len(valErrs) == 0 {
+					// Emit only the changed files.
+					changedSet := make(map[string]bool, len(changedDialogues))
+					for _, src := range changedDialogues {
+						changedSet[src.Path] = true
+					}
+					var toEmit []*dlg.DialogueFile
+					for _, df := range dlgFiles {
+						if changedSet[df.Path] {
+							toEmit = append(toEmit, df)
+						}
+					}
+					changedLP := &dlg.LinkedProject{
+						Files:        toEmit,
+						NodesByTitle: lp.NodesByTitle,
+					}
+					dlgOutDir := filepath.Join(root, ".engine", "generated", "dialogue")
+					for _, emitErr := range dlg.EmitProject(changedLP, dlgOutDir) {
+						fmt.Fprintln(os.Stderr, emitErr)
+						errs = append(errs, emitErr)
+					}
+					if len(errs) == 0 {
+						project.RecordMtimes(changedDialogues, manifest)
+						for _, src := range changedDialogues {
+							base := strings.TrimSuffix(filepath.Base(src.Path), ".agdlg") + ".json"
+							fmt.Printf("  %s → .engine/generated/dialogue/%s\n", src.Rel, base)
+						}
+					}
+				}
+			}
+		}
 	}
 
 	if saveErr := project.SaveManifest(root, manifest); saveErr != nil {
