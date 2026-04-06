@@ -77,6 +77,8 @@ Commands:
   run                      build then launch Godot editor
   validate                 static analysis on the project
   export --platform NAME   build and export (windows|mac|linux|web|ios|android)
+  export --locale LANG     export dialogue strings as PO/CSV for translation
+                           flags: --format po|csv  --diff (changed/untranslated only)
   new NAME                 scaffold a new AGS3D project
   viz tokens      FILE     print token stream (line/col/kind/lexeme)
   viz ast         FILE     print AST tree (text)
@@ -601,14 +603,108 @@ func cmdValidate(_ []string) error {
 func cmdExport(args []string) error {
 	fs := flag.NewFlagSet("export", flag.ContinueOnError)
 	platform := fs.String("platform", "", "export target (windows|mac|linux|web|ios|android)")
+	locale := fs.String("locale", "", "export dialogue strings for locale (e.g. en, fr, de)")
+	format := fs.String("format", "po", "output format: po or csv")
+	diff := fs.Bool("diff", false, "only emit strings missing or changed since last export")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+
+	if *locale != "" {
+		return cmdExportLocale(*locale, *format, *diff)
+	}
+
 	if *platform == "" {
-		return fmt.Errorf("--platform is required")
+		return fmt.Errorf("--platform or --locale is required")
 	}
 	// TODO(T18): build then invoke Godot's export pipeline.
 	fmt.Printf("ag export: export pipeline for %q not yet implemented (T18)\n", *platform)
+	return nil
+}
+
+func cmdExportLocale(lang, format string, diffOnly bool) error {
+	if lang == "" {
+		return fmt.Errorf("--locale requires a language code (e.g. en, fr)")
+	}
+	if format != "po" && format != "csv" {
+		return fmt.Errorf("--format must be po or csv")
+	}
+
+	root, _ := requireProject()
+	all, err := project.Scan(root)
+	if err != nil {
+		return err
+	}
+
+	var dlgFiles []*dlg.DialogueFile
+	for _, f := range all {
+		if f.Ext != ".agdlg" {
+			continue
+		}
+		df, err := dlg.ParseFile(f.Path)
+		if err != nil {
+			return fmt.Errorf("export locale: parse %s: %w", f.Rel, err)
+		}
+		dlgFiles = append(dlgFiles, df)
+	}
+	if len(dlgFiles) == 0 {
+		fmt.Println("ag export: no .agdlg files found")
+		return nil
+	}
+
+	lp, linkErr := dlg.Link(dlgFiles)
+	if linkErr != nil {
+		return fmt.Errorf("export locale: %w", linkErr)
+	}
+
+	entries := dlg.CollectLocEntries(lp)
+	if len(entries) == 0 {
+		fmt.Println("ag export: no localizable strings found")
+		return nil
+	}
+
+	// Determine output path and load existing translations for --diff.
+	localeDir := filepath.Join(root, "locale")
+	if err := os.MkdirAll(localeDir, 0755); err != nil {
+		return fmt.Errorf("export locale: create locale dir: %w", err)
+	}
+
+	var ext, outPath string
+	switch format {
+	case "csv":
+		ext = ".csv"
+	default:
+		ext = ".po"
+	}
+	outPath = filepath.Join(localeDir, lang+ext)
+
+	existing := map[string]string{}
+	if diffOnly {
+		if raw, readErr := os.ReadFile(outPath); readErr == nil {
+			switch format {
+			case "csv":
+				existing = dlg.ParseCSVTranslations(string(raw))
+			default:
+				existing = dlg.ParsePOTranslations(string(raw))
+			}
+		}
+		// If the file doesn't exist yet, existing stays empty — all entries emitted.
+	}
+
+	var content string
+	switch format {
+	case "csv":
+		content = dlg.ExportCSV(entries, existing, diffOnly)
+	default:
+		content = dlg.ExportPO(entries, existing, diffOnly)
+	}
+
+	if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
+		return fmt.Errorf("export locale: write %s: %w", outPath, err)
+	}
+
+	rel, _ := filepath.Rel(root, outPath)
+	fmt.Printf("ag export: %d strings → %s\n", len(entries), rel)
 	return nil
 }
 

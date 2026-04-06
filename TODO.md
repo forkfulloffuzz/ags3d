@@ -45,7 +45,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M-DLG — Export pipeline
 
-- [ ] **T-DLG08** — Go: `ag export --locale <lang>` — PO format export. Walk the linked dialogue project; for each line/option/narration with a loc key, emit a `msgid` / `msgstr` pair with translator context comment (character name, node title, line type: spoken/choice/narration). `--diff` flag emits only strings where `msgstr` is empty or whose source text hash has changed since last export. Also support `--format csv`. Output file: `locale/<lang>.po` (or `.csv`). Integrate into `ag` CLI as a subcommand.
+- [x] **T-DLG08** — Go: `ag export --locale <lang>` — PO format export. Walk the linked dialogue project; for each line/option/narration with a loc key, emit a `msgid` / `msgstr` pair with translator context comment (character name, node title, line type: spoken/choice/narration). `--diff` flag emits only strings where `msgstr` is empty or whose source text hash has changed since last export. Also support `--format csv`. Output file: `locale/<lang>.po` (or `.csv`). Integrate into `ag` CLI as a subcommand.
 
 - [ ] **T-DLG09** — Go: `ag export --voicescript` — per-character voice actor scripts. Group all `<<line character …>>` commands by `voice_session` header, then by character name. Each entry: loc key, speaker, text, the preceding player/NPC line for timing context, emotion tag if present. Markdown or plain-text output. `--character <name>` and `--locale <lang>` filters. Output: `voicescripts/<session>/<character>.md`.
 
