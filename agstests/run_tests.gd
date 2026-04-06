@@ -48,6 +48,7 @@ const SUITES: Array[String] = [
 ## Async test suites — each test_* method is awaited so coroutine-based tests
 ## (multi-frame physics simulations) run to completion before the next test starts.
 const ASYNC_SUITES: Array[String] = [
+	"m_dlg/test_dialogue_engine.gd",           # T-DLG14
 	"m6_integration/test_end_to_end.gd",
 	"m10_game_systems/test_say.gd",       # T-GS01: say() / think() use SceneTree timers
 	"m10_game_systems/test_cutscene.gd",  # T-GS18 (async subset: wait, fade_in, fade_out)
