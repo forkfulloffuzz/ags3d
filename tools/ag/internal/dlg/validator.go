@@ -2,8 +2,24 @@ package dlg
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+// dlgIdentRe is the naming rule for all author-assigned dialogue identifiers.
+var dlgIdentRe = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+// isValidDlgIdent returns true if s satisfies the naming rule.
+func isValidDlgIdent(s string) bool { return dlgIdentRe.MatchString(s) }
+
+// dlgIdentErr returns a DLG-E011 ValidationError for field at pos.
+func dlgIdentErr(pos Pos, field, value string) ValidationError {
+	return ValidationError{
+		Pos:  pos,
+		Code: "DLG-E011",
+		Msg:  fmt.Sprintf("identifier %q in %s violates naming rule (must match ^[a-z][a-z0-9_]*$)", value, field),
+	}
+}
 
 // ValidationError is a structural error found during the validate stage.
 // All errors in this set block the build.
@@ -73,6 +89,18 @@ func Validate(lp *LinkedProject) []ValidationError {
 func validateNode(lp *LinkedProject, n *DialogueNode) []ValidationError {
 	var errs []ValidationError
 
+	// DLG-E011: identifier naming rule.
+	if n.Title != "" && !isValidDlgIdent(n.Title) {
+		errs = append(errs, dlgIdentErr(n.Pos, "title", n.Title))
+	}
+	if n.Character != "" && !isValidDlgIdent(n.Character) {
+		errs = append(errs, dlgIdentErr(n.Pos, "character", n.Character))
+	}
+	if n.LocID != "" && !isValidDlgIdent(n.LocID) {
+		errs = append(errs, dlgIdentErr(n.Pos, "loc_id", n.LocID))
+	}
+	errs = append(errs, checkJumpTargetIdents(n.Body)...)
+
 	// DLG-E007: empty <<>> command content.
 	errs = append(errs, checkEmptyCommands(n.Body)...)
 
@@ -88,6 +116,23 @@ func validateNode(lp *LinkedProject, n *DialogueNode) []ValidationError {
 		})
 	}
 
+	return errs
+}
+
+// checkJumpTargetIdents walks body statements and flags any <<jump target>>
+// where target violates the identifier naming rule (DLG-E011).
+func checkJumpTargetIdents(stmts []Statement) []ValidationError {
+	var errs []ValidationError
+	for _, s := range stmts {
+		switch st := s.(type) {
+		case *CommandStatement:
+			if target, ok := jumpTarget(st.Raw); ok && !isValidDlgIdent(target) {
+				errs = append(errs, dlgIdentErr(st.SrcPos, "jump target", target))
+			}
+		case *OptionBranch:
+			errs = append(errs, checkJumpTargetIdents(st.Body)...)
+		}
+	}
 	return errs
 }
 

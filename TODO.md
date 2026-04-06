@@ -29,9 +29,9 @@ When all tasks are done, ask Claude to pick the next 10.
 
 - [x] **T-CUT14** — Go: implement CUT-E013 identifier naming rule (`^[a-z][a-z0-9_]*$`) in `cut/validator.go`. Check: `cf.Title`, every `<<label name>>` arg, every `bg:id` and `id:` step identifier, `<<cutscene file:name>>` ref values, `cf.LocGroup`, `cf.VoiceSession`. Reserved words (`room_music`, `room_ambient`, `all`) are exempt. Add unit tests in `validator_test.go` covering each checked position plus a clean-passing case.
 
-- [ ] **T-DLG20** — Go: implement DLG-E011 identifier naming rule (`^[a-z][a-z0-9_]*$`) in `dlg/validator.go`. Check: node `title`, every `<<jump target>>` argument, `character:` header value, `loc_id:` header value. Exempt tags (`chapter:1`, `global`) and locale codes. Add unit tests in `dlg/validator_test.go`.
+- [x] **T-DLG20** — Go: implement DLG-E011 identifier naming rule (`^[a-z][a-z0-9_]*$`) in `dlg/validator.go`. Check: node `title`, every `<<jump target>>` argument, `character:` header value, `loc_id:` header value. Exempt tags (`chapter:1`, `global`) and locale codes. Add unit tests in `dlg/validator_test.go`.
 
-- [ ] **T-CUT15** — Go: add the missing test for the `<<cutscene file:name>>` named-param form of the nested cutscene reference. `validator_test.go` currently only tests the positional form (`<<cutscene ghost>>`). Add both: `<<cutscene file:does_not_exist>>` → CUT-E008, `<<cutscene file:self>>` → CUT-E009, and `<<cutscene file:existing>>` → no error.
+- [x] **T-CUT15** — Go: add the missing test for the `<<cutscene file:name>>` named-param form of the nested cutscene reference. `validator_test.go` currently only tests the positional form (`<<cutscene ghost>>`). Add both: `<<cutscene file:does_not_exist>>` → CUT-E008, `<<cutscene file:self>>` → CUT-E009, and `<<cutscene file:existing>>` → no error.
 
 ## M-CUT — Validator (phase 2)
 

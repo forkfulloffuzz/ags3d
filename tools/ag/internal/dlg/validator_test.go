@@ -178,6 +178,91 @@ func TestValidate_UniqueLocIDsNoError(t *testing.T) {
 	}
 }
 
+// --- DLG-E011: identifier naming rule ---
+
+func TestValidate_TitleUppercaseIsE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: Guard_Greeting\n---\n<<end>>\n===")
+	if !hasCode(errs, "DLG-E011") {
+		t.Error("expected DLG-E011 for uppercase title, none found")
+	}
+}
+
+func TestValidate_TitleHyphenIsE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: guard-greeting\n---\n<<end>>\n===")
+	if !hasCode(errs, "DLG-E011") {
+		t.Error("expected DLG-E011 for hyphen in title, none found")
+	}
+}
+
+func TestValidate_TitleStartsWithDigitIsE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: 1st_meeting\n---\n<<end>>\n===")
+	if !hasCode(errs, "DLG-E011") {
+		t.Error("expected DLG-E011 for digit-leading title, none found")
+	}
+}
+
+func TestValidate_TitleValidNoE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: guard_greeting\n---\n<<end>>\n===")
+	for _, e := range errs {
+		if e.Code == "DLG-E011" {
+			t.Errorf("unexpected DLG-E011: %v", e)
+		}
+	}
+}
+
+func TestValidate_CharacterUppercaseIsE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: a\ncharacter: Guard\n---\n<<end>>\n===")
+	if !hasCode(errs, "DLG-E011") {
+		t.Error("expected DLG-E011 for uppercase character name, none found")
+	}
+}
+
+func TestValidate_CharacterValidNoE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: a\ncharacter: guard\n---\n<<end>>\n===")
+	for _, e := range errs {
+		if e.Code == "DLG-E011" {
+			t.Errorf("unexpected DLG-E011: %v", e)
+		}
+	}
+}
+
+func TestValidate_LocIDUppercaseIsE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: a\nloc_id: Guard_Intro\n---\n<<end>>\n===")
+	if !hasCode(errs, "DLG-E011") {
+		t.Error("expected DLG-E011 for uppercase loc_id, none found")
+	}
+}
+
+func TestValidate_LocIDValidNoE011(t *testing.T) {
+	errs := mustLinkAndValidate(t, "title: a\nloc_id: guard_intro\n---\n<<end>>\n===")
+	for _, e := range errs {
+		if e.Code == "DLG-E011" {
+			t.Errorf("unexpected DLG-E011: %v", e)
+		}
+	}
+}
+
+func TestValidate_JumpTargetUppercaseIsE011(t *testing.T) {
+	// Jump target has uppercase — note: DLG-E002 will also fire since target doesn't exist,
+	// but DLG-E011 should fire too.
+	errs := mustLinkAndValidate(t, "title: a\n---\n<<jump BadTarget>>\n===")
+	if !hasCode(errs, "DLG-E011") {
+		t.Error("expected DLG-E011 for uppercase jump target, none found")
+	}
+}
+
+func TestValidate_JumpTargetValidNoE011(t *testing.T) {
+	errs := mustLinkAndValidate(t,
+		"title: a\n---\n<<jump b>>\n===",
+		"title: b\n---\n<<end>>\n===",
+	)
+	for _, e := range errs {
+		if e.Code == "DLG-E011" {
+			t.Errorf("unexpected DLG-E011: %v", e)
+		}
+	}
+}
+
 // --- Clean project produces no errors ---
 
 func TestValidate_CleanProjectNoErrors(t *testing.T) {
