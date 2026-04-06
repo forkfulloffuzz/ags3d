@@ -19,20 +19,20 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M-CUT — Runtime (Phase 4: Core sequencer)
 
-- [ ] **T-CUT12** — GDScript: Core sequencer — `AGSSequencer` AutoLoad. Step queue and active background step set. Execution loop: dequeue next step; foreground step fires and blocks; background step fires with id and is added to background set; sync point waits for named ids. Step states: `pending`, `running`, `complete`, `failed`, `skipped`. Signals: `step_started(id)`, `step_complete(id)`, `step_failed(id)`, `sequence_complete`. Runs on main game loop. Tests in `agstests/`. *(depends on T-CUT10 — done, T-CUT11)*
+- [x] **T-CUT12** — GDScript: Core sequencer — `AGSSequencer` AutoLoad. Step queue and active background step set. Execution loop: dequeue next step; foreground step fires and blocks; background step fires with id and is added to background set; sync point waits for named ids. Step states: `pending`, `running`, `complete`, `failed`, `skipped`. Signals: `step_started(id)`, `step_complete(id)`, `step_failed(id)`, `sequence_complete`. Runs on main game loop. Tests in `agstests/`. *(depends on T-CUT10 — done, T-CUT11)*
 
 ## M-DLG — Validator (Batch 3 continued)
 
-- [ ] **T-DLG06** — Go: Static analysis warnings — DLG-W001..W012: orphaned node, dead end option, condition always false/true, one-shot with no state change, global never suppressed, modified line missing loc annotation, character missing portrait, node only reachable via always-false condition, deep nesting (> 4 levels), empty node, duplicate manual loc key. Reachability graph traversal from root nodes. Warning suppression via `// @suppress DLG-Wxxx`. *(depends on T-DLG05)*
+- [x] **T-DLG06** — Go: Static analysis warnings — DLG-W001..W012: orphaned node, dead end option, condition always false/true, one-shot with no state change, global never suppressed, modified line missing loc annotation, character missing portrait, node only reachable via always-false condition, deep nesting (> 4 levels), empty node, duplicate manual loc key. Reachability graph traversal from root nodes. Warning suppression via `// @suppress DLG-Wxxx`. *(depends on T-DLG05)*
 
 ## M-CUT — Runtime (Phase 4: Sequencer features)
 
-- [ ] **T-CUT13** — GDScript: Sync points — `<<sync id1 id2>>` blocks sequencer until all named background step ids reach `complete` state. `<<sync>>` (no args) waits for all active backgrounds. Sync over already-completed steps passes immediately. Tests for: named sync, all-sync, sync-over-complete, mixed complete/pending. *(depends on T-CUT12)*
-- [ ] **T-CUT14** — GDScript: Timeout mechanism — per-step `timeout:` seconds parameter. Global default from `game.agp` `step_timeout_default`. `timeout:none` for steps that must never time out (dialogue, video). On timeout: step enters `failed` state, fallback policy fires. Tests for: timeout fires, timeout:none respected, default applied. *(depends on T-CUT12)*
+- [x] **T-CUT13** — GDScript: Sync points — `<<sync id1 id2>>` blocks sequencer until all named background step ids reach `complete` state. `<<sync>>` (no args) waits for all active backgrounds. Sync over already-completed steps passes immediately. Tests for: named sync, all-sync, sync-over-complete, mixed complete/pending. *(depends on T-CUT12)*
+- [x] **T-CUT14** — GDScript: Timeout mechanism — per-step `timeout:` seconds parameter. Global default from `game.agp` `step_timeout_default`. `timeout:none` for steps that must never time out (dialogue, video). On timeout: step enters `failed` state, fallback policy fires. Tests for: timeout fires, timeout:none respected, default applied. *(depends on T-CUT12)*
 
 ## M-DLG — Validation Integration
 
-- [ ] **T-DLG19** — Go: Integrate dialogue validator into `ag validate` project-wide pass. Dialogue errors (DLG-E001..E025) and warnings (DLG-W001..W012) appear in the same structured report as room, character, and item errors. Provide full cross-system symbol table to cross-system validator (T-DLG05). *(depends on T-DLG05, T-DLG06)*
+- [x] **T-DLG19** — Go: Integrate dialogue validator into `ag validate` project-wide pass. Dialogue errors (DLG-E001..E025) and warnings (DLG-W001..W012) appear in the same structured report as room, character, and item errors. Provide full cross-system symbol table to cross-system validator (T-DLG05). *(depends on T-DLG05, T-DLG06)*
 
 ## Notes
 
