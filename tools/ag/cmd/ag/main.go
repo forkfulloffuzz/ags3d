@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/ags3d/ag/internal/char"
+	"github.com/ags3d/ag/internal/cut"
 	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/gui"
@@ -181,7 +182,7 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var scripts, rooms, chars, items, guis, dialogues []project.SourceFile
+	var scripts, rooms, chars, items, guis, dialogues, cutscenes []project.SourceFile
 	for _, f := range all {
 		switch f.Ext {
 		case ".agscript":
@@ -196,6 +197,8 @@ func build(root string, force bool, trace bool) error {
 			guis = append(guis, f)
 		case ".agdlg":
 			dialogues = append(dialogues, f)
+		case ".agcut":
+			cutscenes = append(cutscenes, f)
 		}
 	}
 
@@ -204,9 +207,9 @@ func build(root string, force bool, trace bool) error {
 		return err
 	}
 
-	var changedScripts, changedRooms, changedChars, changedItems, changedGUIs, changedDialogues []project.SourceFile
+	var changedScripts, changedRooms, changedChars, changedItems, changedGUIs, changedDialogues, changedCutscenes []project.SourceFile
 	if force {
-		changedScripts, changedRooms, changedChars, changedItems, changedGUIs, changedDialogues = scripts, rooms, chars, items, guis, dialogues
+		changedScripts, changedRooms, changedChars, changedItems, changedGUIs, changedDialogues, changedCutscenes = scripts, rooms, chars, items, guis, dialogues, cutscenes
 	} else {
 		changedScripts = project.Changed(scripts, manifest)
 		changedRooms = project.Changed(rooms, manifest)
@@ -214,9 +217,10 @@ func build(root string, force bool, trace bool) error {
 		changedItems = project.Changed(items, manifest)
 		changedGUIs = project.Changed(guis, manifest)
 		changedDialogues = project.Changed(dialogues, manifest)
+		changedCutscenes = project.Changed(cutscenes, manifest)
 	}
 
-	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems) + len(changedGUIs) + len(changedDialogues)
+	total := len(changedScripts) + len(changedRooms) + len(changedChars) + len(changedItems) + len(changedGUIs) + len(changedDialogues) + len(changedCutscenes)
 	if total == 0 {
 		fmt.Println("ag build: nothing to do (no changed source files)")
 		return nil
@@ -437,6 +441,63 @@ func build(root string, force bool, trace bool) error {
 							base := strings.TrimSuffix(filepath.Base(src.Path), ".agdlg") + ".json"
 							fmt.Printf("  %s → .engine/generated/dialogue/%s\n", src.Rel, base)
 						}
+					}
+				}
+			}
+		}
+	}
+
+	// --- .agcut → .engine/generated/cutscenes/*.json (cutscene compilation) ---
+	// All cutscene files are parsed together for multi-file validation; only
+	// changed files are re-emitted.
+	if len(changedCutscenes) > 0 {
+		var cutFiles []*cut.CutsceneFile
+		for _, src := range cutscenes {
+			cf, err := cut.ParseFile(src.Path)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				errs = append(errs, err)
+			} else {
+				cutFiles = append(cutFiles, cf)
+			}
+		}
+		if len(cutFiles) > 0 {
+			// Structural validation (errors block build).
+			valErrs := cut.ValidateProjectCutscenes(cutFiles, nil)
+			for _, ve := range valErrs {
+				fmt.Fprintln(os.Stderr, ve)
+				errs = append(errs, ve)
+			}
+			// Sequencing validation + warnings (non-blocking).
+			for _, cf := range cutFiles {
+				for _, se := range cut.ValidateSequence(cf) {
+					fmt.Fprintf(os.Stderr, "warning: %s\n", se)
+				}
+				for _, w := range cut.WarnCutscene(cf, nil, nil) {
+					fmt.Fprintf(os.Stderr, "warning: %s\n", w)
+				}
+			}
+			if len(valErrs) == 0 {
+				changedSet := make(map[string]bool, len(changedCutscenes))
+				for _, src := range changedCutscenes {
+					changedSet[src.Path] = true
+				}
+				var toEmit []*cut.CutsceneFile
+				for _, cf := range cutFiles {
+					if changedSet[cf.Path] {
+						toEmit = append(toEmit, cf)
+					}
+				}
+				cutOutDir := filepath.Join(root, ".engine", "generated", "cutscenes")
+				for _, emitErr := range cut.EmitCutscenes(toEmit, cutOutDir) {
+					fmt.Fprintln(os.Stderr, emitErr)
+					errs = append(errs, emitErr)
+				}
+				if len(errs) == 0 {
+					project.RecordMtimes(changedCutscenes, manifest)
+					for _, src := range changedCutscenes {
+						base := strings.TrimSuffix(filepath.Base(src.Path), ".agcut") + ".json"
+						fmt.Printf("  %s → .engine/generated/cutscenes/%s\n", src.Rel, base)
 					}
 				}
 			}

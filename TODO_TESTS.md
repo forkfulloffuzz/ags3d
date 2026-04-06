@@ -622,3 +622,15 @@ All tests are automated (`go test ./internal/cut/...`). Manual verification:
 - [ ] `duck_restore: 1.0` parsed — `DuckRestore == 1.0`.
 - [ ] `auto_duck: true` parsed — `AutoDuck == true`.
 - [ ] No duck fields set — defaults: `DuckLevel=0.25`, `DuckFade=0.3`, `DuckRestore=0.5`, `AutoDuck=false`.
+
+### T-CUT09 — Cutscene emit + ag build integration
+
+**Setup:** Have `ag` CLI built. Create a project with `.agcut` files.
+
+- [ ] `ag build` with a valid `.agcut` file → produces `.engine/generated/cutscenes/<name>.json`; JSON contains `title`, `skip`, `save_block`, `tags`, `audio_scope`, `sequence` fields.
+- [ ] Each `<<command>>` in the JSON has `name`, `positional`, `params`, `is_block_open`/`is_block_close` as appropriate.
+- [ ] `ag build` with an invalid `.agcut` (e.g. missing `title`) → prints CUT-E001 error, exits non-zero, no JSON written.
+- [ ] `ag build --force` re-emits all `.agcut` files even if unchanged.
+- [ ] `ag build` with no changes to `.agcut` → "nothing to do" (no JSON re-emitted).
+- [ ] A `.agcut` with `bg:step_a` and no `<<sync>>` → build succeeds (SEQ errors currently warnings), warning printed to stderr.
+- [ ] A `.agcut` with `auto_duck: true` and no `duck_channels` → CUT-W011 warning printed to stderr, build still succeeds.

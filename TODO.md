@@ -41,7 +41,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M-CUT — Emit (phase 2)
 
-- [ ] **T-CUT09** — Go: emit validated cutscene data to `.engine/generated/cutscenes/` (JSON, one file per `.agcut`). JSON schema mirrors the dialogue emit format: top-level object with `title`, `skip`, `save_block`, `tags`, `fallback`, `audio_scope`, `duck_*` fields, and a `sequence` array of command objects (`name`, `args`, `params`, `condition`, `expr`, `text`, `bg_id`, nested `body`/`else` for block commands). Wire into `ag build` pipeline (scan `.agcut` files, parse, validate all errors+warnings, emit changed files to output dir). Integrate CUT and SEQ validator results into `ag validate` report.
+- [x] **T-CUT09** — Go: emit validated cutscene data to `.engine/generated/cutscenes/` (JSON, one file per `.agcut`). JSON schema mirrors the dialogue emit format: top-level object with `title`, `skip`, `save_block`, `tags`, `fallback`, `audio_scope`, `duck_*` fields, and a `sequence` array of command objects (`name`, `args`, `params`, `condition`, `expr`, `text`, `bg_id`, nested `body`/`else` for block commands). Wire into `ag build` pipeline (scan `.agcut` files, parse, validate all errors+warnings, emit changed files to output dir). Integrate CUT and SEQ validator results into `ag validate` report.
 
 ## M-DLG — Export pipeline
 
