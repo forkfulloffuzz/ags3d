@@ -1,5 +1,6 @@
 #include "register_types.h"
 
+#include "ags_event_bus.h"
 #include "ags_blocker_volume.h"
 #include "ags_camera.h"
 #include "ags_camera_zone.h"
@@ -26,6 +27,7 @@
 
 static AGSScriptLanguage *ags_language = nullptr;
 static AGSRuntime *ags_runtime = nullptr;
+static AGSEventBus *ags_event_bus = nullptr;
 static Ref<ResourceFormatLoaderAGSScript> ags_loader;
 static Ref<ResourceFormatSaverAGSScript> ags_saver;
 
@@ -37,6 +39,7 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 
 	GDREGISTER_CLASS(AGSScript);
 	GDREGISTER_CLASS(AGSRuntime);
+	GDREGISTER_CLASS(AGSEventBus);
 	GDREGISTER_CLASS(AGSCamera);
 	GDREGISTER_CLASS(AGSCameraZone);
 	GDREGISTER_CLASS(AGSCharacterBase);
@@ -60,6 +63,9 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 
 	ags_runtime = memnew(AGSRuntime);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("AGSRuntime", ags_runtime));
+
+	ags_event_bus = memnew(AGSEventBus);
+	Engine::get_singleton()->add_singleton(Engine::Singleton("AGSEventBus", ags_event_bus));
 
 	ags_language = memnew(AGSScriptLanguage);
 	ScriptServer::register_language(ags_language);
@@ -85,5 +91,11 @@ void uninitialize_agvm_module(ModuleInitializationLevel p_level) {
 		Engine::get_singleton()->remove_singleton("AGSRuntime");
 		memdelete(ags_runtime);
 		ags_runtime = nullptr;
+	}
+
+	if (ags_event_bus) {
+		Engine::get_singleton()->remove_singleton("AGSEventBus");
+		memdelete(ags_event_bus);
+		ags_event_bus = nullptr;
 	}
 }
