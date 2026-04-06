@@ -3,36 +3,41 @@
 This file tracks the active batch of tasks. Update status as work progresses.
 When all tasks are done, ask Claude to pick the next 10.
 
-## M-DLG — Cross-system integration (Batch 2)
+## M-CUT — Runtime (Phase 3: Event bus surface)
 
-- [x] **T-DLG10** — Go: `.agchar` `[dialogue]` block — parse `roots`, `inherits_globals`, `suppress_globals` fields; validate all listed node titles exist in the linked project *(depends on T-DLG03 — done)*
-- [x] **T-DLG11** — Go: `.agroom` `[dialogue]` block — parse `on_enter` and `on_enter_repeat` fields (node titles); validate they exist in the linked project *(depends on T-DLG03 — done)*
-- [x] **T-DLG12** — Go: `.agitem` `[dialogue]` block — parse `on_examine` and `on_use_failed` fields (node titles); validate they exist *(depends on T-DLG03 — done)*
+- [x] **T-CUT11** — GDScript: Event bus AGS-spirit surface — `on_event(name)` room function hook (room receives all events while active); `cutscene.EmitEvent(name)`, `cutscene.WaitFor(event_name)` (blocking coroutine), `cutscene.OnEvent(name, handler)` (one-time); priority order: character handlers → room → cutscene → dialogue. Thin GDScript wrapper over AGSEventBus C++ singleton. Tests in `agstests/`. *(depends on T-CUT10 — done)*
 
-## M-CUT — Go tooling (Batch 2)
+## M-DLG — Validator & Runtime (Batch 3)
 
-- [x] **T-CUT08** — Go: sequencing warnings SEQ-W001..W006 in `cut/seqvalidator.go` (or new `cut/seqwarnings.go`). W001: bg step duration > 10s before sync. W002: foreground walk_to/run_to/camera move_to with no `timeout:`. W003: `<<sync>>` all with no active backgrounds at that point. W004: Blender frame tag (`.aganim` step) with no registered handler. W005: `on_fail:skip` on a step containing a critical state change (`<<action>>` / `<<set>>`). W006: `<<wait_for event:>>` where no command in the same file emits that event. Return `[]ValidationWarning`. Add tests for each code. *(depends on T-CUT07 — done)*
+- [x] **T-DLG05** — Go: Cross-system dialogue validator — errors DLG-E020..E025: inventory item referenced does not exist, room referenced does not exist, character property not defined, flag never set anywhere in project, named point not in room, knowledge flag never granted. Requires full project symbol table from `ag validate` pass. Tests for each error code. *(depends on T-DLG04 — done)*
+- [x] **T-DLG17** — GDScript: Localisation runtime — `Game.SetLocale(code)` switches active locale without restart; loads translation table from `.engine/generated/locale/`; fallback chain on missing strings; RTL layout flag propagated to dialogue presenter. In-progress dialogue restarts current node on locale switch. AutoLoad `AGSLocalisation`. Tests in `agstests/`. *(depends on T-DLG13 — done, T-DLG16 — done)*
+- [x] **T-DLG18** — Go: AGS-spirit grammar + emitter for dialogue API — `dialogue.Start(char, "node")`, `dialogue.StartDefault(char)`, `dialogue.NodeVisited("node")` → bool, `dialogue.OptionSeen("node", index)` → bool, `dialogue.StartItem(item, "trigger")`, `Game.SetLocale("code")`. All Start variants emit `await` (blocking). Query variants emit direct calls. *(depends on T-DLG14 — done)*
 
-## M-LOC — Localisation pipeline (Batch 1)
+## M-LOC — Localisation pipeline (Batch 2)
 
-- [x] **T-LOC01** — Design: `.agstrings` format spec — define the AGS3D native localisation format. A flat key=value file with optional metadata comments. Blocks (`[locale:en]`, `[locale:fr]`) contain `key = "value"` pairs. Header declares `base_locale` and `fallback_chain`. Write a `docs/localisation-milestone.md` milestone doc covering file format, parser API, diff semantics, and the full M-LOC task table. *(no blockers)*
-- [x] **T-LOC02** — Go: `.agstrings` parser, writer, and diff engine in a new `tools/ag/internal/loc/` package. `Parse(filename, src)` → `StringsFile` (locale blocks, key→value map per locale). `Write(sf)` → canonical string. `Diff(base, updated)` → `[]DiffEntry` (added/changed/removed/stale). Tests covering round-trip, diff, and empty fallback. *(depends on T-LOC01)*
+- [x] **T-LOC03** — Go: `ag export --locale <lang>` — PO format export from compiled dialogue JSON. Stable loc keys, translator context comments (character, chapter, context type: spoken/choice/narration). `--diff` flag emits only untranslated and stale strings. CSV format option with `--format csv`. Integrates with `.agstrings` diff engine (T-LOC02). *(depends on T-LOC02 — done)*
 
-## M-CUT — Runtime (Batch 1: Event bus)
+## M-CUT — Runtime (Phase 4: Core sequencer)
 
-- [x] **T-CUT10** — C++: AGS3D synchronous event bus — `EventBus` class (registered as Engine singleton `AGSEventBus`). `emit(name: StringName, payload: Dictionary)` — calls all subscribers synchronously before returning. `subscribe(name: StringName, callable: Callable)` / `unsubscribe(name: StringName, callable: Callable)`. Namespaced event names (`event:{char}:{tag}`). GDScript bindings. Tests in `agstests/`. *(no blockers)*
+- [ ] **T-CUT12** — GDScript: Core sequencer — `AGSSequencer` AutoLoad. Step queue and active background step set. Execution loop: dequeue next step; foreground step fires and blocks; background step fires with id and is added to background set; sync point waits for named ids. Step states: `pending`, `running`, `complete`, `failed`, `skipped`. Signals: `step_started(id)`, `step_complete(id)`, `step_failed(id)`, `sequence_complete`. Runs on main game loop. Tests in `agstests/`. *(depends on T-CUT10 — done, T-CUT11)*
 
-## M-DLG — Runtime (Batch 1: Core engine)
+## M-DLG — Validator (Batch 3 continued)
 
-- [x] **T-DLG14** — GDScript: runtime dialogue engine — load compiled graph from `.engine/generated/dialogue/` (JSON). `dialogue.Start(char, node_title)` and `dialogue.StartDefault(char)` as blocking coroutines (`await`). `dialogue.StartItem(item, trigger)` for item examine/use. Execute nodes: evaluate `visible_if` / `available_if` conditions against AGSRuntime state graph, present choices, follow jumps, fire `<<action>>` and `<<set>>` commands, handle `<<end>>`. Signals: `dialogue_started(node_title)`, `dialogue_ended(node_title)`, `line_spoken(char, text, emotion)`, `choices_presented(options[])`, `choice_made(index)`. *(depends on T-DLG07 — done)*
-- [x] **T-DLG15** — GDScript: dialogue state tracking — `visited_nodes` (set), `seen_options` (map node→set of indices), `one_shot_consumed` (set), `node_visit_count` (map). Persisted in save graph under `dialogue_state`. `dialogue.NodeVisited(title)` → bool, `dialogue.OptionSeen(title, index)` → bool, `dialogue.VisitCount(title)` → int. Schema version field for save compatibility. *(depends on T-DLG14)*
-- [x] **T-DLG16** — GDScript: dialogue presenter — `CanvasLayer`-based choice UI. Speaker name + text display. Option list rendering (visible, available, greyed-out states for `available_if` false options). Emotion tag signal dispatch (`portrait_requested(char, emotion)`). Auto-advance timer. Hold-to-advance input. Connects to dialogue engine signals. *(depends on T-DLG14)*
+- [ ] **T-DLG06** — Go: Static analysis warnings — DLG-W001..W012: orphaned node, dead end option, condition always false/true, one-shot with no state change, global never suppressed, modified line missing loc annotation, character missing portrait, node only reachable via always-false condition, deep nesting (> 4 levels), empty node, duplicate manual loc key. Reachability graph traversal from root nodes. Warning suppression via `// @suppress DLG-Wxxx`. *(depends on T-DLG05)*
+
+## M-CUT — Runtime (Phase 4: Sequencer features)
+
+- [ ] **T-CUT13** — GDScript: Sync points — `<<sync id1 id2>>` blocks sequencer until all named background step ids reach `complete` state. `<<sync>>` (no args) waits for all active backgrounds. Sync over already-completed steps passes immediately. Tests for: named sync, all-sync, sync-over-complete, mixed complete/pending. *(depends on T-CUT12)*
+- [ ] **T-CUT14** — GDScript: Timeout mechanism — per-step `timeout:` seconds parameter. Global default from `game.agp` `step_timeout_default`. `timeout:none` for steps that must never time out (dialogue, video). On timeout: step enters `failed` state, fallback policy fires. Tests for: timeout fires, timeout:none respected, default applied. *(depends on T-CUT12)*
+
+## M-DLG — Validation Integration
+
+- [ ] **T-DLG19** — Go: Integrate dialogue validator into `ag validate` project-wide pass. Dialogue errors (DLG-E001..E025) and warnings (DLG-W001..W012) appear in the same structured report as room, character, and item errors. Provide full cross-system symbol table to cross-system validator (T-DLG05). *(depends on T-DLG05, T-DLG06)*
 
 ## Notes
 
-- T-DLG10, T-DLG11, T-DLG12 are independent of each other and can be done in any order.
-- T-CUT08 is independent and can be done alongside DLG tasks.
-- T-LOC01 must precede T-LOC02; both precede the rest of M-LOC.
-- T-CUT10 has no blockers and is the critical path for all M-CUT runtime (T-CUT11-T-CUT32).
-- T-DLG14 is the critical path for T-DLG15, T-DLG16, T-DLG17, T-DLG18.
-- T-DLG15 and T-DLG16 both depend on T-DLG14 but are independent of each other.
+- T-CUT11 is the critical path for all M-CUT sequencer runtime (T-CUT12 onward).
+- T-CUT12 must be done before T-CUT13, T-CUT14 (both independent of each other).
+- T-DLG05 must precede T-DLG06 and T-DLG19.
+- T-DLG17, T-DLG18 are independent of each other and of the validator chain.
+- T-LOC03 is independent of all M-DLG and M-CUT tasks in this batch.
