@@ -539,3 +539,9 @@ All tests are automated (`go test ./internal/project/...`). Manual verification:
 ### T-DLG02 — Go: `.agdlg` parser
 
 All tests are automated (`go test ./internal/dlg/...`). No manual test required.
+
+---
+
+### T-DLG03 — Go: `.agdlg` link stage
+
+All tests are automated (`go test ./internal/dlg/...`). No manual test required.
