@@ -182,3 +182,200 @@ func TestScaffold_CreatesExpectedLayout(t *testing.T) {
 		t.Errorf("scaffolded name = %q, want mygame", m.Project.Name)
 	}
 }
+
+// --- T-DLG13: [locale.*] and [localisation] block tests ---
+
+func TestLoad_LocaleEntries(t *testing.T) {
+	dir := t.TempDir()
+	agp := `[project]
+name = "Test"
+start_room = "rooms/start/start.agroom"
+start_character = "characters/player.agchar"
+
+[locale.en]
+name = "English"
+rtl = false
+
+[locale.fr]
+name = "French"
+rtl = false
+
+[locale.ar]
+name = "Arabic"
+rtl = true
+`
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if len(m.Locales) != 3 {
+		t.Fatalf("expected 3 locales, got %d", len(m.Locales))
+	}
+	en := m.Locales["en"]
+	if en == nil {
+		t.Fatal("locale 'en' not found")
+	}
+	if en.Name != "English" {
+		t.Errorf("en.Name = %q, want English", en.Name)
+	}
+	if en.RTL {
+		t.Error("en.RTL = true, want false")
+	}
+	ar := m.Locales["ar"]
+	if ar == nil {
+		t.Fatal("locale 'ar' not found")
+	}
+	if !ar.RTL {
+		t.Error("ar.RTL = false, want true")
+	}
+}
+
+func TestLoad_LocaleCodeSetFromSectionName(t *testing.T) {
+	dir := t.TempDir()
+	agp := "[project]\nname = \"T\"\n[locale.zh-TW]\nname = \"Traditional Chinese\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	entry, ok := m.Locales["zh-TW"]
+	if !ok {
+		t.Fatal("locale 'zh-TW' not found")
+	}
+	if entry.Code != "zh-TW" {
+		t.Errorf("Code = %q, want zh-TW", entry.Code)
+	}
+}
+
+func TestLoad_LocalisationSection(t *testing.T) {
+	dir := t.TempDir()
+	agp := `[project]
+name = "Test"
+
+[locale.en]
+name = "English"
+
+[locale.fr]
+name = "French"
+
+[localisation]
+base_locale = "en"
+fallback_chain = "en, fr"
+`
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if m.Localisation.BaseLocale != "en" {
+		t.Errorf("BaseLocale = %q, want en", m.Localisation.BaseLocale)
+	}
+	if len(m.Localisation.FallbackChain) != 2 {
+		t.Fatalf("FallbackChain len = %d, want 2", len(m.Localisation.FallbackChain))
+	}
+	if m.Localisation.FallbackChain[0] != "en" || m.Localisation.FallbackChain[1] != "fr" {
+		t.Errorf("FallbackChain = %v, want [en fr]", m.Localisation.FallbackChain)
+	}
+}
+
+func TestValidateLocales_ValidProject(t *testing.T) {
+	dir := t.TempDir()
+	agp := `[project]
+name = "Test"
+
+[locale.en]
+name = "English"
+
+[locale.fr]
+name = "French"
+
+[localisation]
+base_locale = "en"
+fallback_chain = "en, fr"
+`
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	errs := m.ValidateLocales()
+	if len(errs) != 0 {
+		t.Errorf("unexpected validation errors: %v", errs)
+	}
+}
+
+func TestValidateLocales_InvalidCode(t *testing.T) {
+	dir := t.TempDir()
+	agp := "[project]\nname = \"T\"\n[locale.INVALID]\nname = \"Bad\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	errs := m.ValidateLocales()
+	if len(errs) == 0 {
+		t.Error("expected validation error for invalid locale code, got none")
+	}
+}
+
+func TestValidateLocales_BaseLocaleMissing(t *testing.T) {
+	dir := t.TempDir()
+	agp := "[project]\nname = \"T\"\n[locale.en]\nname = \"English\"\n[localisation]\nbase_locale = \"de\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	errs := m.ValidateLocales()
+	if len(errs) == 0 {
+		t.Error("expected error for undeclared base_locale, got none")
+	}
+}
+
+func TestValidateLocales_FallbackChainMissing(t *testing.T) {
+	dir := t.TempDir()
+	agp := "[project]\nname = \"T\"\n[locale.en]\nname = \"English\"\n[localisation]\nbase_locale = \"en\"\nfallback_chain = \"en, xx\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	errs := m.ValidateLocales()
+	if len(errs) == 0 {
+		t.Error("expected error for undeclared fallback_chain entry, got none")
+	}
+}
+
+func TestLoad_NoLocalesSection(t *testing.T) {
+	dir := t.TempDir()
+	agp := "[project]\nname = \"T\"\nstart_room = \"r\"\nstart_character = \"c\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if len(m.Locales) != 0 {
+		t.Errorf("expected 0 locales, got %d", len(m.Locales))
+	}
+	errs := m.ValidateLocales()
+	if len(errs) != 0 {
+		t.Errorf("expected no errors on project without locales, got %v", errs)
+	}
+}

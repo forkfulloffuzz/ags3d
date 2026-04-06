@@ -7,18 +7,62 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 // Manifest is the parsed content of game.agp.
 type Manifest struct {
-	Project  ProjectSection  `toml:"project"`
-	Settings SettingsSection `toml:"settings"`
+	Project       ProjectSection      `toml:"project"`
+	Settings      SettingsSection     `toml:"settings"`
+	Localisation  LocalisationSection `toml:"localisation"`
+	// Locales maps BCP 47 locale codes to their declarations.
+	// Populated from [locale.xx] subsections in game.agp.
+	Locales map[string]*LocaleEntry `toml:"locales"`
 	// Globals holds the user-defined global variables from the [globals] section.
 	// Key: variable name, Value: default value string (e.g. "0", "false", `""`).
 	Globals map[string]string `toml:"globals"`
 	// Root is the directory containing game.agp (set after parsing).
 	Root string `toml:"-"`
+}
+
+// LocaleEntry declares a supported locale for the project.
+type LocaleEntry struct {
+	Code string // BCP 47 code, e.g. "en", "fr", "zh-TW" (set from section name)
+	Name string // Human-readable display name, e.g. "English"
+	RTL  bool   // True for right-to-left scripts (Arabic, Hebrew, etc.)
+}
+
+// LocalisationSection holds project-wide localisation settings from [localisation].
+type LocalisationSection struct {
+	BaseLocale    string   // Locale code used for authoring (source strings)
+	FallbackChain []string // Ordered list of locale codes tried when a string is missing
+}
+
+// localeCodeRE matches valid BCP 47 locale codes: "en", "fr", "zh-TW", "sr-Latn-RS".
+var localeCodeRE = regexp.MustCompile(`^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$`)
+
+// ValidateLocales checks that all locale codes are valid BCP 47, that base_locale
+// exists in the declared locales, and that every entry in fallback_chain is declared.
+// Returns a slice of human-readable error strings (empty if valid).
+func (m *Manifest) ValidateLocales() []string {
+	var errs []string
+	for code := range m.Locales {
+		if !localeCodeRE.MatchString(code) {
+			errs = append(errs, fmt.Sprintf("invalid locale code %q (expected BCP 47, e.g. \"en\", \"zh-TW\")", code))
+		}
+	}
+	if bl := m.Localisation.BaseLocale; bl != "" {
+		if _, ok := m.Locales[bl]; !ok {
+			errs = append(errs, fmt.Sprintf("base_locale %q is not declared in any [locale.*] section", bl))
+		}
+	}
+	for _, code := range m.Localisation.FallbackChain {
+		if _, ok := m.Locales[code]; !ok {
+			errs = append(errs, fmt.Sprintf("fallback_chain entry %q is not declared in any [locale.*] section", code))
+		}
+	}
+	return errs
 }
 
 type ProjectSection struct {
@@ -100,8 +144,8 @@ func parseAGP(src string, m *Manifest) error {
 		}
 		k = strings.TrimSpace(k)
 		v = strings.Trim(strings.TrimSpace(v), `"`)
-		switch section {
-		case "project":
+		switch {
+		case section == "project":
 			switch k {
 			case "name":
 				m.Project.Name = v
@@ -110,18 +154,47 @@ func parseAGP(src string, m *Manifest) error {
 			case "start_character":
 				m.Project.StartCharacter = v
 			}
-		case "settings":
+		case section == "settings":
 			switch k {
 			case "rendering_mode":
 				m.Settings.RenderingMode = v
 			case "autosave":
 				m.Settings.Autosave = v == "true"
 			}
-		case "globals":
+		case section == "globals":
 			if m.Globals == nil {
 				m.Globals = make(map[string]string)
 			}
 			m.Globals[k] = v
+		case strings.HasPrefix(section, "locale."):
+			// [locale.en], [locale.fr], etc.
+			code := section[len("locale."):]
+			if m.Locales == nil {
+				m.Locales = make(map[string]*LocaleEntry)
+			}
+			entry := m.Locales[code]
+			if entry == nil {
+				entry = &LocaleEntry{Code: code}
+				m.Locales[code] = entry
+			}
+			switch k {
+			case "name":
+				entry.Name = v
+			case "rtl":
+				entry.RTL = v == "true"
+			}
+		case section == "localisation":
+			switch k {
+			case "base_locale":
+				m.Localisation.BaseLocale = v
+			case "fallback_chain":
+				// Comma-separated list, e.g. fallback_chain = "en, fr"
+				for _, part := range strings.Split(v, ",") {
+					if code := strings.TrimSpace(part); code != "" {
+						m.Localisation.FallbackChain = append(m.Localisation.FallbackChain, code)
+					}
+				}
+			}
 		}
 	}
 	return nil

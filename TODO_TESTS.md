@@ -517,3 +517,19 @@ One test section per TODO task. Update this file immediately after marking a tas
 - [ ] Saving to slot 1 and slot 2 independently — loading slot 1 does not affect slot 2 state
 - [ ] `load_game` with a non-existent slot prints a warning and does not crash
 - [ ] `save_game` / `load_game` appear as signals in the Node panel (requires Godot rebuild)
+
+---
+
+### T-DLG01 — Go: `.agdlg` lexer
+
+All tests are automated (`go test ./internal/dlg/...`). No manual test required.
+
+---
+
+### T-DLG13 — Go: `game.agp` `[locales]` + `[localisation]` blocks
+
+All tests are automated (`go test ./internal/project/...`). Manual verification:
+
+- [ ] Add a `[locale.en]` / `[locale.fr]` / `[locale.ar]` block to a real `game.agp`; run `ag build` — build does not crash and no error is printed
+- [ ] Add `[localisation]\nbase_locale = "zz"` (undeclared locale) to `game.agp`; run `ag validate` — error message references `base_locale "zz"` not declared
+- [ ] Add `[locale.INVALID]` to `game.agp`; run `ag validate` — error message references invalid locale code
