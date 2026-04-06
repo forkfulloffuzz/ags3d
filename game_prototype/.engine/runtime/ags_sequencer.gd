@@ -149,16 +149,66 @@ func run(steps: Array) -> void:
 # Step execution
 # ---------------------------------------------------------------------------
 
+## Default step timeout in seconds (0 = no global default).
+## Set from game.agp [cutscenes] step_timeout_default at startup.
+var step_timeout_default: float = 0.0
+
 ## Execute a foreground step, waiting for its completion signal.
+## Respects per-step "timeout" field and step_timeout_default.
+## "timeout:none" disables timeout for that step (e.g. dialogue, video).
 func _execute_step(step: Dictionary) -> void:
 	var sid: String = step.get("id", step.get("type", "step"))
 	step_started.emit(sid)
 
-	var done := await _dispatch_step(step)
+	var timeout_val: Variant = step.get("timeout", null)
+	var use_timeout: float = 0.0
+	if timeout_val == "none":
+		use_timeout = 0.0  # explicitly disabled
+	elif timeout_val is float or timeout_val is int:
+		use_timeout = float(timeout_val)
+	elif step_timeout_default > 0.0:
+		use_timeout = step_timeout_default
+
+	var done: bool
+	if use_timeout > 0.0 and get_tree() != null:
+		done = await _dispatch_with_timeout(step, use_timeout)
+	else:
+		done = await _dispatch_step(step)
+
 	if done:
 		step_complete.emit(sid)
 	else:
 		step_failed.emit(sid)
+
+## Execute a step with a hard timeout. Returns false if the step times out.
+func _dispatch_with_timeout(step: Dictionary, timeout_secs: float) -> bool:
+	var timed_out: bool = false
+	var finished: bool = false
+	var result: bool = false
+
+	# Race: step completion vs timer.
+	var timer_done: bool = false
+	get_tree().create_timer(timeout_secs).timeout.connect(
+		func() -> void: timer_done = true,
+		CONNECT_ONE_SHOT
+	)
+
+	var dispatch_result: Array = [false]
+	var dispatch_done: bool = false
+	_dispatch_step_async(step, dispatch_result, func() -> void: dispatch_done = true)
+
+	while not dispatch_done and not timer_done:
+		await get_tree().process_frame
+
+	if dispatch_done:
+		return dispatch_result[0]
+	# Timer fired before step completed.
+	return false
+
+## Async wrapper for _dispatch_step that stores result and calls on_done.
+func _dispatch_step_async(step: Dictionary, result_box: Array, on_done: Callable) -> void:
+	result_box[0] = await _dispatch_step(step)
+	on_done.call()
 
 ## Fire a background step without blocking. Tracks it by id.
 func _fire_bg_step(step: Dictionary, bg_id: String) -> void:
