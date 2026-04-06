@@ -79,6 +79,8 @@ Commands:
   export --platform NAME   build and export (windows|mac|linux|web|ios|android)
   export --locale LANG     export dialogue strings as PO/CSV for translation
                            flags: --format po|csv  --diff (changed/untranslated only)
+  export --voicescript     export per-character voice actor scripts from .agcut files
+                           flags: --character NAME  --locale LANG (include translations)
   new NAME                 scaffold a new AGS3D project
   viz tokens      FILE     print token stream (line/col/kind/lexeme)
   viz ast         FILE     print AST tree (text)
@@ -604,10 +606,16 @@ func cmdExport(args []string) error {
 	fs := flag.NewFlagSet("export", flag.ContinueOnError)
 	platform := fs.String("platform", "", "export target (windows|mac|linux|web|ios|android)")
 	locale := fs.String("locale", "", "export dialogue strings for locale (e.g. en, fr, de)")
-	format := fs.String("format", "po", "output format: po or csv")
+	format := fs.String("format", "po", "output format for --locale: po or csv")
 	diff := fs.Bool("diff", false, "only emit strings missing or changed since last export")
+	voicescript := fs.Bool("voicescript", false, "export per-character voice actor scripts from .agcut files")
+	charFilter := fs.String("character", "", "limit voicescript to one character name")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+
+	if *voicescript {
+		return cmdExportVoicescript(*locale, *charFilter)
 	}
 
 	if *locale != "" {
@@ -615,7 +623,7 @@ func cmdExport(args []string) error {
 	}
 
 	if *platform == "" {
-		return fmt.Errorf("--platform or --locale is required")
+		return fmt.Errorf("--platform, --locale, or --voicescript is required")
 	}
 	// TODO(T18): build then invoke Godot's export pipeline.
 	fmt.Printf("ag export: export pipeline for %q not yet implemented (T18)\n", *platform)
@@ -705,6 +713,65 @@ func cmdExportLocale(lang, format string, diffOnly bool) error {
 
 	rel, _ := filepath.Rel(root, outPath)
 	fmt.Printf("ag export: %d strings → %s\n", len(entries), rel)
+	return nil
+}
+
+func cmdExportVoicescript(localeFilter, charFilter string) error {
+	root, _ := requireProject()
+	all, err := project.Scan(root)
+	if err != nil {
+		return err
+	}
+
+	var cutFiles []*cut.CutsceneFile
+	for _, f := range all {
+		if f.Ext != ".agcut" {
+			continue
+		}
+		cf, err := cut.ParseFile(f.Path)
+		if err != nil {
+			return fmt.Errorf("voicescript: parse %s: %w", f.Rel, err)
+		}
+		cutFiles = append(cutFiles, cf)
+	}
+	if len(cutFiles) == 0 {
+		fmt.Println("ag export: no .agcut files found")
+		return nil
+	}
+
+	lines := cut.CollectVoiceLines(cutFiles)
+	if len(lines) == 0 {
+		fmt.Println("ag export: no <<line>> commands found in cutscene files")
+		return nil
+	}
+
+	// Optionally load translations from locale/<lang>.po.
+	var translations map[string]string
+	if localeFilter != "" {
+		poPath := filepath.Join(root, "locale", localeFilter+".po")
+		if raw, readErr := os.ReadFile(poPath); readErr == nil {
+			translations = dlg.ParsePOTranslations(string(raw))
+		}
+	}
+
+	groups := cut.RenderVoicescripts(lines, translations, charFilter)
+	if len(groups) == 0 {
+		fmt.Println("ag export: no lines matched the specified filters")
+		return nil
+	}
+
+	outRoot := filepath.Join(root, "voicescripts")
+	for key, content := range groups {
+		outPath := filepath.Join(outRoot, key+".md")
+		if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+			return fmt.Errorf("voicescript: mkdir %s: %w", filepath.Dir(outPath), err)
+		}
+		if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
+			return fmt.Errorf("voicescript: write %s: %w", outPath, err)
+		}
+		rel, _ := filepath.Rel(root, outPath)
+		fmt.Printf("ag export: voicescripts/%s\n", rel)
+	}
 	return nil
 }
 
