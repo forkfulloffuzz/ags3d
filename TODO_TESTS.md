@@ -571,3 +571,9 @@ Unit tests are automated (`go test ./internal/dlg/...`). Manual verification:
 ### T-CUT01 — Go: `.agcut` file parser
 
 All tests are automated (`go test ./internal/cut/...`). No manual test required.
+
+---
+
+### T-CUT02 — Go: full command vocabulary parser
+
+All tests are automated (`go test ./internal/cut/...`). No manual test required.

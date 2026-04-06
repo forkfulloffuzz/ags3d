@@ -163,6 +163,12 @@ var blockCloseNames = map[string]bool{
 	"end_cutscene": true,
 }
 
+// IsBlockOpenName returns true if name is a block-opening command.
+func IsBlockOpenName(name string) bool { return blockOpenNames[name] }
+
+// IsBlockCloseName returns true if name is a block-closing command.
+func IsBlockCloseName(name string) bool { return blockCloseNames[name] }
+
 // ---- Parser -------------------------------------------------------
 
 // ParseFile reads and parses a .agcut file from disk.
