@@ -14,7 +14,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M-CUT — Cutscene System (Batch 1: Parser foundation)
 
-- [ ] **T-CUT01** — Go: `.agcut` file parser — header block (`title`, `skip`, `save_block`, `tags`, `fallback`, `sequence:`); token types for all command forms
+- [x] **T-CUT01** — Go: `.agcut` file parser — header block (`title`, `skip`, `save_block`, `tags`, `fallback`, `sequence:`); token types for all command forms
 - [ ] **T-CUT02** — Go: full command vocabulary parser — all `<<command>>` forms (character, camera, audio, visual, flow control, sync, parallel) *(depends on T-CUT01)*
 - [ ] **T-CUT04** — Go: `game.agp` `[cutscenes]` + `[input]` blocks — cutscene registry, skip-input binding *(depends on T-CUT01)*
 - [ ] **T-CUT05** — Go: cutscene format validator (errors CUT-E001..E012) — unknown commands, missing labels, invalid skip values *(depends on T-CUT02)*

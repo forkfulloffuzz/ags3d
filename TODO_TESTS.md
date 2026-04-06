@@ -565,3 +565,9 @@ Unit tests are automated (`go test ./internal/dlg/...`). Manual verification:
 - [ ] Run `ag build --force` — file is re-emitted
 - [ ] Add `<<jump missing_target>>` to a node; run `ag build` — build fails with DLG-E002 error message
 - [ ] Add duplicate `title:` in two files; run `ag build` — build fails with DLG-E001 error message
+
+---
+
+### T-CUT01 — Go: `.agcut` file parser
+
+All tests are automated (`go test ./internal/cut/...`). No manual test required.
