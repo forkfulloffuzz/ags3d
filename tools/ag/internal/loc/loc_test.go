@@ -1,0 +1,278 @@
+package loc_test
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/ags3d/ag/internal/loc"
+)
+
+// --------------------------------------------------------------------------
+// Parse
+// --------------------------------------------------------------------------
+
+const minimalSrc = `[meta]
+base_locale = en
+locale      = fr
+
+[strings]
+guard_greeting:line0:a1b2c3d4 = "Vous. Arrêtez."
+guard_greeting:line1:e5f6a7b8 = ""
+`
+
+func TestParse_Meta(t *testing.T) {
+	sf, err := loc.Parse("test.agstrings", minimalSrc)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if sf.Meta.Locale != "fr" {
+		t.Errorf("Locale = %q, want fr", sf.Meta.Locale)
+	}
+	if sf.Meta.BaseLocale != "en" {
+		t.Errorf("BaseLocale = %q, want en", sf.Meta.BaseLocale)
+	}
+}
+
+func TestParse_Entries(t *testing.T) {
+	sf, err := loc.Parse("test.agstrings", minimalSrc)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(sf.Entries) != 2 {
+		t.Fatalf("entries len = %d, want 2", len(sf.Entries))
+	}
+	if sf.Entries[0].Value != "Vous. Arrêtez." {
+		t.Errorf("Entries[0].Value = %q", sf.Entries[0].Value)
+	}
+	if sf.Entries[1].Value != "" {
+		t.Errorf("Entries[1].Value = %q, want empty", sf.Entries[1].Value)
+	}
+}
+
+func TestParse_Get(t *testing.T) {
+	sf, err := loc.Parse("test.agstrings", minimalSrc)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if got := sf.Get("guard_greeting:line0:a1b2c3d4"); got != "Vous. Arrêtez." {
+		t.Errorf("Get = %q", got)
+	}
+	if got := sf.Get("nonexistent"); got != "" {
+		t.Errorf("Get nonexistent = %q, want empty", got)
+	}
+}
+
+func TestParse_RTL(t *testing.T) {
+	src := "[meta]\nbase_locale = en\nlocale = ar\nrtl = true\n\n[strings]\n"
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !sf.Meta.RTL {
+		t.Error("RTL should be true")
+	}
+}
+
+func TestParse_FallbackChain(t *testing.T) {
+	src := "[meta]\nbase_locale = en\nlocale = fr_CA\nfallback_chain = fr en\n\n[strings]\n"
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(sf.Meta.FallbackChain) != 2 || sf.Meta.FallbackChain[0] != "fr" {
+		t.Errorf("FallbackChain = %v", sf.Meta.FallbackChain)
+	}
+}
+
+func TestParse_StaleMarker(t *testing.T) {
+	src := "[meta]\nbase_locale = en\nlocale = fr\n\n[strings]\n// [stale] key:line0:abc = \"old\"\n"
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(sf.Entries) != 1 || !sf.Entries[0].Stale {
+		t.Errorf("expected 1 stale entry, got %+v", sf.Entries)
+	}
+}
+
+func TestParse_OrphanMarker(t *testing.T) {
+	src := "[meta]\nbase_locale = en\nlocale = fr\n\n[strings]\n// [orphan] old:key:abc = \"gone\"\n"
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(sf.Entries) != 1 || !sf.Entries[0].Orphan {
+		t.Errorf("expected 1 orphan entry, got %+v", sf.Entries)
+	}
+}
+
+func TestParse_ErrMissingLocale(t *testing.T) {
+	src := "[meta]\nbase_locale = en\n\n[strings]\n"
+	_, err := loc.Parse("test.agstrings", src)
+	if err == nil || !strings.Contains(err.Error(), "locale") {
+		t.Errorf("expected locale error, got %v", err)
+	}
+}
+
+func TestParse_ErrMissingBaseLocale(t *testing.T) {
+	src := "[meta]\nlocale = fr\n\n[strings]\n"
+	_, err := loc.Parse("test.agstrings", src)
+	if err == nil || !strings.Contains(err.Error(), "base_locale") {
+		t.Errorf("expected base_locale error, got %v", err)
+	}
+}
+
+func TestParse_ErrDuplicateKey(t *testing.T) {
+	src := "[meta]\nbase_locale = en\nlocale = fr\n\n[strings]\nkey:a = \"v\"\nkey:a = \"v2\"\n"
+	_, err := loc.Parse("test.agstrings", src)
+	if err == nil || !strings.Contains(err.Error(), "duplicate") {
+		t.Errorf("expected duplicate key error, got %v", err)
+	}
+}
+
+func TestParse_ErrUnknownMetaField(t *testing.T) {
+	src := "[meta]\nbase_locale = en\nlocale = fr\nunknown_field = x\n\n[strings]\n"
+	_, err := loc.Parse("test.agstrings", src)
+	if err == nil || !strings.Contains(err.Error(), "unknown meta field") {
+		t.Errorf("expected unknown meta field error, got %v", err)
+	}
+}
+
+// --------------------------------------------------------------------------
+// Write / round-trip
+// --------------------------------------------------------------------------
+
+func TestWrite_RoundTrip(t *testing.T) {
+	sf, err := loc.Parse("test.agstrings", minimalSrc)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	out := loc.Write(sf)
+	sf2, err := loc.Parse("test.agstrings", out)
+	if err != nil {
+		t.Fatalf("Parse round-trip: %v", err)
+	}
+	if sf2.Meta.Locale != sf.Meta.Locale {
+		t.Errorf("Locale mismatch after round-trip")
+	}
+	if len(sf2.Entries) != len(sf.Entries) {
+		t.Errorf("Entries len mismatch: %d vs %d", len(sf2.Entries), len(sf.Entries))
+	}
+	if sf2.Entries[0].Value != sf.Entries[0].Value {
+		t.Errorf("Entry value mismatch: %q vs %q", sf2.Entries[0].Value, sf.Entries[0].Value)
+	}
+}
+
+func TestWrite_ContainsMeta(t *testing.T) {
+	sf := &loc.StringsFile{Meta: loc.Meta{BaseLocale: "en", Locale: "fr"}}
+	out := loc.Write(sf)
+	if !strings.Contains(out, "locale         = fr") {
+		t.Errorf("Write missing locale line: %s", out)
+	}
+	if !strings.Contains(out, "[meta]") {
+		t.Errorf("Write missing [meta] section: %s", out)
+	}
+}
+
+func TestWrite_StaleEntryCommented(t *testing.T) {
+	sf := &loc.StringsFile{
+		Meta:    loc.Meta{BaseLocale: "en", Locale: "fr"},
+		Entries: []loc.Entry{{Key: "k", Value: "v", Stale: true}},
+	}
+	out := loc.Write(sf)
+	if !strings.Contains(out, "// [stale]") {
+		t.Errorf("Write missing stale comment: %s", out)
+	}
+}
+
+func TestWrite_OrphanEntryCommented(t *testing.T) {
+	sf := &loc.StringsFile{
+		Meta:    loc.Meta{BaseLocale: "en", Locale: "fr"},
+		Entries: []loc.Entry{{Key: "k", Value: "v", Orphan: true}},
+	}
+	out := loc.Write(sf)
+	if !strings.Contains(out, "// [orphan]") {
+		t.Errorf("Write missing orphan comment: %s", out)
+	}
+}
+
+// --------------------------------------------------------------------------
+// Diff / Apply
+// --------------------------------------------------------------------------
+
+func mustParse(t *testing.T, src string) *loc.StringsFile {
+	t.Helper()
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	return sf
+}
+
+func TestDiff_Unchanged(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\nk:a = \"v\"\n")
+	diff := loc.Diff(base, []string{"k:a"})
+	if len(diff) != 1 || diff[0].Kind != loc.DiffUnchanged {
+		t.Errorf("expected 1 Unchanged, got %+v", diff)
+	}
+}
+
+func TestDiff_Added(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\n")
+	diff := loc.Diff(base, []string{"new:key:abc"})
+	if len(diff) != 1 || diff[0].Kind != loc.DiffAdded {
+		t.Errorf("expected 1 Added, got %+v", diff)
+	}
+}
+
+func TestDiff_Removed(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\nold:key:abc = \"old\"\n")
+	diff := loc.Diff(base, []string{})
+	if len(diff) != 1 || diff[0].Kind != loc.DiffRemoved {
+		t.Errorf("expected 1 Removed, got %+v", diff)
+	}
+}
+
+func TestApply_NewKeyAdded(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\n")
+	diff := loc.Diff(base, []string{"new:key:abc"})
+	updated := loc.Apply(base, diff)
+	if len(updated.Entries) != 1 || updated.Entries[0].Key != "new:key:abc" {
+		t.Errorf("Apply: expected new key, got %+v", updated.Entries)
+	}
+	if updated.Entries[0].Value != "" {
+		t.Errorf("Apply: new key should have empty value, got %q", updated.Entries[0].Value)
+	}
+}
+
+func TestApply_RemovedMarkedOrphan(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\nold:key = \"v\"\n")
+	diff := loc.Diff(base, []string{})
+	updated := loc.Apply(base, diff)
+	if len(updated.Entries) != 1 || !updated.Entries[0].Orphan {
+		t.Errorf("Apply: expected orphan entry, got %+v", updated.Entries)
+	}
+}
+
+func TestApply_ExistingTranslationPreserved(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\nk:a = \"Bonjour.\"\n")
+	diff := loc.Diff(base, []string{"k:a"})
+	updated := loc.Apply(base, diff)
+	if updated.Entries[0].Value != "Bonjour." {
+		t.Errorf("Apply: translation lost, got %q", updated.Entries[0].Value)
+	}
+}
+
+func TestApply_RoundTripWriteParse(t *testing.T) {
+	base := mustParse(t, "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\nk:a = \"v\"\n")
+	diff := loc.Diff(base, []string{"k:a", "k:b"})
+	updated := loc.Apply(base, diff)
+	written := loc.Write(updated)
+	reparsed, err := loc.Parse("test.agstrings", written)
+	if err != nil {
+		t.Fatalf("re-parse: %v", err)
+	}
+	if len(reparsed.Entries) != 2 {
+		t.Errorf("expected 2 entries after round-trip, got %d", len(reparsed.Entries))
+	}
+}
