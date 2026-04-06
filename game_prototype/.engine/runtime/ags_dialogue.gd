@@ -56,6 +56,9 @@ var _nodes: Dictionary = {}
 ## Whether a dialogue is currently playing.
 var _active: bool = false
 
+## Title of the node currently executing (for locale-change restart).
+var _current_node_title: String = ""
+
 ## Whether the engine is waiting for advance() to be called.
 var _waiting: bool = false
 
@@ -162,6 +165,7 @@ signal _advance_signal(choice_index: int)
 # ---------------------------------------------------------------------------
 
 func _execute_node(title: String) -> void:
+	_current_node_title = title
 	var node_data: Variant = _nodes.get(title)
 	if node_data == null:
 		push_warning("AGSDialogue: node not found: " + title)
@@ -267,12 +271,29 @@ func _wait_for_choice() -> int:
 # ---------------------------------------------------------------------------
 
 func _localise(loc_key: String, fallback: String) -> String:
-	# If a LocalisationRuntime is present, ask it for the translated string.
-	if Engine.has_singleton("AGSLocalisation"):
-		var tr: String = Engine.get_singleton("AGSLocalisation").get_string(loc_key)
+	# Prefer AutoLoad path; fall back to Engine singleton registration.
+	var loc: Node = null
+	if get_tree() != null:
+		loc = get_tree().root.get_node_or_null("/root/AGSLocalisation")
+	if loc == null and Engine.has_singleton("AGSLocalisation"):
+		loc = Engine.get_singleton("AGSLocalisation")
+	if loc != null:
+		var tr: String = loc.get_string(loc_key, "")
 		if tr != "":
 			return tr
 	return fallback
+
+## Called by AGSLocalisation when the active locale changes.
+## If a dialogue is in progress, restart the current node so all strings
+## are re-fetched in the new locale.
+func _on_locale_changed(_new_locale: String) -> void:
+	if _active and _current_node_title != "":
+		# Interrupt the current wait and re-execute the node.
+		if _waiting:
+			_waiting = false
+			_advance_signal.emit(-1)  # sentinel: restart, not a real choice
+		# Re-execute the current node from the top.
+		await _execute_node(_current_node_title)
 
 # ---------------------------------------------------------------------------
 # Condition evaluation

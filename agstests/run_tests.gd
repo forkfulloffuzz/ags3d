@@ -50,6 +50,7 @@ const SUITES: Array[String] = [
 const ASYNC_SUITES: Array[String] = [
 	"m_cut/test_event_bus_surface.gd",              # T-CUT11
 	"m_dlg/test_dialogue_engine.gd",           # T-DLG14
+	"m_dlg/test_localisation.gd",              # T-DLG17
 	"m_dlg/test_dialogue_state.gd",            # T-DLG15
 	"m_dlg/test_dialogue_ui.gd",               # T-DLG16
 	"m6_integration/test_end_to_end.gd",
