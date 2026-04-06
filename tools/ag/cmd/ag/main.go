@@ -29,6 +29,7 @@ import (
 	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/gui"
+	"github.com/ags3d/ag/internal/loc"
 	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
@@ -634,8 +635,8 @@ func cmdExportLocale(lang, format string, diffOnly bool) error {
 	if lang == "" {
 		return fmt.Errorf("--locale requires a language code (e.g. en, fr)")
 	}
-	if format != "po" && format != "csv" {
-		return fmt.Errorf("--format must be po or csv")
+	if format != "po" && format != "csv" && format != "agstrings" {
+		return fmt.Errorf("--format must be po, csv, or agstrings")
 	}
 
 	root, _ := requireProject()
@@ -681,10 +682,17 @@ func cmdExportLocale(lang, format string, diffOnly bool) error {
 	switch format {
 	case "csv":
 		ext = ".csv"
+	case "agstrings":
+		ext = ".agstrings"
 	default:
 		ext = ".po"
 	}
 	outPath = filepath.Join(localeDir, lang+ext)
+
+	// agstrings format uses the loc package's Diff/Apply pipeline.
+	if format == "agstrings" {
+		return cmdExportLocaleAgstrings(entries, lang, outPath, diffOnly)
+	}
 
 	existing := map[string]string{}
 	if diffOnly {
@@ -712,6 +720,56 @@ func cmdExportLocale(lang, format string, diffOnly bool) error {
 	}
 
 	rel, _ := filepath.Rel(root, outPath)
+	fmt.Printf("ag export: %d strings → %s\n", len(entries), rel)
+	return nil
+}
+
+// cmdExportLocaleAgstrings exports dialogue strings in .agstrings format using
+// the loc package's Diff/Apply pipeline for incremental update tracking.
+// If an existing .agstrings file is present, Diff() marks new keys as empty
+// and removed keys as orphans. Apply() merges the diff into the base file.
+func cmdExportLocaleAgstrings(entries []dlg.LocEntry, lang, outPath string, diffOnly bool) error {
+	// Build the current key list from the dialogue entries.
+	currentKeys := make([]string, 0, len(entries))
+	for _, e := range entries {
+		currentKeys = append(currentKeys, e.LocKey)
+	}
+
+	// Load existing .agstrings file (if any).
+	var base *loc.StringsFile
+	if raw, readErr := os.ReadFile(outPath); readErr == nil {
+		var parseErr error
+		base, parseErr = loc.Parse(outPath, string(raw))
+		if parseErr != nil {
+			base = nil // treat as missing
+		}
+	}
+	if base == nil {
+		base = &loc.StringsFile{Meta: loc.Meta{Locale: lang}}
+	}
+
+	// Diff: detect new / removed / unchanged keys.
+	diff := loc.Diff(base, currentKeys)
+
+	// Apply diff to produce the updated file.
+	updated := loc.Apply(base, diff)
+
+	if diffOnly {
+		// In diff-only mode, keep only untranslated, stale, or orphan entries.
+		var filtered []loc.Entry
+		for _, e := range updated.Entries {
+			if e.Value == "" || e.Stale || e.Orphan {
+				filtered = append(filtered, e)
+			}
+		}
+		updated.Entries = filtered
+	}
+
+	content := loc.Write(updated)
+	if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
+		return fmt.Errorf("export locale: write %s: %w", outPath, err)
+	}
+	rel, _ := filepath.Rel(filepath.Dir(filepath.Dir(outPath)), outPath)
 	fmt.Printf("ag export: %d strings → %s\n", len(entries), rel)
 	return nil
 }
