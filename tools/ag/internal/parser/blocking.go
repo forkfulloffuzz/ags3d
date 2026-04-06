@@ -49,6 +49,20 @@ var blockingMethodNames = map[string]bool{
 	"RunInteraction": true,
 }
 
+// blockingNamespaceMethods is the set of "Namespace.Method" pairs that are
+// blocking coroutines (emitter must prefix with `await`).
+// T-DLG18: dialogue.Start variants.
+var blockingNamespaceMethods = map[string]bool{
+	"dialogue.Start":        true,
+	"dialogue.StartDefault": true,
+	"dialogue.StartItem":    true,
+}
+
+// IsBlockingNamespaceMethod reports whether the "Namespace.Method" pair is blocking.
+func IsBlockingNamespaceMethod(ns, method string) bool {
+	return blockingNamespaceMethods[ns+"."+method]
+}
+
 // IsBlockingBuiltin reports whether name is a known blocking global function.
 func IsBlockingBuiltin(name string) bool { return blockingGlobalFuncs[name] }
 
@@ -252,7 +266,16 @@ func calleeIsBlocking(callee Expr, fns map[string]*FunctionDecl) bool {
 			return true
 		}
 	case *MemberExpr:
-		return blockingMethodNames[c.Field]
+		// Unqualified method name (character methods).
+		if blockingMethodNames[c.Field] {
+			return true
+		}
+		// Namespace.Method (e.g. dialogue.Start).
+		if ns, ok := c.Object.(*Identifier); ok {
+			if blockingNamespaceMethods[ns.Name+"."+c.Field] {
+				return true
+			}
+		}
 	}
 	return false
 }

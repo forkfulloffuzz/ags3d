@@ -243,3 +243,75 @@ func TestUT_M3_13_SourceMapLineOrder(t *testing.T) {
 		prev = gdLine
 	}
 }
+
+// ─── T-DLG18 — dialogue.* and Game.* namespace API emission ─────────────────
+
+func TestUT_DLG18_01_DialogueStartEmitsAwait(t *testing.T) {
+	src := `function talk_to_guard() { dialogue.Start(guard, "guard_greeting"); }`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await AGSDialogue.start") {
+		t.Errorf("dialogue.Start should emit await AGSDialogue.start, got:\n%s", out)
+	}
+}
+
+func TestUT_DLG18_02_DialogueStartDefaultEmitsAwait(t *testing.T) {
+	src := `function greet() { dialogue.StartDefault(elara); }`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await AGSDialogue.start_default") {
+		t.Errorf("dialogue.StartDefault should emit await AGSDialogue.start_default, got:\n%s", out)
+	}
+}
+
+func TestUT_DLG18_03_DialogueStartItemEmitsAwait(t *testing.T) {
+	src := `function examine_key() { dialogue.StartItem(rusty_key, "on_examine"); }`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await AGSDialogue.start_item") {
+		t.Errorf("dialogue.StartItem should emit await AGSDialogue.start_item, got:\n%s", out)
+	}
+}
+
+func TestUT_DLG18_04_DialogueNodeVisitedNoAwait(t *testing.T) {
+	src := `function check() { if (dialogue.NodeVisited("guard_greeting")) { return; } }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("dialogue.NodeVisited should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSDialogueState.node_visited") {
+		t.Errorf("dialogue.NodeVisited should emit AGSDialogueState.node_visited, got:\n%s", out)
+	}
+}
+
+func TestUT_DLG18_05_DialogueOptionSeenNoAwait(t *testing.T) {
+	src := `function check() { if (dialogue.OptionSeen("guard_greeting", 0)) { return; } }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("dialogue.OptionSeen should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSDialogueState.option_seen") {
+		t.Errorf("dialogue.OptionSeen should emit AGSDialogueState.option_seen, got:\n%s", out)
+	}
+}
+
+func TestUT_DLG18_06_GameSetLocaleNoAwait(t *testing.T) {
+	src := `function switch_lang() { Game.SetLocale("fr"); }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("Game.SetLocale should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSLocalisation.set_locale") {
+		t.Errorf("Game.SetLocale should emit AGSLocalisation.set_locale, got:\n%s", out)
+	}
+}
+
+func TestUT_DLG18_07_DialogueStartBlockingPropagates(t *testing.T) {
+	// A function that calls dialogue.Start should itself be treated as blocking
+	// when called from another function.
+	src := `
+function start_talk() { dialogue.Start(guard, "guard_greeting"); }
+function interact() { start_talk(); }
+`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await start_talk()") {
+		t.Errorf("caller of blocking dialogue.Start function should emit await, got:\n%s", out)
+	}
+}

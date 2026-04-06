@@ -594,6 +594,18 @@ func (p *printer) exprStr(e parser.Expr) string {
 				return call
 			}
 		}
+		// T-DLG18: dialogue.* and Game.* namespace method calls.
+		if gdCall, blocking, ok := namespaceBuiltinCallee(v); ok {
+			args := make([]string, len(v.Args))
+			for i, a := range v.Args {
+				args[i] = p.exprStr(a)
+			}
+			call := gdCall + "(" + strings.Join(args, ", ") + ")"
+			if blocking {
+				return "await " + call
+			}
+			return call
+		}
 		// T32: character built-in methods are rewritten to AGSRuntime calls.
 		if recv, gdMethod, ok := characterBuiltinCallee(v.Callee); ok {
 			charName := p.receiverName(recv)
@@ -736,6 +748,45 @@ var builtinCharacterMethods = map[string]string{
 	"AddInventory":  "add_inventory",
 	"LoseInventory": "lose_inventory",
 	"HasInventory":  "has_inventory",
+}
+
+// -------------------------------------------------------------------
+// T-DLG18 — dialogue.* / Game.* namespace → AGSDialogue / AGSLocalisation
+// -------------------------------------------------------------------
+
+// namespaceBuiltinMethods maps "Namespace.Method" → (gdscript_call, blocking).
+var namespaceBuiltinMethods = map[string]struct {
+	gd      string
+	blocking bool
+}{
+	// dialogue.Start — blocking coroutine.
+	"dialogue.Start":        {gd: "AGSDialogue.start", blocking: true},
+	"dialogue.StartDefault": {gd: "AGSDialogue.start_default", blocking: true},
+	"dialogue.StartItem":    {gd: "AGSDialogue.start_item", blocking: true},
+	// dialogue query helpers — non-blocking.
+	"dialogue.NodeVisited": {gd: "AGSDialogueState.node_visited", blocking: false},
+	"dialogue.OptionSeen":  {gd: "AGSDialogueState.option_seen", blocking: false},
+	// Game.SetLocale — non-blocking.
+	"Game.SetLocale": {gd: "AGSLocalisation.set_locale", blocking: false},
+}
+
+// namespaceBuiltinCallee returns (gdscript_call_prefix, is_blocking, true) when
+// call.Callee is a MemberExpr of the form dialogue.Start, Game.SetLocale, etc.
+// The caller is responsible for appending "(" + args + ")".
+func namespaceBuiltinCallee(call *parser.CallExpr) (gdCall string, blocking bool, ok bool) {
+	m, isMember := call.Callee.(*parser.MemberExpr)
+	if !isMember {
+		return "", false, false
+	}
+	ns, isIdent := m.Object.(*parser.Identifier)
+	if !isIdent {
+		return "", false, false
+	}
+	key := ns.Name + "." + m.Field
+	if entry, found := namespaceBuiltinMethods[key]; found {
+		return entry.gd, entry.blocking || call.IsBlocking, true
+	}
+	return "", false, false
 }
 
 // characterBuiltinCallee returns the receiver expression, the GDScript method
