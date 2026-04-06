@@ -244,6 +244,139 @@ func TestValidate_PointExistsNoError(t *testing.T) {
 	}
 }
 
+// --- CUT-E013: identifier naming rule ---
+
+func TestValidate_TitleUppercaseIsE013(t *testing.T) {
+	cf := mustParseCF(t, "title: Chapter1Opening\nsequence:\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for uppercase title, none found")
+	}
+}
+
+func TestValidate_TitleStartsWithDigitIsE013(t *testing.T) {
+	cf := mustParseCF(t, "title: 1st_scene\nsequence:\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for digit-leading title, none found")
+	}
+}
+
+func TestValidate_TitleValidNoE013(t *testing.T) {
+	cf := mustParseCF(t, "title: chapter1_opening\nsequence:\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	for _, e := range errs {
+		if e.Code == "CUT-E013" {
+			t.Errorf("unexpected CUT-E013: %v", e)
+		}
+	}
+}
+
+func TestValidate_LabelInvalidIsE013(t *testing.T) {
+	errs := validate(t, "title: t\nsequence:\n<<label Act-Two>>\n<<end>>\n")
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for hyphen in label, none found")
+	}
+}
+
+func TestValidate_LabelValidNoE013(t *testing.T) {
+	errs := validate(t, "title: t\nsequence:\n<<label act_two>>\n<<skip_to act_two>>\n<<end>>\n")
+	for _, e := range errs {
+		if e.Code == "CUT-E013" {
+			t.Errorf("unexpected CUT-E013: %v", e)
+		}
+	}
+}
+
+func TestValidate_BgIDInvalidIsE013(t *testing.T) {
+	errs := validate(t, "title: t\nsequence:\n<<fade_in duration:1.0 bg:Cam.Move>>\n<<end>>\n")
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for invalid bg: id, none found")
+	}
+}
+
+func TestValidate_BgIDValidNoE013(t *testing.T) {
+	errs := validate(t, "title: t\nsequence:\n<<fade_in duration:1.0 bg:cam_move>>\n<<end>>\n")
+	for _, e := range errs {
+		if e.Code == "CUT-E013" {
+			t.Errorf("unexpected CUT-E013: %v", e)
+		}
+	}
+}
+
+func TestValidate_CutsceneRefInvalidIsE013(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nsequence:\n<<cutscene BadRef>>\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for uppercase cutscene ref, none found")
+	}
+}
+
+func TestValidate_CutsceneFileParamInvalidIsE013(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nsequence:\n<<cutscene file:BadRef>>\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for uppercase file: cutscene ref, none found")
+	}
+}
+
+func TestValidate_LocGroupInvalidIsE013(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nloc_group: Chapter1\nsequence:\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for uppercase loc_group, none found")
+	}
+}
+
+func TestValidate_VoiceSessionInvalidIsE013(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nvoice_session: Session-A\nsequence:\n<<end>>\n")
+	errs := cut.ValidateCutscene(cf, nil, nil)
+	if !hasErrCode(errs, "CUT-E013") {
+		t.Error("expected CUT-E013 for hyphen in voice_session, none found")
+	}
+}
+
+func TestValidate_ReservedIdentNoE013(t *testing.T) {
+	// "room_music" and "room_ambient" satisfy the regex anyway, but exercise the exempt path.
+	errs := validate(t, "title: t\nsequence:\n<<ambient stop channel:room_music>>\n<<end>>\n")
+	for _, e := range errs {
+		if e.Code == "CUT-E013" {
+			t.Errorf("unexpected CUT-E013 for reserved ident: %v", e)
+		}
+	}
+}
+
+// --- CUT-E015: <<cutscene file:name>> named-param form ---
+
+func TestValidate_CutsceneFileParamExistsNoError(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nsequence:\n<<cutscene file:other>>\n<<end>>\n")
+	allTitles := map[string]bool{"t": true, "other": true}
+	errs := cut.ValidateCutscene(cf, allTitles, nil)
+	for _, e := range errs {
+		if e.Code == "CUT-E008" {
+			t.Errorf("unexpected CUT-E008: %v", e)
+		}
+	}
+}
+
+func TestValidate_CutsceneFileParamMissingIsE008(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nsequence:\n<<cutscene file:does_not_exist>>\n<<end>>\n")
+	allTitles := map[string]bool{"t": true}
+	errs := cut.ValidateCutscene(cf, allTitles, nil)
+	if !hasErrCode(errs, "CUT-E008") {
+		t.Error("expected CUT-E008 for missing file: cutscene ref, none found")
+	}
+}
+
+func TestValidate_CutsceneFileParamSelfIsE009(t *testing.T) {
+	cf := mustParseCF(t, "title: t\nsequence:\n<<cutscene file:t>>\n<<end>>\n")
+	allTitles := map[string]bool{"t": true}
+	errs := cut.ValidateCutscene(cf, allTitles, nil)
+	if !hasErrCode(errs, "CUT-E009") {
+		t.Error("expected CUT-E009 for self-referencing file: form, none found")
+	}
+}
+
 // --- Clean cutscene produces no errors ---
 
 func TestValidate_CleanCutsceneNoErrors(t *testing.T) {

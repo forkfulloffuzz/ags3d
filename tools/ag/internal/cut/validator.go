@@ -2,8 +2,33 @@ package cut
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+// identRe is the naming rule for all author-assigned identifiers: ^[a-z][a-z0-9_]*$
+var identRe = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+// reservedIdents are built-in channel/control names always considered valid.
+var reservedIdents = map[string]bool{
+	"room_music":   true,
+	"room_ambient": true,
+	"all":          true,
+}
+
+// isValidIdent returns true if s satisfies the author-identifier naming rule.
+func isValidIdent(s string) bool {
+	return reservedIdents[s] || identRe.MatchString(s)
+}
+
+// identErr returns a CUT-E013 ValidationError for field at pos.
+func identErr(pos Pos, field, value string) ValidationError {
+	return ValidationError{
+		Pos:  pos,
+		Code: "CUT-E013",
+		Msg:  fmt.Sprintf("identifier %q in %s violates naming rule (must match ^[a-z][a-z0-9_]*$)", value, field),
+	}
+}
 
 // ValidationError is a structural error found during cutscene validation.
 // All errors in this set block the build.
@@ -52,6 +77,18 @@ func ValidateCutscene(cf *CutsceneFile, allTitles map[string]bool, cross *Projec
 		})
 	}
 
+	// CUT-E013: identifier naming rule for header-level fields.
+	headerPos := Pos{File: cf.Path, Line: 1}
+	if cf.Title != "" && !isValidIdent(cf.Title) {
+		errs = append(errs, identErr(headerPos, "title", cf.Title))
+	}
+	if cf.LocGroup != "" && !isValidIdent(cf.LocGroup) {
+		errs = append(errs, identErr(headerPos, "loc_group", cf.LocGroup))
+	}
+	if cf.VoiceSession != "" && !isValidIdent(cf.VoiceSession) {
+		errs = append(errs, identErr(headerPos, "voice_session", cf.VoiceSession))
+	}
+
 	// CUT-E012: save_block:false with state changes (<<action>> or <<set>>).
 	if !cf.SaveBlock {
 		for _, rc := range cf.Sequence {
@@ -77,10 +114,23 @@ func ValidateCutscene(cf *CutsceneFile, allTitles map[string]bool, cross *Projec
 	for _, rc := range cf.Sequence {
 		cmd := ParseCommand(rc)
 
+		// CUT-E013: bg:id and id: step identifiers on any command.
+		if bgID, ok := cmd.Params["bg"]; ok && bgID != "" && !isValidIdent(bgID) {
+			errs = append(errs, identErr(rc.Pos, "bg: step id", bgID))
+		}
+		if stepID, ok := cmd.Params["id"]; ok && stepID != "" && !isValidIdent(stepID) {
+			errs = append(errs, identErr(rc.Pos, "id: step id", stepID))
+		}
+
 		switch rc.Name {
 		case "label":
 			if len(cmd.Positional) > 0 {
-				labels[cmd.Positional[0]] = true
+				lbl := cmd.Positional[0]
+				labels[lbl] = true
+				// CUT-E013: label name must be a valid identifier.
+				if !isValidIdent(lbl) {
+					errs = append(errs, identErr(rc.Pos, "label", lbl))
+				}
 			}
 
 		case "skip_to":
@@ -119,6 +169,10 @@ func ValidateCutscene(cf *CutsceneFile, allTitles map[string]bool, cross *Projec
 				ref = v
 			}
 			if ref != "" {
+				// CUT-E013: cutscene ref must be a valid identifier.
+				if !isValidIdent(ref) {
+					errs = append(errs, identErr(rc.Pos, "cutscene ref", ref))
+				}
 				if allTitles != nil && !allTitles[ref] {
 					errs = append(errs, ValidationError{
 						Pos:  rc.Pos,
