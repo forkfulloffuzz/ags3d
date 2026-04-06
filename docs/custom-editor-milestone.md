@@ -147,6 +147,8 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI30 | Dialogue node graph (T-DLG01/02) | Visual dialogue node editor: shows nodes as cards, options as edges, jump targets as arrows |
 | T-CE-UI31 | Locale manager panel (T-DLG13) | Project settings panel listing declared locales; add/remove/edit name+RTL flag; base_locale picker; fallback_chain reorder list |
 | T-CE-UI32 | Dialogue build log (T-DLG07) | Build log panel showing .agdlg → .json output, DLG-E/W error codes inline |
+| T-CE-UI33 | Cutscene format validator output (T-CUT05) | Build log shows CUT-E/W error codes with source file and line |
+| T-CE-UI34 | Cutscene input bindings panel (T-CUT04) | Project settings panel for [input] bindings: dialogue_advance, cutscene_skip, dialogue_hold_advance |
 
 ---
 

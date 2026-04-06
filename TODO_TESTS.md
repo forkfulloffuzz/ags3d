@@ -585,3 +585,15 @@ All tests are automated (`go test ./internal/cut/...`). No manual test required.
 All tests are automated (`go test ./internal/project/...`). Manual verification:
 
 - [ ] Add `[cutscenes]` and `[input]` blocks to `game.agp`; run `ag build` — no error, fields accessible
+
+---
+
+### T-CUT05 — Go: cutscene format validator (CUT-E001..E012)
+
+All tests are automated (`go test ./internal/cut/...`). Manual verification:
+
+- [ ] Create two `.agcut` files with the same `title:`; run `ag validate` — CUT-E001 error listed
+- [ ] Add `save_block: false` with `<<action flag.x = true>>`; run `ag validate` — CUT-E012 error
+- [ ] Add `<<skip_to nowhere>>` with no matching `<<label nowhere>>`; run `ag validate` — CUT-E006 error
+- [ ] Add `<<choice>>` inside `<<parallel>>`/`<<end_parallel>>`; run `ag validate` — CUT-E007 error
+- [ ] Add `<<cutscene nonexistent_title>>`; run `ag validate` — CUT-E008 error
