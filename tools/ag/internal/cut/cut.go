@@ -20,6 +20,7 @@ package cut
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -114,6 +115,14 @@ type CutsceneFile struct {
 	LocGroup     string
 	VoiceSession string
 
+	// Audio scope and dialogue ducking fields.
+	AudioScope   string  // "keep" | "pause" | "stop"; default "keep"
+	DuckChannels string  // space-separated channel names to duck during dialogue
+	DuckLevel    float64 // target volume level while ducked; default 0.25
+	DuckFade     float64 // seconds to ramp down to DuckLevel; default 0.3
+	DuckRestore  float64 // seconds to ramp back up after dialogue; default 0.5
+	AutoDuck     bool    // automatically duck during all <<line>>/<<dialogue>> commands
+
 	// Sequence is the flat ordered list of commands in the sequence body.
 	// Block structure (parallel, if, on) is resolved in T-CUT02.
 	Sequence []*RawCommand
@@ -137,6 +146,13 @@ var ValidSkipPolicies = map[string]bool{
 	"never":            true,
 	"after_first_view": true,
 	"author_controlled": true,
+}
+
+// ValidAudioScopes is the set of recognised audio_scope: values.
+var ValidAudioScopes = map[string]bool{
+	"keep":  true,
+	"pause": true,
+	"stop":  true,
 }
 
 // ValidFallbacks is the set of recognised fallback: values.
@@ -184,8 +200,12 @@ func ParseFile(path string) (*CutsceneFile, error) {
 // filename is used for position reporting only.
 func Parse(filename, src string) (*CutsceneFile, error) {
 	cf := &CutsceneFile{
-		Path:      filename,
-		SaveBlock: true, // default
+		Path:        filename,
+		SaveBlock:   true,   // default
+		AudioScope:  "keep", // default
+		DuckLevel:   0.25,   // default
+		DuckFade:    0.3,    // default
+		DuckRestore: 0.5,    // default
 	}
 
 	lines := strings.Split(src, "\n")
@@ -264,6 +284,24 @@ func parseHeaderLine(cf *CutsceneFile, pos Pos, line string) error {
 		cf.LocGroup = rawVal
 	case "voice_session":
 		cf.VoiceSession = rawVal
+	case "audio_scope":
+		cf.AudioScope = rawVal
+	case "duck_channels":
+		cf.DuckChannels = rawVal
+	case "duck_level":
+		if v, err := strconv.ParseFloat(rawVal, 64); err == nil {
+			cf.DuckLevel = v
+		}
+	case "duck_fade":
+		if v, err := strconv.ParseFloat(rawVal, 64); err == nil {
+			cf.DuckFade = v
+		}
+	case "duck_restore":
+		if v, err := strconv.ParseFloat(rawVal, 64); err == nil {
+			cf.DuckRestore = v
+		}
+	case "auto_duck":
+		cf.AutoDuck = rawVal == "true"
 	// Unknown header keys silently ignored (forward compatibility).
 	}
 	return nil

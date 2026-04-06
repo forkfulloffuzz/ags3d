@@ -83,6 +83,94 @@ func TestParse_VoiceSessionField(t *testing.T) {
 	}
 }
 
+func TestParse_AudioScopeField(t *testing.T) {
+	cf := mustParse(t, "title: t\naudio_scope: pause\nsequence:\n<<end>>\n")
+	if cf.AudioScope != "pause" {
+		t.Errorf("AudioScope = %q, want pause", cf.AudioScope)
+	}
+}
+
+func TestParse_AudioScopeDefault(t *testing.T) {
+	cf := mustParse(t, "title: t\nsequence:\n<<end>>\n")
+	if cf.AudioScope != "keep" {
+		t.Errorf("AudioScope default = %q, want keep", cf.AudioScope)
+	}
+}
+
+func TestParse_DuckChannelsField(t *testing.T) {
+	cf := mustParse(t, "title: t\nduck_channels: room_music room_ambient\nsequence:\n<<end>>\n")
+	if cf.DuckChannels != "room_music room_ambient" {
+		t.Errorf("DuckChannels = %q", cf.DuckChannels)
+	}
+}
+
+func TestParse_DuckLevelField(t *testing.T) {
+	cf := mustParse(t, "title: t\nduck_level: 0.15\nsequence:\n<<end>>\n")
+	if cf.DuckLevel != 0.15 {
+		t.Errorf("DuckLevel = %v, want 0.15", cf.DuckLevel)
+	}
+}
+
+func TestParse_DuckLevelDefault(t *testing.T) {
+	cf := mustParse(t, "title: t\nsequence:\n<<end>>\n")
+	if cf.DuckLevel != 0.25 {
+		t.Errorf("DuckLevel default = %v, want 0.25", cf.DuckLevel)
+	}
+}
+
+func TestParse_DuckFadeField(t *testing.T) {
+	cf := mustParse(t, "title: t\nduck_fade: 0.5\nsequence:\n<<end>>\n")
+	if cf.DuckFade != 0.5 {
+		t.Errorf("DuckFade = %v, want 0.5", cf.DuckFade)
+	}
+}
+
+func TestParse_DuckFadeDefault(t *testing.T) {
+	cf := mustParse(t, "title: t\nsequence:\n<<end>>\n")
+	if cf.DuckFade != 0.3 {
+		t.Errorf("DuckFade default = %v, want 0.3", cf.DuckFade)
+	}
+}
+
+func TestParse_DuckRestoreField(t *testing.T) {
+	cf := mustParse(t, "title: t\nduck_restore: 1.0\nsequence:\n<<end>>\n")
+	if cf.DuckRestore != 1.0 {
+		t.Errorf("DuckRestore = %v, want 1.0", cf.DuckRestore)
+	}
+}
+
+func TestParse_DuckRestoreDefault(t *testing.T) {
+	cf := mustParse(t, "title: t\nsequence:\n<<end>>\n")
+	if cf.DuckRestore != 0.5 {
+		t.Errorf("DuckRestore default = %v, want 0.5", cf.DuckRestore)
+	}
+}
+
+func TestParse_AutoDuckTrue(t *testing.T) {
+	cf := mustParse(t, "title: t\nauto_duck: true\nsequence:\n<<end>>\n")
+	if !cf.AutoDuck {
+		t.Error("AutoDuck should be true")
+	}
+}
+
+func TestParse_AutoDuckDefault(t *testing.T) {
+	cf := mustParse(t, "title: t\nsequence:\n<<end>>\n")
+	if cf.AutoDuck {
+		t.Error("AutoDuck default should be false")
+	}
+}
+
+func TestValidAudioScopes(t *testing.T) {
+	for _, v := range []string{"keep", "pause", "stop"} {
+		if !cut.ValidAudioScopes[v] {
+			t.Errorf("expected %q in ValidAudioScopes", v)
+		}
+	}
+	if cut.ValidAudioScopes["mute"] {
+		t.Error("expected 'mute' not in ValidAudioScopes")
+	}
+}
+
 func TestParse_UnknownHeaderKeyIgnored(t *testing.T) {
 	cf := mustParse(t, "title: t\nfuture_field: value\nsequence:\n<<end>>\n")
 	if cf.Title != "t" {

@@ -25,7 +25,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 ## M-CUT / M-DLG — Missing fields + identifier rules
 
-- [ ] **T-CUT13** — Go: add `audio_scope` (`keep`|`pause`|`stop`, default `keep`), `duck_channels` (space-separated string), `duck_level` (float64, default 0.25), `duck_fade` (float64, default 0.3), `duck_restore` (float64, default 0.5), `auto_duck` (bool, default false) fields to `CutsceneFile` struct in `cut.go`. Parse them in `parseHeaderLine`. Add tests in `cut_test.go` covering each field round-trip and the `auto_duck`/`duck_level` defaults.
+- [x] **T-CUT13** — Go: add `audio_scope` (`keep`|`pause`|`stop`, default `keep`), `duck_channels` (space-separated string), `duck_level` (float64, default 0.25), `duck_fade` (float64, default 0.3), `duck_restore` (float64, default 0.5), `auto_duck` (bool, default false) fields to `CutsceneFile` struct in `cut.go`. Parse them in `parseHeaderLine`. Add tests in `cut_test.go` covering each field round-trip and the `auto_duck`/`duck_level` defaults.
 
 - [ ] **T-CUT14** — Go: implement CUT-E013 identifier naming rule (`^[a-z][a-z0-9_]*$`) in `cut/validator.go`. Check: `cf.Title`, every `<<label name>>` arg, every `bg:id` and `id:` step identifier, `<<cutscene file:name>>` ref values, `cf.LocGroup`, `cf.VoiceSession`. Reserved words (`room_music`, `room_ambient`, `all`) are exempt. Add unit tests in `validator_test.go` covering each checked position plus a clean-passing case.
 

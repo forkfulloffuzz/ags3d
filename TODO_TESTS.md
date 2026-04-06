@@ -608,3 +608,17 @@ All tests are automated (`go test ./internal/cut/...`). Manual verification:
 - [ ] Add a new invalid fixture with first-line comment `// EXPECT_ERROR [not-implemented]: ...` — harness skips it with message "validator not yet implemented".
 - [ ] Add a new invalid fixture with first-line comment `// EXPECT_ERROR [multi-file]: ...` — harness skips it with "requires multi-file context".
 - [ ] Run `.dev/test-all.sh` — the section header reads "Go — tools/ag (transpiler / CLI / LSP / fixture harness)".
+
+### T-CUT13 — audio_scope + duck_* header fields
+
+**Setup:** Have `ag` CLI built. Create a test `.agcut` file.
+
+- [ ] `audio_scope: pause` parsed — `CutsceneFile.AudioScope == "pause"`.
+- [ ] `audio_scope: stop` parsed — `CutsceneFile.AudioScope == "stop"`.
+- [ ] No `audio_scope` header — defaults to `"keep"`.
+- [ ] `duck_channels: room_music room_ambient` parsed — `DuckChannels == "room_music room_ambient"`.
+- [ ] `duck_level: 0.15` parsed — `DuckLevel == 0.15`.
+- [ ] `duck_fade: 0.5` parsed — `DuckFade == 0.5`.
+- [ ] `duck_restore: 1.0` parsed — `DuckRestore == 1.0`.
+- [ ] `auto_duck: true` parsed — `AutoDuck == true`.
+- [ ] No duck fields set — defaults: `DuckLevel=0.25`, `DuckFade=0.3`, `DuckRestore=0.5`, `AutoDuck=false`.
