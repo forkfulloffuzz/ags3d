@@ -50,6 +50,7 @@ const SUITES: Array[String] = [
 const ASYNC_SUITES: Array[String] = [
 	"m_dlg/test_dialogue_engine.gd",           # T-DLG14
 	"m_dlg/test_dialogue_state.gd",            # T-DLG15
+	"m_dlg/test_dialogue_ui.gd",               # T-DLG16
 	"m6_integration/test_end_to_end.gd",
 	"m10_game_systems/test_say.gd",       # T-GS01: say() / think() use SceneTree timers
 	"m10_game_systems/test_cutscene.gd",  # T-GS18 (async subset: wait, fade_in, fade_out)
