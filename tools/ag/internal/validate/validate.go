@@ -72,6 +72,17 @@ func ValidateProject(root string, manifest *project.Manifest) ([]Issue, error) {
 		return issues, err
 	}
 
+	fileIssues, err := ValidateFiles(files)
+	issues = append(issues, fileIssues...)
+	return issues, err
+}
+
+// ValidateFiles runs cross-reference checks on an explicit list of source files.
+// Unlike ValidateProject it does not require a game.agp — use this when files
+// are supplied via stdin or a file-list flag instead of a project directory.
+func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
+	var issues []Issue
+
 	// Build a set of known item names from all .agitem files.
 	itemNames := make(map[string]bool)
 	for _, f := range files {

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -577,8 +578,23 @@ func findGodot() (string, error) {
 // -------------------------------------------------------------------
 
 func cmdValidate(_ []string) error {
-	root, manifest := requireProject()
-	issues, err := validate.ValidateProject(root, manifest)
+	var issues []validate.Issue
+	var err error
+
+	// If stdin is a pipe, read newline-separated file paths from it.
+	// This lets users do: find . -name "*.agdlg" | ag validate
+	// All provided files are analysed together so cross-file checks work.
+	if stdinIsPipe() {
+		files, readErr := readFilesFromStdin()
+		if readErr != nil {
+			return readErr
+		}
+		issues, err = validate.ValidateFiles(files)
+	} else {
+		root, manifest := requireProject()
+		issues, err = validate.ValidateProject(root, manifest)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -597,6 +613,49 @@ func cmdValidate(_ []string) error {
 		return fmt.Errorf("%d error(s)", errorCount)
 	}
 	return nil
+}
+
+// stdinIsPipe reports whether os.Stdin is connected to a pipe or redirect
+// rather than an interactive terminal.
+func stdinIsPipe() bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice == 0
+}
+
+// readFilesFromStdin reads newline-separated file paths from stdin and returns
+// a []project.SourceFile. Paths are made absolute; Rel is relative to cwd.
+// Blank lines and lines starting with '#' are ignored.
+func readFilesFromStdin() ([]project.SourceFile, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	var files []project.SourceFile
+	sc := bufio.NewScanner(os.Stdin)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		abs, err := filepath.Abs(line)
+		if err != nil {
+			return nil, fmt.Errorf("invalid path %q: %w", line, err)
+		}
+		ext := filepath.Ext(abs)
+		rel, err := filepath.Rel(cwd, abs)
+		if err != nil {
+			rel = abs
+		}
+		files = append(files, project.SourceFile{Path: abs, Rel: rel, Ext: ext})
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+	return files, nil
 }
 
 // -------------------------------------------------------------------
