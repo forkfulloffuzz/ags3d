@@ -16,6 +16,8 @@ type Manifest struct {
 	Project       ProjectSection      `toml:"project"`
 	Settings      SettingsSection     `toml:"settings"`
 	Localisation  LocalisationSection `toml:"localisation"`
+	Cutscenes     CutsceneSection     `toml:"cutscenes"`
+	Input         InputSection        `toml:"input"`
 	// Locales maps BCP 47 locale codes to their declarations.
 	// Populated from [locale.xx] subsections in game.agp.
 	Locales map[string]*LocaleEntry `toml:"locales"`
@@ -24,6 +26,29 @@ type Manifest struct {
 	Globals map[string]string `toml:"globals"`
 	// Root is the directory containing game.agp (set after parsing).
 	Root string `toml:"-"`
+}
+
+// CutsceneSection holds project-wide cutscene defaults from [cutscenes].
+type CutsceneSection struct {
+	// FallbackDebug is the default fallback policy during debug builds.
+	// One of: "halt", "skip_and_continue", "log_and_continue", "retry_once".
+	FallbackDebug string
+	// FallbackRelease is the default fallback policy for release builds.
+	FallbackRelease string
+	// FallbackQA is the default fallback policy for QA builds.
+	FallbackQA string
+	// StepTimeoutDefault is the default step timeout in seconds (0 = no timeout).
+	StepTimeoutDefault float64
+}
+
+// InputSection holds input action bindings for dialogue and cutscenes from [input].
+type InputSection struct {
+	// DialogueAdvance is the input action name for advancing dialogue.
+	DialogueAdvance string
+	// CutsceneSkip is the input action name for skipping a cutscene.
+	CutsceneSkip string
+	// DialogueHoldAdvance is the input action name for hold-to-rapid-advance dialogue.
+	DialogueHoldAdvance string
 }
 
 // LocaleEntry declares a supported locale for the project.
@@ -166,6 +191,28 @@ func parseAGP(src string, m *Manifest) error {
 				m.Globals = make(map[string]string)
 			}
 			m.Globals[k] = v
+		case section == "cutscenes":
+			switch k {
+			case "fallback_debug":
+				m.Cutscenes.FallbackDebug = v
+			case "fallback_release":
+				m.Cutscenes.FallbackRelease = v
+			case "fallback_qa":
+				m.Cutscenes.FallbackQA = v
+			case "step_timeout_default":
+				var f float64
+				_, _ = fmt.Sscanf(v, "%f", &f)
+				m.Cutscenes.StepTimeoutDefault = f
+			}
+		case section == "input":
+			switch k {
+			case "dialogue_advance":
+				m.Input.DialogueAdvance = v
+			case "cutscene_skip":
+				m.Input.CutsceneSkip = v
+			case "dialogue_hold_advance":
+				m.Input.DialogueHoldAdvance = v
+			}
 		case strings.HasPrefix(section, "locale."):
 			// [locale.en], [locale.fr], etc.
 			code := section[len("locale."):]

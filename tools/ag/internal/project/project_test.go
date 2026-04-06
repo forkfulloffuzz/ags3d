@@ -379,3 +379,83 @@ func TestLoad_NoLocalesSection(t *testing.T) {
 		t.Errorf("expected no errors on project without locales, got %v", errs)
 	}
 }
+
+// --- T-CUT04: [cutscenes] and [input] block tests ---
+
+func TestLoad_CutsceneSection(t *testing.T) {
+	dir := t.TempDir()
+	agp := `[project]
+name = "Test"
+
+[cutscenes]
+fallback_debug = "halt"
+fallback_release = "skip_and_continue"
+fallback_qa = "log_and_continue"
+step_timeout_default = "30"
+`
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if m.Cutscenes.FallbackDebug != "halt" {
+		t.Errorf("FallbackDebug = %q, want halt", m.Cutscenes.FallbackDebug)
+	}
+	if m.Cutscenes.FallbackRelease != "skip_and_continue" {
+		t.Errorf("FallbackRelease = %q, want skip_and_continue", m.Cutscenes.FallbackRelease)
+	}
+	if m.Cutscenes.FallbackQA != "log_and_continue" {
+		t.Errorf("FallbackQA = %q, want log_and_continue", m.Cutscenes.FallbackQA)
+	}
+	if m.Cutscenes.StepTimeoutDefault != 30 {
+		t.Errorf("StepTimeoutDefault = %v, want 30", m.Cutscenes.StepTimeoutDefault)
+	}
+}
+
+func TestLoad_InputSection(t *testing.T) {
+	dir := t.TempDir()
+	agp := `[project]
+name = "Test"
+
+[input]
+dialogue_advance = "ui_accept"
+cutscene_skip = "cutscene_skip"
+dialogue_hold_advance = "ui_accept_hold"
+`
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if m.Input.DialogueAdvance != "ui_accept" {
+		t.Errorf("DialogueAdvance = %q, want ui_accept", m.Input.DialogueAdvance)
+	}
+	if m.Input.CutsceneSkip != "cutscene_skip" {
+		t.Errorf("CutsceneSkip = %q, want cutscene_skip", m.Input.CutsceneSkip)
+	}
+	if m.Input.DialogueHoldAdvance != "ui_accept_hold" {
+		t.Errorf("DialogueHoldAdvance = %q, want ui_accept_hold", m.Input.DialogueHoldAdvance)
+	}
+}
+
+func TestLoad_NoCutsceneOrInputSection(t *testing.T) {
+	dir := t.TempDir()
+	agp := "[project]\nname = \"T\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(agp), 0644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := project.Load(dir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if m.Cutscenes.FallbackDebug != "" {
+		t.Errorf("expected empty FallbackDebug, got %q", m.Cutscenes.FallbackDebug)
+	}
+	if m.Input.DialogueAdvance != "" {
+		t.Errorf("expected empty DialogueAdvance, got %q", m.Input.DialogueAdvance)
+	}
+}

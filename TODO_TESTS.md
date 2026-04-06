@@ -577,3 +577,11 @@ All tests are automated (`go test ./internal/cut/...`). No manual test required.
 ### T-CUT02 — Go: full command vocabulary parser
 
 All tests are automated (`go test ./internal/cut/...`). No manual test required.
+
+---
+
+### T-CUT04 — Go: `game.agp` `[cutscenes]` + `[input]` blocks
+
+All tests are automated (`go test ./internal/project/...`). Manual verification:
+
+- [ ] Add `[cutscenes]` and `[input]` blocks to `game.agp`; run `ag build` — no error, fields accessible
