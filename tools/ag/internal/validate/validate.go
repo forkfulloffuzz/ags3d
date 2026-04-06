@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/ags3d/ag/internal/char"
+	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
@@ -188,7 +189,111 @@ func ValidateProject(root string, manifest *project.Manifest) ([]Issue, error) {
 		issues = append(issues, checkScriptItemRefs(f.Rel, src, itemNames)...)
 	}
 
+	// --- Dialogue validation (DLG-E001..E025, DLG-W001..W012) ---
+	issues = append(issues, validateDialogue(files, charNames, itemNames, roomData)...)
+
 	return issues, nil
+}
+
+// validateDialogue parses all .agdlg files, links them, and runs the structural
+// validator (DLG-E001..E011), cross-system validator (DLG-E020..E025), and
+// static analysis warnings (DLG-W001..W012).
+func validateDialogue(files []project.SourceFile, charNames map[string]string, itemNames map[string]bool, roomData map[string]*room.RoomData) []Issue {
+	var issues []Issue
+
+	// Parse all .agdlg files.
+	var dlgFiles []*dlg.DialogueFile
+	for _, f := range files {
+		if f.Ext != ".agdlg" {
+			continue
+		}
+		if _, err := os.Stat(f.Path); err != nil {
+			continue
+		}
+		df, parseErr := dlg.ParseFile(f.Path)
+		if parseErr != nil {
+			issues = append(issues, Issue{
+				File:     f.Rel,
+				Severity: "error",
+				Message:  parseErr.Error(),
+			})
+			continue
+		}
+		dlgFiles = append(dlgFiles, df)
+	}
+	if len(dlgFiles) == 0 {
+		return issues
+	}
+
+	// Link.
+	lp, linkErr := dlg.Link(dlgFiles)
+	if linkErr != nil {
+		issues = append(issues, Issue{
+			File:     "dialogue",
+			Severity: "error",
+			Message:  linkErr.Error(),
+		})
+		return issues
+	}
+
+	// Structural validation (DLG-E001..E011).
+	for _, e := range dlg.Validate(lp) {
+		issues = append(issues, Issue{
+			File:     e.Pos.File,
+			Line:     e.Pos.Line,
+			Severity: "error",
+			Message:  fmt.Sprintf("%s: %s", e.Code, e.Msg),
+		})
+	}
+
+	// Cross-system validation (DLG-E020..E025).
+	sym := buildDlgSymbolTable(charNames, itemNames, roomData)
+	for _, e := range dlg.ValidateCrossSystem(lp, sym) {
+		issues = append(issues, Issue{
+			File:     e.Pos.File,
+			Line:     e.Pos.Line,
+			Severity: "error",
+			Message:  fmt.Sprintf("%s: %s", e.Code, e.Msg),
+		})
+	}
+
+	// Static analysis warnings (DLG-W001..W012).
+	for _, w := range dlg.WarnProject(lp) {
+		issues = append(issues, Issue{
+			File:     w.Pos.File,
+			Line:     w.Pos.Line,
+			Severity: "warning",
+			Message:  fmt.Sprintf("%s: %s", w.Code, w.Msg),
+		})
+	}
+
+	return issues
+}
+
+// buildDlgSymbolTable constructs the ProjectSymbolTable for cross-system
+// dialogue validation from the already-parsed project symbols.
+func buildDlgSymbolTable(charNames map[string]string, itemNames map[string]bool, roomData map[string]*room.RoomData) dlg.ProjectSymbolTable {
+	sym := dlg.ProjectSymbolTable{
+		CharacterNames: make(map[string]bool, len(charNames)),
+		ItemNames:      itemNames,
+		RoomNames:      make(map[string]bool, len(roomData)),
+		RoomPoints:     make(map[string]map[string]bool, len(roomData)),
+		FlagsEverSet:   make(map[string]bool),
+		KnowledgeFlags: make(map[string]bool),
+	}
+	for name := range charNames {
+		sym.CharacterNames[name] = true
+	}
+	for relPath, rd := range roomData {
+		sym.RoomNames[rd.Name] = true
+		pts := make(map[string]bool, len(rd.Points))
+		for _, p := range rd.Points {
+			pts[p.Name] = true
+		}
+		sym.RoomPoints[rd.Name] = pts
+		_ = relPath
+	}
+	return sym
 }
 
 // checkScriptPointRefs parses src as an .agscript and returns Issues for any
