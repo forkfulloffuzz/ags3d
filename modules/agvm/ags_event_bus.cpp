@@ -1,6 +1,7 @@
 #include "ags_event_bus.h"
 
 #include "core/config/engine.h"
+#include "core/object/class_db.h"
 
 AGSEventBus *AGSEventBus::singleton = nullptr;
 
