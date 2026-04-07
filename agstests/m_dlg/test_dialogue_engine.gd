@@ -39,13 +39,13 @@ func test_03_start_emits_started_ended() -> void:
 	_inject_nodes(eng, [
 		{"title": "test_node", "body": [{"type": "command", "raw": "<<end>>"}]}
 	])
-	var started_title: String = ""
-	var ended_title: String = ""
-	eng.dialogue_started.connect(func(t: String) -> void: started_title = t)
-	eng.dialogue_ended.connect(func(t: String) -> void: ended_title = t)
+	var started_title := [""]
+	var ended_title := [""]
+	eng.dialogue_started.connect(func(t: String) -> void: started_title[0] = t)
+	eng.dialogue_ended.connect(func(t: String) -> void: ended_title[0] = t)
 	await eng.start(null, "test_node")
-	assert_eq(started_title, "test_node", "dialogue_started should emit node title")
-	assert_eq(ended_title, "test_node", "dialogue_ended should emit node title")
+	assert_eq(started_title[0], "test_node", "dialogue_started should emit node title")
+	assert_eq(ended_title[0], "test_node", "dialogue_ended should emit node title")
 	_cleanup(eng)
 
 # UT-DLG14-04: A speaker_line emits line_ready and waits for advance().
@@ -57,16 +57,16 @@ func test_04_speaker_line_emits_and_waits() -> void:
 			{"type": "command", "raw": "<<end>>"},
 		]}
 	])
-	var received_speaker: String = ""
-	var received_text: String = ""
+	var received_speaker := [""]
+	var received_text := [""]
 	eng.line_ready.connect(func(sp: String, tx: String, _lk: String, _em: String) -> void:
-		received_speaker = sp
-		received_text = tx
+		received_speaker[0] = sp
+		received_text[0] = tx
 	)
 	eng.waiting_for_advance.connect(func() -> void: eng.advance(), CONNECT_ONE_SHOT)
 	await eng.start(null, "greet")
-	assert_eq(received_speaker, "guard", "line_ready: speaker mismatch")
-	assert_eq(received_text, "Halt!", "line_ready: text mismatch")
+	assert_eq(received_speaker[0], "guard", "line_ready: speaker mismatch")
+	assert_eq(received_text[0], "Halt!", "line_ready: text mismatch")
 	_cleanup(eng)
 
 # UT-DLG14-05: Narration emits line_ready with empty speaker.
@@ -78,13 +78,13 @@ func test_05_narration_empty_speaker() -> void:
 			{"type": "command", "raw": "<<end>>"},
 		]}
 	])
-	var speaker_received: String = "NOT_EMPTY"
+	var speaker_received := ["NOT_EMPTY"]
 	eng.line_ready.connect(func(sp: String, _t: String, _lk: String, _em: String) -> void:
-		speaker_received = sp
+		speaker_received[0] = sp
 	)
 	eng.waiting_for_advance.connect(func() -> void: eng.advance(), CONNECT_ONE_SHOT)
 	await eng.start(null, "narr")
-	assert_eq(speaker_received, "", "Narration should have empty speaker")
+	assert_eq(speaker_received[0], "", "Narration should have empty speaker")
 	_cleanup(eng)
 
 # UT-DLG14-06: A command fires command_fired signal.
@@ -96,10 +96,10 @@ func test_06_command_fires_signal() -> void:
 			{"type": "command", "raw": "<<end>>"},
 		]}
 	])
-	var fired_raw: String = ""
-	eng.command_fired.connect(func(r: String) -> void: fired_raw = r)
+	var fired_raw := [""]
+	eng.command_fired.connect(func(r: String) -> void: fired_raw[0] = r)
 	await eng.start(null, "cmd_node")
-	assert_eq(fired_raw, "<<action flag.done = true>>", "command_fired raw mismatch")
+	assert_eq(fired_raw[0], "<<action flag.done = true>>", "command_fired raw mismatch")
 	_cleanup(eng)
 
 # UT-DLG14-07: <<jump>> navigates to another node.
@@ -137,20 +137,20 @@ func test_08_options_choice_branch() -> void:
 		]}
 	])
 	var choices_received: Array = []
-	var branch_text: String = ""
+	var branch_text := [""]
 	eng.choices_ready.connect(func(opts: Array) -> void:
-		choices_received = opts
+		choices_received.assign(opts)
 		# Immediately choose option 0 (Yes).
 		eng.choose(0)
 	)
 	eng.line_ready.connect(func(_sp: String, tx: String, _lk: String, _em: String) -> void:
-		branch_text = tx
+		branch_text[0] = tx
 	)
 	eng.waiting_for_advance.connect(func() -> void: eng.advance(), CONNECT_ONE_SHOT)
 	await eng.start(null, "choice_node")
 	assert_eq(choices_received.size(), 2, "Expected 2 choices")
 	assert_eq(choices_received[0]["text"], "Yes", "First choice text mismatch")
-	assert_eq(branch_text, "You chose yes.", "Wrong branch executed")
+	assert_eq(branch_text[0], "You chose yes.", "Wrong branch executed")
 	_cleanup(eng)
 
 # UT-DLG14-09: start() ignores a second call while active.
@@ -162,13 +162,13 @@ func test_09_reentrant_start_ignored() -> void:
 			{"type": "command", "raw": "<<end>>"},
 		]}
 	])
-	var started_count: int = 0
-	eng.dialogue_started.connect(func(_t: String) -> void: started_count += 1)
+	var started_count := [0]
+	eng.dialogue_started.connect(func(_t: String) -> void: started_count[0] += 1)
 	eng.waiting_for_advance.connect(func() -> void:
 		# While waiting, try to start again — should be ignored.
 		eng.start(null, "slow")
 		eng.advance()
 	)
 	await eng.start(null, "slow")
-	assert_eq(started_count, 1, "Second start() while active should be ignored")
+	assert_eq(started_count[0], 1, "Second start() while active should be ignored")
 	_cleanup(eng)

@@ -254,7 +254,11 @@ func _execute_command(raw: String) -> void:
 
 func _wait_for_advance() -> void:
 	_waiting = true
-	waiting_for_advance.emit()
+	# Defer the signal so that the caller's `await _advance_signal` line is
+	# reached and registered BEFORE any connected handler calls advance().
+	# Without this, a CONNECT_ONE_SHOT handler that calls advance() synchronously
+	# would emit _advance_signal before the await listener exists, causing a hang.
+	waiting_for_advance.emit.call_deferred()
 	await _advance_signal
 
 func _wait_for_choice() -> int:

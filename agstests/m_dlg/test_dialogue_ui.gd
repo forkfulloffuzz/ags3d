@@ -93,16 +93,16 @@ func test_05_portrait_requested_emitted() -> void:
 			{"type": "command", "raw": "<<end>>"},
 		]}
 	])
-	var got_char: String = ""
-	var got_emotion: String = ""
+	var got_char := [""]
+	var got_emotion := [""]
 	ui.portrait_requested.connect(func(c: String, e: String) -> void:
-		got_char = c
-		got_emotion = e
+		got_char[0] = c
+		got_emotion[0] = e
 	)
 	eng.waiting_for_advance.connect(func() -> void: eng.advance(), CONNECT_ONE_SHOT)
 	await eng.start(null, "emote")
-	assert_eq(got_char, "Elara", "portrait_requested: char mismatch")
-	assert_eq(got_emotion, "happy", "portrait_requested: emotion mismatch")
+	assert_eq(got_char[0], "Elara", "portrait_requested: char mismatch")
+	assert_eq(got_emotion[0], "happy", "portrait_requested: emotion mismatch")
 	await _cleanup(eng, ui)
 
 # UT-DLG16-06: choices_container is populated with correct button count.
@@ -140,16 +140,16 @@ func test_07_choice_hides_container() -> void:
 			]},
 		]}
 	])
-	var choices_hidden_after: bool = false
+	var choices_hidden_after := [false]
 	eng.choices_ready.connect(func(_opts: Array) -> void:
 		eng.choose(0)
 	, CONNECT_ONE_SHOT)
 	eng.line_ready.connect(func(_sp: String, _tx: String, _lk: String, _em: String) -> void:
-		choices_hidden_after = not ui._choices_container.visible
+		choices_hidden_after[0] = not ui._choices_container.visible
 	, CONNECT_ONE_SHOT)
 	eng.waiting_for_advance.connect(func() -> void: eng.advance(), CONNECT_ONE_SHOT)
 	await eng.start(null, "pick")
-	assert_true(choices_hidden_after, "choices_container should be hidden after choice")
+	assert_true(choices_hidden_after[0], "choices_container should be hidden after choice")
 	await _cleanup(eng, ui)
 
 # UT-DLG16-08: _showing_line is reset to false after dialogue ends.

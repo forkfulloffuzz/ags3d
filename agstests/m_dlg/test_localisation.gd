@@ -79,10 +79,10 @@ func test_06_base_locale_last_resort() -> void:
 func test_07_locale_changed_emitted() -> void:
 	var loc := _make_loc()
 	_inject_table(loc, "fr", {})
-	var received: String = ""
-	loc.locale_changed.connect(func(code: String) -> void: received = code)
+	var received := [""]
+	loc.locale_changed.connect(func(code: String) -> void: received[0] = code)
 	loc.set_locale("fr")
-	assert_eq(received, "fr", "locale_changed should emit with new locale code")
+	assert_eq(received[0], "fr", "locale_changed should emit with new locale code")
 	await _cleanup(loc)
 
 # UT-DLG17-08: set_locale is a no-op if locale unchanged.
@@ -90,10 +90,10 @@ func test_08_set_same_locale_noop() -> void:
 	var loc := _make_loc()
 	loc.base_locale = "en"
 	_inject_table(loc, "en", {})
-	var count: int = 0
-	loc.locale_changed.connect(func(_c: String) -> void: count += 1)
+	var count := [0]
+	loc.locale_changed.connect(func(_c: String) -> void: count[0] += 1)
 	loc.set_locale("en")  # same as active — should be no-op
-	assert_eq(count, 0, "locale_changed should not emit when locale unchanged")
+	assert_eq(count[0], 0, "locale_changed should not emit when locale unchanged")
 	await _cleanup(loc)
 
 # UT-DLG17-09: is_rtl returns false by default.
