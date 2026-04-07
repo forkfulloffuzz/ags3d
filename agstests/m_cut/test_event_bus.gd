@@ -11,23 +11,23 @@ func test_01_singleton_accessible() -> void:
 # UT-CUT10-02: Subscribing and emitting calls the callable synchronously.
 func test_02_emit_calls_subscriber() -> void:
 	AGSEventBus.clear()
-	var called := false
+	var called := [false]
 	var handler := func(_p: Dictionary) -> void:
-		called = true
+		called[0] = true
 	AGSEventBus.subscribe("event:test:fire", handler)
 	AGSEventBus.emit_event("event:test:fire", {})
-	assert_true(called, "Subscriber was not called after emit_event")
+	assert_true(called[0], "Subscriber was not called after emit_event")
 	AGSEventBus.clear()
 
 # UT-CUT10-03: Payload dictionary is passed to the subscriber.
 func test_03_payload_passed() -> void:
 	AGSEventBus.clear()
-	var received: Dictionary = {}
+	var received := [{}]
 	var handler := func(p: Dictionary) -> void:
-		received = p
+		received[0] = p
 	AGSEventBus.subscribe("event:test:payload", handler)
 	AGSEventBus.emit_event("event:test:payload", {"x": 42})
-	assert_eq(received.get("x", -1), 42, "Payload value not received correctly")
+	assert_eq(received[0].get("x", -1), 42, "Payload value not received correctly")
 	AGSEventBus.clear()
 
 # UT-CUT10-04: Multiple subscribers all fire in subscription order.
@@ -52,13 +52,13 @@ func test_05_emit_no_subscribers_no_crash() -> void:
 # UT-CUT10-06: unsubscribe removes the callable; it is not called on next emit.
 func test_06_unsubscribe_removes_callable() -> void:
 	AGSEventBus.clear()
-	var called := false
+	var called := [false]
 	var handler := func(_p: Dictionary) -> void:
-		called = true
+		called[0] = true
 	AGSEventBus.subscribe("event:test:unsub", handler)
 	AGSEventBus.unsubscribe("event:test:unsub", handler)
 	AGSEventBus.emit_event("event:test:unsub", {})
-	assert_false(called, "Unsubscribed callable should not be invoked")
+	assert_false(called[0], "Unsubscribed callable should not be invoked")
 	AGSEventBus.clear()
 
 # UT-CUT10-07: subscriber_count returns correct count before and after subscribe/unsubscribe.
@@ -86,12 +86,12 @@ func test_08_clear_removes_all() -> void:
 # UT-CUT10-09: Subscribers added during emit are NOT called in the same dispatch.
 func test_09_snapshot_semantics() -> void:
 	AGSEventBus.clear()
-	var second_called := false
+	var second_called := [false]
 	var second_handler := func(_p: Dictionary) -> void:
-		second_called = true
+		second_called[0] = true
 	var first_handler := func(_p: Dictionary) -> void:
 		AGSEventBus.subscribe("event:test:snap", second_handler)
 	AGSEventBus.subscribe("event:test:snap", first_handler)
 	AGSEventBus.emit_event("event:test:snap", {})
-	assert_false(second_called, "Subscriber added during emit should not be called in same dispatch")
+	assert_false(second_called[0], "Subscriber added during emit should not be called in same dispatch")
 	AGSEventBus.clear()

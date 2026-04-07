@@ -116,6 +116,7 @@ func run_suite_async() -> Dictionary:
 		_current_test = method
 		_current_test_failures = []
 		var fail_before := _fail_count
+		print("  · %s" % method)  # print before awaiting so hangs are visible
 		setUp()
 		await call(method)
 		tearDown()

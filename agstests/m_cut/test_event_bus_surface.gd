@@ -94,7 +94,7 @@ func test_08_wait_for_returns_on_event() -> void:
 	var result: Dictionary = {}
 
 	# Fire the event after one frame so wait_for starts first.
-	get_tree().process_frame.connect(func() -> void:
+	_tree.process_frame.connect(func() -> void:
 		s.emit_event("event:player:land", {"speed": 7.0})
 	, CONNECT_ONE_SHOT)
 

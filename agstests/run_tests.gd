@@ -95,6 +95,8 @@ func _run_tests() -> void:
 			continue
 
 		suite._tree = self
+		print("")
+		print("── %s" % suite_path)
 		var result: Dictionary = suite.run_suite()
 		reporter.record(result)
 
@@ -116,6 +118,8 @@ func _run_tests() -> void:
 			continue
 
 		suite._tree = self
+		print("")
+		print("── %s" % suite_path)
 		var result: Dictionary = await suite.run_suite_async()
 		reporter.record(result)
 
