@@ -13,10 +13,10 @@ import (
 	"github.com/ags3d/ag/api"
 )
 
-// fixture returns the absolute path to a file under tools/ag/testdata.
+// fixture returns the absolute path to a file under tools/ag/testdata/scripts.
 // Tests run with CWD = tools/agui/backend/, so "../../ag/testdata" is correct.
 func fixture(parts ...string) string {
-	base := filepath.Join("..", "..", "ag", "testdata")
+	base := filepath.Join("..", "..", "ag", "testdata", "scripts")
 	return filepath.Join(append([]string{base}, parts...)...)
 }
 
