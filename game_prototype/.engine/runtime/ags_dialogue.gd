@@ -227,7 +227,9 @@ func _execute_options(opts: Array) -> void:
 	if not any_available:
 		return
 
-	choices_ready.emit(display_opts)
+	# Defer so that _wait_for_choice()'s await listener is registered before
+	# any connected handler calls choose() and emits _advance_signal.
+	choices_ready.emit.call_deferred(display_opts)
 	var chosen_idx: int = await _wait_for_choice()
 	choice_made.emit(chosen_idx)
 
