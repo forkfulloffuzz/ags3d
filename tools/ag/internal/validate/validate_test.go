@@ -9,6 +9,29 @@ import (
 	"github.com/ags3d/ag/internal/validate"
 )
 
+// scaffoldFiles creates a temp dir with given files and returns a
+// []project.SourceFile list suitable for ValidateFiles.
+func scaffoldFiles(t *testing.T, files map[string]string) []project.SourceFile {
+	t.Helper()
+	root := t.TempDir()
+	var out []project.SourceFile
+	for rel, content := range files {
+		abs := filepath.Join(root, rel)
+		if err := os.MkdirAll(filepath.Dir(abs), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(abs, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, project.SourceFile{
+			Path: abs,
+			Rel:  rel,
+			Ext:  filepath.Ext(rel),
+		})
+	}
+	return out
+}
+
 // --------------------------------------------------------------------------
 // Test fixture helpers
 // --------------------------------------------------------------------------
@@ -426,5 +449,118 @@ func TestBrokenAgitemReportedAsIssue(t *testing.T) {
 	issues, _ := validate.ValidateProject(root, m)
 	if !hasIssue(issues, "bad.agitem") {
 		t.Errorf("expected parse error issue for bad.agitem, got %v", issues)
+	}
+}
+
+// --------------------------------------------------------------------------
+// T-LOC04 — Localisation validation
+// --------------------------------------------------------------------------
+
+const agstringsClean = `[meta]
+base_locale = en
+locale      = fr
+
+[strings]
+node1:line0:aabb1122 = "Bonjour."
+node1:line1:ccdd3344 = "Au revoir."
+`
+
+const agstringsStale = `[meta]
+base_locale = en
+locale      = fr
+
+[strings]
+// [stale] node1:line0:aabb1122 = "Bonjour."
+node1:line0:eeff5566 = ""
+`
+
+const agstringsOrphan = `[meta]
+base_locale = en
+locale      = fr
+
+[strings]
+// [orphan] node1:line0:aabb1122 = "Bonjour."
+`
+
+const agstringsUntranslated = `[meta]
+base_locale = en
+locale      = fr
+
+[strings]
+node1:line0:aabb1122 = ""
+`
+
+func TestLocaleClean(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"locale/fr.agstrings": agstringsClean,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	for _, iss := range issues {
+		if contains(iss.File, ".agstrings") {
+			t.Errorf("expected no locale issues for clean file, got %v", iss)
+		}
+	}
+}
+
+func TestLocaleStaleKeyReportsWarning(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"locale/fr.agstrings": agstringsStale,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "DLG-LOC-W001") {
+		t.Errorf("expected DLG-LOC-W001 for stale key, got %v", issues)
+	}
+}
+
+func TestLocaleOrphanKeyReportsWarning(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"locale/fr.agstrings": agstringsOrphan,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "DLG-LOC-W002") {
+		t.Errorf("expected DLG-LOC-W002 for orphan key, got %v", issues)
+	}
+}
+
+func TestLocaleUntranslatedDevMode(t *testing.T) {
+	// In dev mode (default), untranslated keys are warnings, not errors.
+	t.Setenv("AGSBUILD", "")
+	files := scaffoldFiles(t, map[string]string{
+		"locale/fr.agstrings": agstringsUntranslated,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "DLG-LOC-W003") {
+		t.Errorf("expected DLG-LOC-W003 warning for untranslated key in dev mode, got %v", issues)
+	}
+	for _, iss := range issues {
+		if contains(iss.String(), "DLG-LOC-E001") {
+			t.Errorf("unexpected error DLG-LOC-E001 in dev mode, got %v", iss)
+		}
+	}
+}
+
+func TestLocaleUntranslatedReleaseMode(t *testing.T) {
+	// In release mode, untranslated keys escalate to errors.
+	t.Setenv("AGSBUILD", "release")
+	files := scaffoldFiles(t, map[string]string{
+		"locale/fr.agstrings": agstringsUntranslated,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "DLG-LOC-E001") {
+		t.Errorf("expected DLG-LOC-E001 error for untranslated key in release mode, got %v", issues)
+	}
+}
+
+func TestLocaleMultipleFilesEachChecked(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"locale/fr.agstrings": agstringsStale,
+		"locale/de.agstrings": agstringsOrphan,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "DLG-LOC-W001") {
+		t.Errorf("expected DLG-LOC-W001 for fr.agstrings, got %v", issues)
+	}
+	if !hasIssue(issues, "DLG-LOC-W002") {
+		t.Errorf("expected DLG-LOC-W002 for de.agstrings, got %v", issues)
 	}
 }

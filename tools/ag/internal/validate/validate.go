@@ -19,6 +19,7 @@ import (
 	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/item"
+	"github.com/ags3d/ag/internal/loc"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
 	"github.com/ags3d/ag/internal/room"
@@ -203,7 +204,72 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 	// --- Dialogue validation (DLG-E001..E025, DLG-W001..W012) ---
 	issues = append(issues, validateDialogue(files, charNames, itemNames, roomData)...)
 
+	// --- Localisation validation (DLG-LOC-E001, DLG-LOC-W001, DLG-LOC-W002) ---
+	issues = append(issues, validateLocale(files)...)
+
 	return issues, nil
+}
+
+// validateLocale scans all .agstrings files in the provided file list and
+// reports missing translations (DLG-LOC-E001), stale keys (DLG-LOC-W001),
+// and orphaned keys (DLG-LOC-W002).
+//
+// DLG-LOC-E001 (error) is only reported when the --release flag is set via
+// the AGSBUILD environment variable; in dev builds it is downgraded to a
+// warning so untranslated strings don't block iteration.
+func validateLocale(files []project.SourceFile) []Issue {
+	var issues []Issue
+	releaseMode := os.Getenv("AGSBUILD") == "release"
+
+	for _, f := range files {
+		if f.Ext != ".agstrings" {
+			continue
+		}
+		data, err := os.ReadFile(f.Path)
+		if err != nil {
+			continue
+		}
+		sf, parseErr := loc.Parse(f.Rel, string(data))
+		if parseErr != nil {
+			issues = append(issues, Issue{
+				File:     f.Rel,
+				Severity: "error",
+				Message:  parseErr.Error(),
+			})
+			continue
+		}
+		for _, e := range sf.Entries {
+			if e.Orphan {
+				issues = append(issues, Issue{
+					File:     f.Rel,
+					Severity: "warning",
+					Message:  fmt.Sprintf("DLG-LOC-W002: orphaned key %q (no longer in source)", e.Key),
+				})
+				continue
+			}
+			if e.Stale {
+				issues = append(issues, Issue{
+					File:     f.Rel,
+					Severity: "warning",
+					Message:  fmt.Sprintf("DLG-LOC-W001: stale key %q (source text changed since last export)", e.Key),
+				})
+			}
+			if e.Value == "" {
+				sev := "warning"
+				code := "DLG-LOC-W003"
+				if releaseMode {
+					sev = "error"
+					code = "DLG-LOC-E001"
+				}
+				issues = append(issues, Issue{
+					File:     f.Rel,
+					Severity: sev,
+					Message:  fmt.Sprintf("%s: untranslated key %q", code, e.Key),
+				})
+			}
+		}
+	}
+	return issues
 }
 
 // validateDialogue parses all .agdlg files, links them, and runs the structural
