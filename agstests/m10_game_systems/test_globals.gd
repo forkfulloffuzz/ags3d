@@ -20,6 +20,7 @@ func test_20_set_and_get_global() -> void:
 
 # UT-M10-21: get_global returns null for an unknown key (not a hard error).
 func test_21_get_global_unknown_returns_null() -> void:
+	note("WARNING below is intentional: verifying that get_global logs unknown keys and returns null")
 	var v = AGSRuntime.get_global("t21_nonexistent")
 	assert_true(v == null, "get_global for unknown key should return null")
 

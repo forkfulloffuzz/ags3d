@@ -7,6 +7,7 @@ extends RefCounted
 
 const C_GREEN  := "\u001b[32m"
 const C_RED    := "\u001b[31m"
+const C_YELLOW := "\u001b[33m"
 const C_DIM    := "\u001b[2m"
 const C_RESET  := "\u001b[0m"
 
@@ -84,6 +85,10 @@ func assert_no_crash(callable: Callable, msg: String = "") -> void:
 ## Explicitly mark a test as failed with a message.
 func fail(msg: String) -> void:
 	_fail(msg)
+
+## Print a yellow note explaining expected noise (warnings/errors) in the output.
+func note(msg: String) -> void:
+	print("  %s⚑ note:%s %s" % [C_YELLOW, C_RESET, msg])
 
 ## Explicitly mark a test as passed (for coroutine-based tests).
 func pass_test() -> void:

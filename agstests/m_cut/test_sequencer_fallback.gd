@@ -47,6 +47,7 @@ func test_02_halt() -> void:
 
 # UT-CUT15-03: log_and_continue — step fails, sequence continues to completion.
 func test_03_log_and_continue() -> void:
+	note("WARNING below is intentional: log_and_continue policy emits a push_warning — this is the expected behaviour")
 	var seq := _make_seq()
 	var completed := [false]
 	seq.sequence_complete.connect(func() -> void: completed[0] = true)
@@ -78,6 +79,7 @@ func test_04_retry_once_succeeds() -> void:
 
 # UT-CUT15-05: retry_once exhausted — fails twice, sequence_failed emitted.
 func test_05_retry_once_exhausted() -> void:
+	note("ERROR below is intentional: retry_once exhausted calls push_error before halting — this is the expected behaviour")
 	var seq := _make_seq()
 	var halted := [false]
 	seq.sequence_failed.connect(func(_r: String) -> void: halted[0] = true)

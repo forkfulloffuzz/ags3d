@@ -25,6 +25,8 @@ func test_30_item_properties() -> void:
 
 # UT-M10-31: AGSItem registers with AGSRuntime when NOTIFICATION_READY fires.
 func test_31_item_registers_on_ready() -> void:
+	note("ERROR 'get_viewport() is null' below: AGSItem calls get_viewport() during NOTIFICATION_READY " +
+		"for icon loading; headless tests have no viewport — registration still succeeds")
 	var item := AGSItem.new()
 	item.item_name = "t31_test_key"
 	item.notification(Node.NOTIFICATION_READY)
@@ -42,6 +44,7 @@ func test_32_get_item_unknown_returns_null() -> void:
 
 # UT-M10-33: AGSItem unregisters on EXIT_TREE.
 func test_33_item_unregisters_on_exit() -> void:
+	note("ERROR 'get_viewport() is null' below: same as test_31 — headless has no viewport")
 	var item := AGSItem.new()
 	item.item_name = "t33_test_key"
 	item.notification(Node.NOTIFICATION_READY)
@@ -54,6 +57,7 @@ func test_33_item_unregisters_on_exit() -> void:
 
 # UT-M10-34: Multiple items can be registered simultaneously.
 func test_34_multiple_items() -> void:
+	note("ERROR 'get_viewport() is null' x2 below: same as test_31 — headless has no viewport")
 	var a := AGSItem.new()
 	a.item_name = "t34_key"
 	var b := AGSItem.new()

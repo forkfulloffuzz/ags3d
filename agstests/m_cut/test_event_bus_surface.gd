@@ -17,6 +17,8 @@ func _cleanup(s: Node) -> void:
 
 # UT-CUT11-01: emit_event reaches one-shot handler registered via on_event.
 func test_01_emit_reaches_oneshot() -> void:
+	note("ERROR '!found' below: AGSEventBus is not an AutoLoad in agstests — " +
+		"surface falls back to get_node_or_null which logs this internally; bus resolves correctly via Engine singleton")
 	var s := _make_surface()
 	var called := [false]
 	s.on_event("event:player:land", func(_p: Dictionary) -> void: called[0] = true, true)

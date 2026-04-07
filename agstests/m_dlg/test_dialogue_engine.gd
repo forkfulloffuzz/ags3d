@@ -28,6 +28,7 @@ func test_01_initial_state() -> void:
 
 # UT-DLG14-02: load_all with missing directory sets _loaded without crash.
 func test_02_load_all_missing_dir() -> void:
+	note("WARNING below is intentional: verifying that load_all gracefully handles a missing directory")
 	var eng := _make_engine()
 	eng.load_all("res://nonexistent_dir/")
 	assert_true(eng._loaded, "_loaded should be true even if dir is missing")
