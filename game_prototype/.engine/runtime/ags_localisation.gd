@@ -7,8 +7,8 @@
 ## fallback chain and RTL layout flag.
 ##
 ## AGS-spirit API:
-##   Game.SetLocale("fr")          → switches active locale
-##   AGSLocalisation.get(loc_key)  → translated string (or fallback)
+##   Game.SetLocale("fr")                        → switches active locale
+##   AGSLocalisation.get_string(loc_key)         → translated string (or fallback)
 ##
 ## Generated locale file format (.engine/generated/locale/<code>.json):
 ##   {
@@ -19,10 +19,10 @@
 ##
 ## Fallback chain (set in game.agp [localisation]):
 ##   active locale → fallback locales in order → base locale
-##   If none found, the raw source text passed to get() is returned.
+##   If none found, the raw source text passed to get_string() is returned.
 ##
 ## Dialogue integration:
-##   AGSDialogue calls AGSLocalisation.get(loc_key, fallback_text) to
+##   AGSDialogue calls AGSLocalisation.get_string(loc_key, fallback_text) to
 ##   resolve each line. On locale switch mid-conversation, AGSDialogue
 ##   restarts the current node via _on_locale_changed().
 
@@ -122,10 +122,6 @@ func get_string(loc_key: String, fallback_text: String = "") -> String:
 
 	# Return source text as last resort.
 	return fallback_text if fallback_text != "" else loc_key
-
-# Alias — used by AGSDialogue: AGSLocalisation.get(loc_key, fallback)
-func get(loc_key: String, fallback_text: String = "") -> String:
-	return get_string(loc_key, fallback_text)
 
 # ---------------------------------------------------------------------------
 # Internal helpers

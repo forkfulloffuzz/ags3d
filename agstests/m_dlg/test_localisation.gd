@@ -23,14 +23,14 @@ func _inject_table(loc: Node, code: String, table: Dictionary) -> void:
 # UT-DLG17-01: get_string returns fallback when key not found.
 func test_01_get_returns_fallback() -> void:
 	var loc := _make_loc()
-	var result := loc.get_string("missing:key", "fallback text")
+	var result: String = loc.get_string("missing:key", "fallback text")
 	assert_eq(result, "fallback text", "Should return fallback when key absent")
 	await _cleanup(loc)
 
 # UT-DLG17-02: get_string returns key itself when no fallback provided and key missing.
 func test_02_get_returns_key_when_no_fallback() -> void:
 	var loc := _make_loc()
-	var result := loc.get_string("some:key:abc")
+	var result: String = loc.get_string("some:key:abc")
 	assert_eq(result, "some:key:abc", "Should return loc_key when no fallback and key missing")
 	await _cleanup(loc)
 
@@ -47,7 +47,7 @@ func test_04_get_returns_translated_string() -> void:
 	var loc := _make_loc()
 	_inject_table(loc, "fr", {"hello:0:abc": "Bonjour"})
 	loc.set_locale("fr")
-	var result := loc.get_string("hello:0:abc", "Hello")
+	var result: String = loc.get_string("hello:0:abc", "Hello")
 	assert_eq(result, "Bonjour", "Should return French translation")
 	await _cleanup(loc)
 
@@ -60,7 +60,7 @@ func test_05_fallback_chain_used() -> void:
 	loc.fallback_chain = ["fr"]
 	loc.base_locale = "en"
 	loc.set_locale("es")
-	var result := loc.get_string("greeting:0:abc", "fallback")
+	var result: String = loc.get_string("greeting:0:abc", "fallback")
 	assert_eq(result, "Bonjour", "Fallback chain should supply French translation")
 	await _cleanup(loc)
 
@@ -71,7 +71,7 @@ func test_06_base_locale_last_resort() -> void:
 	_inject_table(loc, "de", {})
 	loc.base_locale = "en"
 	loc.set_locale("de")
-	var result := loc.get_string("base_key:0:abc", "fallback")
+	var result: String = loc.get_string("base_key:0:abc", "fallback")
 	assert_eq(result, "Base text", "Base locale should supply string when active locale missing key")
 	await _cleanup(loc)
 
@@ -110,11 +110,11 @@ func test_10_rtl_true_for_rtl_locale() -> void:
 	assert_true(loc.is_rtl(), "is_rtl should be true for Arabic locale")
 	await _cleanup(loc)
 
-# UT-DLG17-11: get() alias works identically to get_string().
-func test_11_get_alias() -> void:
+# UT-DLG17-11: get_string() with explicit locale injection resolves correctly.
+func test_11_explicit_injection() -> void:
 	var loc := _make_loc()
 	_inject_table(loc, "en", {"k:0:x": "Value"})
 	loc.base_locale = "en"
-	var result := loc.get("k:0:x", "fallback")
-	assert_eq(result, "Value", "get() alias should work like get_string()")
+	var result: String = loc.get_string("k:0:x", "fallback")
+	assert_eq(result, "Value", "get_string should resolve injected key")
 	await _cleanup(loc)
