@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/ags3d/ag/internal/char"
+	"github.com/ags3d/ag/internal/cut"
 	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/loc"
@@ -207,7 +208,98 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 	// --- Localisation validation (DLG-LOC-E001, DLG-LOC-W001, DLG-LOC-W002) ---
 	issues = append(issues, validateLocale(files)...)
 
+	// --- Cutscene validation (CUT-E/W, SEQ-E/W) ---
+	issues = append(issues, validateCutscenes(files, charNames, itemNames, roomData)...)
+
 	return issues, nil
+}
+
+// validateCutscenes parses all .agcut files and runs CUT-E/W and SEQ-E/W checks.
+func validateCutscenes(files []project.SourceFile, charNames map[string]string, itemNames map[string]bool, roomData map[string]*room.RoomData) []Issue {
+	var issues []Issue
+
+	// Parse all .agcut files.
+	var cutFiles []*cut.CutsceneFile
+	for _, f := range files {
+		if f.Ext != ".agcut" {
+			continue
+		}
+		cf, err := cut.ParseFile(f.Path)
+		if err != nil {
+			issues = append(issues, Issue{
+				File:     f.Rel,
+				Severity: "error",
+				Message:  err.Error(),
+			})
+			continue
+		}
+		cutFiles = append(cutFiles, cf)
+	}
+	if len(cutFiles) == 0 {
+		return issues
+	}
+
+	// Build ProjectIndex from already-resolved project symbols.
+	cross := &cut.ProjectIndex{
+		Characters:     make(map[string]bool, len(charNames)),
+		NamedPoints:    make(map[string]map[string]bool, len(roomData)),
+		CutsceneTitles: make(map[string]bool, len(cutFiles)),
+	}
+	for name := range charNames {
+		cross.Characters[name] = true
+	}
+	for _, rd := range roomData {
+		pts := make(map[string]bool, len(rd.Points))
+		for _, p := range rd.Points {
+			pts[p.Name] = true
+		}
+		cross.NamedPoints[rd.Name] = pts
+	}
+	for _, cf := range cutFiles {
+		if cf.Title != "" {
+			cross.CutsceneTitles[cf.Title] = true
+		}
+	}
+
+	// CUT-E/W: project-wide and per-file structural validation.
+	for _, e := range cut.ValidateProjectCutscenes(cutFiles, cross) {
+		issues = append(issues, Issue{
+			File:     e.Pos.File,
+			Line:     e.Pos.Line,
+			Severity: "error",
+			Message:  fmt.Sprintf("%s: %s", e.Code, e.Msg),
+		})
+	}
+	for _, w := range cut.WarnProjectCutscenes(cutFiles, cross) {
+		issues = append(issues, Issue{
+			File:     w.Pos.File,
+			Line:     w.Pos.Line,
+			Severity: "warning",
+			Message:  fmt.Sprintf("%s: %s", w.Code, w.Msg),
+		})
+	}
+
+	// SEQ-E/W: per-file sequencing validation.
+	for _, cf := range cutFiles {
+		for _, e := range cut.ValidateSequence(cf) {
+			issues = append(issues, Issue{
+				File:     e.Pos.File,
+				Line:     e.Pos.Line,
+				Severity: "error",
+				Message:  fmt.Sprintf("%s: %s", e.Code, e.Msg),
+			})
+		}
+		for _, w := range cut.WarnSequence(cf) {
+			issues = append(issues, Issue{
+				File:     w.Pos.File,
+				Line:     w.Pos.Line,
+				Severity: "warning",
+				Message:  fmt.Sprintf("%s: %s", w.Code, w.Msg),
+			})
+		}
+	}
+
+	return issues
 }
 
 // validateLocale scans all .agstrings files in the provided file list and

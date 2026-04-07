@@ -564,3 +564,78 @@ func TestLocaleMultipleFilesEachChecked(t *testing.T) {
 		t.Errorf("expected DLG-LOC-W002 for de.agstrings, got %v", issues)
 	}
 }
+
+// --------------------------------------------------------------------------
+// Cutscene validation (T-CUT09)
+// --------------------------------------------------------------------------
+
+const agcutClean = `title: intro_scene
+skip: after_first_view
+fallback: halt
+sequence:
+<<wait duration:1.0>>
+<<end>>
+`
+
+const agcutMissingTitle = `skip: after_first_view
+sequence:
+<<wait duration:1.0>>
+<<end>>
+`
+
+const agcutDupTitle = `title: intro_scene
+sequence:
+<<wait duration:1.0>>
+<<end>>
+`
+
+const agcutBadIdent = `title: INVALID_TITLE
+sequence:
+<<end>>
+`
+
+func TestCutsceneClean(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"cutscenes/intro.agcut": agcutClean,
+	})
+	issues, err := validate.ValidateFiles(files)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, i := range issues {
+		if i.File == "cutscenes/intro.agcut" {
+			t.Errorf("unexpected issue for clean cutscene: %v", i)
+		}
+	}
+}
+
+func TestCutsceneMissingTitle(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"cutscenes/notitle.agcut": agcutMissingTitle,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "CUT-E001") {
+		t.Errorf("expected CUT-E001 for missing title, got %v", issues)
+	}
+}
+
+func TestCutsceneDuplicateTitle(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"cutscenes/a.agcut": agcutDupTitle,
+		"cutscenes/b.agcut": agcutDupTitle,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "CUT-E001") {
+		t.Errorf("expected CUT-E001 for duplicate title, got %v", issues)
+	}
+}
+
+func TestCutsceneBadIdentifier(t *testing.T) {
+	files := scaffoldFiles(t, map[string]string{
+		"cutscenes/badident.agcut": agcutBadIdent,
+	})
+	issues, _ := validate.ValidateFiles(files)
+	if !hasIssue(issues, "CUT-E013") {
+		t.Errorf("expected CUT-E013 for invalid identifier, got %v", issues)
+	}
+}

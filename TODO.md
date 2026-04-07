@@ -29,7 +29,7 @@ When all tasks are done, ask Claude to pick the next 10.
 
 - [x] **T-CUT06** — Go: Cutscene format warnings — CUT-W001..CUT-W011: cutscene never triggered, very long with `skip:never`, state change after room transition, parallel with very different durations, voice line with no audio file, cutscene has no `<<end>>` or room transition, label never used as skip target, `author_controlled` with no labels, audio started with no reachable stop (CUT-W009), `duck:all` used (CUT-W010), `auto_duck:true` with no `duck_channels` (CUT-W011). `WarnFormat(lp)` function. Tests for each warning code. *(depends on T-CUT05)*
 
-- [ ] **T-CUT09** — Go: Emit validated cutscene data to `.engine/generated/cutscenes/` (JSON, one file per `.agcut`). Integrate `.agcut` parsing + CUT/SEQ validation into `ag build` pipeline. Integrate CUT-E/W and SEQ-E/W codes into `ag validate` report alongside DLG codes. *(depends on T-CUT06, T-CUT07 — both from this batch; T-CUT08 — done)*
+- [x] **T-CUT09** — Go: Emit validated cutscene data to `.engine/generated/cutscenes/` (JSON, one file per `.agcut`). Integrate `.agcut` parsing + CUT/SEQ validation into `ag build` pipeline. Integrate CUT-E/W and SEQ-E/W codes into `ag validate` report alongside DLG codes. *(depends on T-CUT06, T-CUT07 — both from this batch; T-CUT08 — done)*
 
 ## Notes
 
