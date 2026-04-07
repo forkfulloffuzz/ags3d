@@ -197,7 +197,7 @@ func _execute_line(stmt: Dictionary) -> void:
 	var speaker: String = stmt.get("speaker", "")
 	var text: String = stmt.get("text", "")
 	var loc_key: String = stmt.get("loc_key", "")
-	var emotion: String = ""  # future: parse from commands list if present
+	var emotion: String = stmt.get("emotion", "")
 
 	# Localise text if a locale is active.
 	var display_text := _localise(loc_key, text)

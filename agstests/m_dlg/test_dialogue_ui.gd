@@ -118,8 +118,6 @@ func test_06_choice_buttons_created() -> void:
 		]}
 	])
 	eng.choices_ready.connect(func(_opts: Array) -> void:
-		# Defer choose so we can inspect button state first.
-		_tree.root.call_deferred("_noop")
 		eng.choose(0)
 	, CONNECT_ONE_SHOT)
 	await eng.start(null, "opts")
