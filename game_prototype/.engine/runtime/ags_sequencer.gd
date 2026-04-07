@@ -115,6 +115,7 @@ func run(steps: Array) -> void:
 		return
 	_active = true
 	_bg_steps.clear()
+	_retry_tracker.clear()
 
 	var i := 0
 	while i < steps.size():
@@ -129,13 +130,31 @@ func run(steps: Array) -> void:
 		if stype == "end":
 			break
 
+		if stype == "label":
+			i += 1
+			continue
+
 		var bg_id: String = step.get("bg", "")
 		if bg_id != "":
 			# Background step: fire without awaiting.
 			_fire_bg_step(step, bg_id)
-		else:
-			# Foreground step: execute and wait for completion.
-			await _execute_step(step)
+			i += 1
+			continue
+
+		# Foreground step: execute and wait for completion.
+		var ok: bool = await _execute_step(step)
+		if not ok:
+			var keep_going := await _apply_fallback(step, steps)
+			if not keep_going:
+				return
+			# If _apply_fallback did a jump_to, _jump_target holds the new index.
+			if _jump_target >= 0:
+				i = _jump_target
+				_jump_target = -1
+				continue
+			elif _retry_pending:
+				_retry_pending = false
+				continue  # retry same i (do NOT increment)
 		i += 1
 
 	# Wait for all remaining background steps before signalling complete.
@@ -143,6 +162,7 @@ func run(steps: Array) -> void:
 
 	_active = false
 	_bg_steps.clear()
+	_retry_tracker.clear()
 	sequence_complete.emit()
 
 # ---------------------------------------------------------------------------
@@ -153,16 +173,33 @@ func run(steps: Array) -> void:
 ## Set from game.agp [cutscenes] step_timeout_default at startup.
 var step_timeout_default: float = 0.0
 
+## Per-cutscene fallback policy (from compiled cutscene header).
+## Overridden per-step via the "on_fail" field.
+## Valid values: "skip_and_continue", "halt", "log_and_continue",
+##               "retry_once", "jump_to <label>"
+var cutscene_fallback: String = "halt"
+
+## Tracks which step ids have already been retried (retry_once policy).
+var _retry_tracker: Dictionary = {}
+
+## Jump target index set by _apply_fallback when policy is "jump_to <label>".
+## -1 means no pending jump.
+var _jump_target: int = -1
+
+## Set to true by _apply_fallback when the step should be retried.
+var _retry_pending: bool = false
+
 ## Execute a foreground step, waiting for its completion signal.
 ## Respects per-step "timeout" field and step_timeout_default.
 ## "timeout:none" disables timeout for that step (e.g. dialogue, video).
-func _execute_step(step: Dictionary) -> void:
+## Returns true on success, false on failure.
+func _execute_step(step: Dictionary) -> bool:
 	var sid: String = step.get("id", step.get("type", "step"))
 	step_started.emit(sid)
 
 	var timeout_val: Variant = step.get("timeout", null)
 	var use_timeout: float = 0.0
-	if timeout_val == "none":
+	if timeout_val is String and timeout_val == "none":
 		use_timeout = 0.0  # explicitly disabled
 	elif timeout_val is float or timeout_val is int:
 		use_timeout = float(timeout_val)
@@ -179,28 +216,25 @@ func _execute_step(step: Dictionary) -> void:
 		step_complete.emit(sid)
 	else:
 		step_failed.emit(sid)
+	return done
 
 ## Execute a step with a hard timeout. Returns false if the step times out.
 func _dispatch_with_timeout(step: Dictionary, timeout_secs: float) -> bool:
-	var timed_out: bool = false
-	var finished: bool = false
-	var result: bool = false
-
-	# Race: step completion vs timer.
-	var timer_done: bool = false
+	# Use single-element arrays so lambda closures can mutate these flags.
+	var timer_done := [false]
 	get_tree().create_timer(timeout_secs).timeout.connect(
-		func() -> void: timer_done = true,
+		func() -> void: timer_done[0] = true,
 		CONNECT_ONE_SHOT
 	)
 
-	var dispatch_result: Array = [false]
-	var dispatch_done: bool = false
-	_dispatch_step_async(step, dispatch_result, func() -> void: dispatch_done = true)
+	var dispatch_result := [false]
+	var dispatch_done := [false]
+	_dispatch_step_async(step, dispatch_result, func() -> void: dispatch_done[0] = true)
 
-	while not dispatch_done and not timer_done:
+	while not dispatch_done[0] and not timer_done[0]:
 		await get_tree().process_frame
 
-	if dispatch_done:
+	if dispatch_done[0]:
 		return dispatch_result[0]
 	# Timer fired before step completed.
 	return false
@@ -242,6 +276,9 @@ func _dispatch_step(step: Dictionary) -> bool:
 			if raw != "":
 				_on_command(raw)
 			return true
+		"fail":
+			# Test-only step type that always fails.
+			return false
 		_:
 			# Unknown step type — no-op (executor plugins handle known types).
 			return true
@@ -249,6 +286,85 @@ func _dispatch_step(step: Dictionary) -> bool:
 ## Override in subclasses or connect a handler to process action/set commands.
 func _on_command(raw: String) -> void:
 	pass  # Game integrators connect to command_fired signal via emit_command.
+
+# ---------------------------------------------------------------------------
+# Fallback policy
+# ---------------------------------------------------------------------------
+
+## Resolve the effective fallback policy for a step.
+## Priority: per-step "on_fail" → cutscene_fallback → "halt".
+func _resolve_policy(step: Dictionary) -> String:
+	var p: String = step.get("on_fail", "").strip_edges()
+	if p != "":
+		return p
+	if cutscene_fallback.strip_edges() != "":
+		return cutscene_fallback
+	return "halt"
+
+## Apply the fallback policy for a failed step.
+## Sets _jump_target or _retry_pending as side-effects.
+## Returns true if the sequence should continue, false if it should halt.
+func _apply_fallback(step: Dictionary, steps: Array) -> bool:
+	_jump_target = -1
+	_retry_pending = false
+	var sid: String = step.get("id", step.get("type", "step"))
+	var policy: String = _resolve_policy(step)
+
+	if policy == "skip_and_continue":
+		_fire_state_changes(step)
+		return true
+
+	if policy == "log_and_continue":
+		push_warning("AGSSequencer: step '%s' failed — continuing (log_and_continue)" % sid)
+		_fire_state_changes(step)
+		return true
+
+	if policy == "retry_once":
+		if not _retry_tracker.has(sid):
+			_retry_tracker[sid] = true
+			_retry_pending = true
+			return true
+		# Retry already exhausted — escalate to halt.
+		push_error("AGSSequencer: step '%s' failed after retry — halting" % sid)
+		_halt("step '%s' failed after retry" % sid)
+		return false
+
+	if policy.begins_with("jump_to "):
+		var label: String = policy.substr(8).strip_edges()
+		_fire_state_changes(step)
+		var target: int = _find_label(steps, label)
+		if target >= 0:
+			_jump_target = target
+			return true
+		push_error("AGSSequencer: jump_to label '%s' not found — halting" % label)
+		_halt("jump_to label '%s' not found" % label)
+		return false
+
+	# Default: halt.
+	_halt("step '%s' failed" % sid)
+	return false
+
+## Fire embedded <<action>> / <<set>> commands from a failing step.
+## State changes always execute regardless of fallback policy.
+func _fire_state_changes(step: Dictionary) -> void:
+	var raw: String = step.get("raw", "")
+	if raw != "":
+		_on_command(raw)
+
+## Tear down active state and emit sequence_failed.
+func _halt(reason: String) -> void:
+	_active = false
+	_bg_steps.clear()
+	_retry_tracker.clear()
+	sequence_failed.emit(reason)
+
+## Find the index of a label step by name.  Returns -1 if not found.
+func _find_label(steps: Array, label: String) -> int:
+	for idx in steps.size():
+		var s: Dictionary = steps[idx]
+		if s.get("type", "") == "label" and s.get("name", "") == label:
+			return idx
+	return -1
 
 # ---------------------------------------------------------------------------
 # Sync points

@@ -1,7 +1,7 @@
 ## T-CUT11 — AGSEventBusSurface GDScript surface tests.
 extends "res://utils/test_base.gd"
 
-const SurfaceScript = preload("res://../../game_prototype/.engine/runtime/ags_event_bus_surface.gd")
+const SurfaceScript = preload("res://../game_prototype/.engine/runtime/ags_event_bus_surface.gd")
 
 func suite_name() -> String:
 	return "M-CUT: EventBusSurface"

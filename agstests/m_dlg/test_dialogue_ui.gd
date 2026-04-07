@@ -1,8 +1,8 @@
 ## T-DLG16 — AGSDialogueUI presenter tests.
 extends "res://utils/test_base.gd"
 
-const DialogueScript = preload("res://../../game_prototype/.engine/runtime/ags_dialogue.gd")
-const UIScript       = preload("res://../../game_prototype/.engine/runtime/ags_dialogue_ui.gd")
+const DialogueScript = preload("res://../game_prototype/.engine/runtime/ags_dialogue.gd")
+const UIScript       = preload("res://../game_prototype/.engine/runtime/ags_dialogue_ui.gd")
 
 func suite_name() -> String:
 	return "M-DLG: DialogueUI"

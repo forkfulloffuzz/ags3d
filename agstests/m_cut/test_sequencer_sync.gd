@@ -1,7 +1,7 @@
 ## T-CUT13 — AGSSequencer sync point tests.
 extends "res://utils/test_base.gd"
 
-const SeqScript = preload("res://../../game_prototype/.engine/runtime/ags_sequencer.gd")
+const SeqScript = preload("res://../game_prototype/.engine/runtime/ags_sequencer.gd")
 
 func suite_name() -> String:
 	return "M-CUT: SequencerSync"
@@ -18,45 +18,39 @@ func _cleanup(s: Node) -> void:
 # UT-CUT13-01: <<sync>> with no ids waits for all active backgrounds.
 func test_01_sync_all_waits_all_bg() -> void:
 	var seq := _make_seq()
-	var bg_done: bool = false
-	seq.step_complete.connect(func(id: String) -> void:
-		if id == "bg_a": bg_done = true
-	)
+	var done_ids: Array[String] = []
+	seq.step_complete.connect(func(id: String) -> void: done_ids.append(id))
 	await seq.run([
 		{"type": "wait", "duration": 0.05, "bg": "bg_a"},
 		{"type": "sync", "ids": []},  # wait for all
 	])
-	assert_true(bg_done, "sync all should wait for bg_a to complete")
+	assert_true(done_ids.has("bg_a"), "sync all should wait for bg_a to complete")
 	await _cleanup(seq)
 
 # UT-CUT13-02: <<sync id>> waits for the named id only.
 func test_02_sync_named_id() -> void:
 	var seq := _make_seq()
-	var bg_a_done: bool = false
-	seq.step_complete.connect(func(id: String) -> void:
-		if id == "bg_a": bg_a_done = true
-	)
+	var done_ids: Array[String] = []
+	seq.step_complete.connect(func(id: String) -> void: done_ids.append(id))
 	await seq.run([
 		{"type": "wait", "duration": 0.05, "bg": "bg_a"},
 		{"type": "wait", "duration": 0.2, "bg": "bg_b"},  # longer, not synced explicitly
 		{"type": "sync", "ids": ["bg_a"]},
 	])
-	# bg_a must be done before sequence_complete (sync ensured it)
-	assert_true(bg_a_done, "sync named should wait for bg_a")
+	assert_true(done_ids.has("bg_a"), "sync named should wait for bg_a")
 	await _cleanup(seq)
 
 # UT-CUT13-03: sync over an already-complete step passes immediately.
 func test_03_sync_over_complete_passes() -> void:
 	var seq := _make_seq()
-	var completed: bool = false
-	seq.sequence_complete.connect(func() -> void: completed = true)
-	# bg_a with 0 duration completes almost immediately
+	var completed := [false]
+	seq.sequence_complete.connect(func() -> void: completed[0] = true)
 	await seq.run([
 		{"type": "wait", "duration": 0.0, "bg": "bg_a"},
 		{"type": "wait", "duration": 0.05},  # give bg_a time to finish
 		{"type": "sync", "ids": ["bg_a"]},   # should pass immediately
 	])
-	assert_true(completed, "sync over already-complete step should not hang")
+	assert_true(completed[0], "sync over already-complete step should not hang")
 	await _cleanup(seq)
 
 # UT-CUT13-04: <<sync>> with multiple named ids waits for all of them.

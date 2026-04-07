@@ -1,7 +1,7 @@
 ## T-DLG15 — AGSDialogueState tracking tests.
 extends "res://utils/test_base.gd"
 
-const StateScript = preload("res://../../game_prototype/.engine/runtime/ags_dialogue_state.gd")
+const StateScript = preload("res://../game_prototype/.engine/runtime/ags_dialogue_state.gd")
 
 func suite_name() -> String:
 	return "M-DLG: DialogueState"

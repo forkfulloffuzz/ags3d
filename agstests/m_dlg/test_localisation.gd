@@ -1,7 +1,7 @@
 ## T-DLG17 — AGSLocalisation runtime tests.
 extends "res://utils/test_base.gd"
 
-const LocScript = preload("res://../../game_prototype/.engine/runtime/ags_localisation.gd")
+const LocScript = preload("res://../game_prototype/.engine/runtime/ags_localisation.gd")
 
 func suite_name() -> String:
 	return "M-DLG: Localisation"

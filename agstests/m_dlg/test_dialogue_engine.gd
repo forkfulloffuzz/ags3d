@@ -1,7 +1,7 @@
 ## T-DLG14 — AGSDialogue runtime engine tests.
 extends "res://utils/test_base.gd"
 
-const DialogueScript = preload("res://../../game_prototype/.engine/runtime/ags_dialogue.gd")
+const DialogueScript = preload("res://../game_prototype/.engine/runtime/ags_dialogue.gd")
 
 func suite_name() -> String:
 	return "M-DLG: DialogueEngine"
