@@ -18,29 +18,29 @@ func _cleanup(s: Node) -> void:
 # UT-CUT11-01: emit_event reaches one-shot handler registered via on_event.
 func test_01_emit_reaches_oneshot() -> void:
 	var s := _make_surface()
-	var called: bool = false
-	s.on_event("event:player:land", func(_p: Dictionary) -> void: called = true, true)
+	var called := [false]
+	s.on_event("event:player:land", func(_p: Dictionary) -> void: called[0] = true, true)
 	s.emit_event("event:player:land")
-	assert_true(called, "One-shot handler should have been called")
+	assert_true(called[0], "One-shot handler should have been called")
 	await _cleanup(s)
 
 # UT-CUT11-02: One-shot handler is removed after first call.
 func test_02_oneshot_fires_once() -> void:
 	var s := _make_surface()
-	var count: int = 0
-	s.on_event("event:player:land", func(_p: Dictionary) -> void: count += 1, true)
+	var count := [0]
+	s.on_event("event:player:land", func(_p: Dictionary) -> void: count[0] += 1, true)
 	s.emit_event("event:player:land")
 	s.emit_event("event:player:land")
-	assert_eq(count, 1, "One-shot handler should fire exactly once")
+	assert_eq(count[0], 1, "One-shot handler should fire exactly once")
 	await _cleanup(s)
 
 # UT-CUT11-03: emit_event passes payload Dictionary to handler.
 func test_03_payload_passed_to_handler() -> void:
 	var s := _make_surface()
-	var received: Dictionary = {}
-	s.on_event("event:char:jump", func(p: Dictionary) -> void: received = p, true)
+	var received := [{}]
+	s.on_event("event:char:jump", func(p: Dictionary) -> void: received[0] = p, true)
 	s.emit_event("event:char:jump", {"height": 3.0})
-	assert_eq(received.get("height", 0.0), 3.0, "Payload should be passed to handler")
+	assert_eq(received[0].get("height", 0.0), 3.0, "Payload should be passed to handler")
 	await _cleanup(s)
 
 # UT-CUT11-04: room handler receives every event.
@@ -58,24 +58,24 @@ func test_04_room_handler_receives_all() -> void:
 # UT-CUT11-05: clear_room_handler stops delivery to room.
 func test_05_clear_room_handler() -> void:
 	var s := _make_surface()
-	var count: int = 0
-	s.set_room_handler(func(_n: String, _p: Dictionary) -> void: count += 1)
+	var count := [0]
+	s.set_room_handler(func(_n: String, _p: Dictionary) -> void: count[0] += 1)
 	s.emit_event("event:a:x")
 	s.clear_room_handler()
 	s.emit_event("event:a:x")
-	assert_eq(count, 1, "Room handler should not be called after clear")
+	assert_eq(count[0], 1, "Room handler should not be called after clear")
 	await _cleanup(s)
 
 # UT-CUT11-06: Multiple one-shot handlers for same event all fire.
 func test_06_multiple_oneshot_all_fire() -> void:
 	var s := _make_surface()
-	var a: bool = false
-	var b: bool = false
-	s.on_event("event:x:y", func(_p: Dictionary) -> void: a = true, true)
-	s.on_event("event:x:y", func(_p: Dictionary) -> void: b = true, true)
+	var a := [false]
+	var b := [false]
+	s.on_event("event:x:y", func(_p: Dictionary) -> void: a[0] = true, true)
+	s.on_event("event:x:y", func(_p: Dictionary) -> void: b[0] = true, true)
 	s.emit_event("event:x:y")
-	assert_true(a, "First one-shot should fire")
-	assert_true(b, "Second one-shot should fire")
+	assert_true(a[0], "First one-shot should fire")
+	assert_true(b[0], "Second one-shot should fire")
 	await _cleanup(s)
 
 # UT-CUT11-07: event_dispatched signal is emitted on every dispatch.

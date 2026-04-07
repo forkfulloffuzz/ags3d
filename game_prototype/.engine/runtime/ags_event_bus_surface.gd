@@ -100,19 +100,20 @@ func remove_handler(event_name: String, handler: Callable) -> void:
 ## Usage:
 ##   var payload = await AGSEventBusSurface.wait_for("event:player:land")
 func wait_for(event_name: String) -> Dictionary:
-	var received: bool = false
-	var result: Dictionary = {}
+	# Use a single-element array so the lambda can mutate shared state.
+	# bool and Dictionary are captured by value / reassignment doesn't propagate.
+	var state := [false, {}]  # [received: bool, result: Dictionary]
 
 	var handler := func(p: Dictionary) -> void:
-		result = p
-		received = true
+		state[1] = p
+		state[0] = true
 
 	on_event(event_name, handler, true)
 
-	while not received:
+	while not state[0]:
 		await get_tree().process_frame
 
-	return result
+	return state[1] as Dictionary
 
 # ---------------------------------------------------------------------------
 # Room hook
