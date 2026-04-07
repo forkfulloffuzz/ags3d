@@ -24,14 +24,14 @@ func test_01_initial_state() -> void:
 	var eng := _make_engine()
 	assert_false(eng._active, "Engine should not be active on init")
 	assert_eq(eng._nodes.size(), 0, "Node table should be empty on init")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-02: load_all with missing directory sets _loaded without crash.
 func test_02_load_all_missing_dir() -> void:
 	var eng := _make_engine()
 	eng.load_all("res://nonexistent_dir/")
 	assert_true(eng._loaded, "_loaded should be true even if dir is missing")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-03: start() emits dialogue_started and dialogue_ended signals.
 func test_03_start_emits_started_ended() -> void:
@@ -46,7 +46,7 @@ func test_03_start_emits_started_ended() -> void:
 	await eng.start(null, "test_node")
 	assert_eq(started_title[0], "test_node", "dialogue_started should emit node title")
 	assert_eq(ended_title[0], "test_node", "dialogue_ended should emit node title")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-04: A speaker_line emits line_ready and waits for advance().
 func test_04_speaker_line_emits_and_waits() -> void:
@@ -67,7 +67,7 @@ func test_04_speaker_line_emits_and_waits() -> void:
 	await eng.start(null, "greet")
 	assert_eq(received_speaker[0], "guard", "line_ready: speaker mismatch")
 	assert_eq(received_text[0], "Halt!", "line_ready: text mismatch")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-05: Narration emits line_ready with empty speaker.
 func test_05_narration_empty_speaker() -> void:
@@ -85,7 +85,7 @@ func test_05_narration_empty_speaker() -> void:
 	eng.waiting_for_advance.connect(func() -> void: eng.advance(), CONNECT_ONE_SHOT)
 	await eng.start(null, "narr")
 	assert_eq(speaker_received[0], "", "Narration should have empty speaker")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-06: A command fires command_fired signal.
 func test_06_command_fires_signal() -> void:
@@ -100,7 +100,7 @@ func test_06_command_fires_signal() -> void:
 	eng.command_fired.connect(func(r: String) -> void: fired_raw[0] = r)
 	await eng.start(null, "cmd_node")
 	assert_eq(fired_raw[0], "<<action flag.done = true>>", "command_fired raw mismatch")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-07: <<jump>> navigates to another node.
 func test_07_jump_navigates() -> void:
@@ -120,7 +120,7 @@ func test_07_jump_navigates() -> void:
 	await eng.start(null, "node_a")
 	assert_eq(texts.size(), 1, "Expected 1 line after jump")
 	assert_eq(texts[0], "In B.", "Jump should navigate to node_b")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-08: Options emit choices_ready; choose() selects the branch.
 func test_08_options_choice_branch() -> void:
@@ -151,7 +151,7 @@ func test_08_options_choice_branch() -> void:
 	assert_eq(choices_received.size(), 2, "Expected 2 choices")
 	assert_eq(choices_received[0]["text"], "Yes", "First choice text mismatch")
 	assert_eq(branch_text[0], "You chose yes.", "Wrong branch executed")
-	_cleanup(eng)
+	await _cleanup(eng)
 
 # UT-DLG14-09: start() ignores a second call while active.
 func test_09_reentrant_start_ignored() -> void:
@@ -171,4 +171,4 @@ func test_09_reentrant_start_ignored() -> void:
 	)
 	await eng.start(null, "slow")
 	assert_eq(started_count[0], 1, "Second start() while active should be ignored")
-	_cleanup(eng)
+	await _cleanup(eng)
