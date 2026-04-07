@@ -293,3 +293,85 @@ func TestParse_EmptyFile(t *testing.T) {
 		t.Errorf("expected 0 nodes, got %d", len(df.Nodes))
 	}
 }
+
+// --- Inline cutscene blocks (T-CUT03) ---
+
+func TestParse_InlineCutscene_Basic(t *testing.T) {
+	src := "title: t\n---\n<<cutscene>>\n<<wait duration:1.0>>\n<<end_cutscene>>\n==="
+	df := mustParse(t, src)
+	body := df.Nodes[0].Body
+	if len(body) != 1 {
+		t.Fatalf("body len = %d, want 1", len(body))
+	}
+	block, ok := body[0].(*dlg.InlineCutsceneBlock)
+	if !ok {
+		t.Fatalf("body[0] type = %T, want *dlg.InlineCutsceneBlock", body[0])
+	}
+	if block.SkipPolicy != "" {
+		t.Errorf("SkipPolicy = %q, want empty", block.SkipPolicy)
+	}
+	if block.Sequence == nil {
+		t.Fatal("Sequence is nil")
+	}
+	if len(block.Sequence.Steps) != 1 {
+		t.Errorf("Sequence.Steps len = %d, want 1", len(block.Sequence.Steps))
+	}
+	if block.Sequence.Steps[0].Cmd.Name != "wait" {
+		t.Errorf("step name = %q, want wait", block.Sequence.Steps[0].Cmd.Name)
+	}
+}
+
+func TestParse_InlineCutscene_SkipPolicy(t *testing.T) {
+	src := "title: t\n---\n<<cutscene skip:after_first_view>>\n<<end_cutscene>>\n==="
+	df := mustParse(t, src)
+	block, ok := df.Nodes[0].Body[0].(*dlg.InlineCutsceneBlock)
+	if !ok {
+		t.Fatalf("expected *dlg.InlineCutsceneBlock, got %T", df.Nodes[0].Body[0])
+	}
+	if block.SkipPolicy != "after_first_view" {
+		t.Errorf("SkipPolicy = %q, want after_first_view", block.SkipPolicy)
+	}
+}
+
+func TestParse_InlineCutscene_NestedCommands(t *testing.T) {
+	src := "title: t\n---\n<<cutscene>>\n<<fade_in duration:2.0>>\n<<wait duration:0.5>>\n<<end>>\n<<end_cutscene>>\n==="
+	df := mustParse(t, src)
+	block, ok := df.Nodes[0].Body[0].(*dlg.InlineCutsceneBlock)
+	if !ok {
+		t.Fatalf("expected *dlg.InlineCutsceneBlock, got %T", df.Nodes[0].Body[0])
+	}
+	if len(block.Sequence.Steps) != 3 {
+		t.Errorf("Sequence.Steps len = %d, want 3", len(block.Sequence.Steps))
+	}
+	names := []string{"fade_in", "wait", "end"}
+	for i, want := range names {
+		if block.Sequence.Steps[i].Cmd.Name != want {
+			t.Errorf("step[%d] name = %q, want %q", i, block.Sequence.Steps[i].Cmd.Name, want)
+		}
+	}
+}
+
+func TestParse_InlineCutscene_UnclosedError(t *testing.T) {
+	_, err := dlg.Parse("test.agdlg", "title: t\n---\n<<cutscene>>\n<<wait duration:1.0>>\n===")
+	if err == nil {
+		t.Fatal("expected error for unclosed <<cutscene>> block, got nil")
+	}
+}
+
+func TestParse_InlineCutscene_SurroundedByOtherStmts(t *testing.T) {
+	src := "title: t\n---\nBefore text.\n<<cutscene skip:never>>\n<<wait duration:0.1>>\n<<end_cutscene>>\nAfter text.\n==="
+	df := mustParse(t, src)
+	body := df.Nodes[0].Body
+	if len(body) != 3 {
+		t.Fatalf("body len = %d, want 3", len(body))
+	}
+	if _, ok := body[0].(*dlg.NarrationLine); !ok {
+		t.Errorf("body[0] = %T, want *dlg.NarrationLine", body[0])
+	}
+	if _, ok := body[1].(*dlg.InlineCutsceneBlock); !ok {
+		t.Errorf("body[1] = %T, want *dlg.InlineCutsceneBlock", body[1])
+	}
+	if _, ok := body[2].(*dlg.NarrationLine); !ok {
+		t.Errorf("body[2] = %T, want *dlg.NarrationLine", body[2])
+	}
+}

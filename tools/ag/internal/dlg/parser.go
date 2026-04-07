@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/ags3d/ag/internal/cut"
 )
 
 // ParseFile lexes and parses a .agdlg source file from disk.
@@ -197,6 +199,16 @@ func (p *parser) parseBody(minDepth int) ([]Statement, error) {
 			if t.Depth < minDepth {
 				return stmts, nil
 			}
+			// Inline cutscene block: <<cutscene>> or <<cutscene skip:policy>>
+			if t.Value == "cutscene" || strings.HasPrefix(t.Value, "cutscene ") {
+				p.consume()
+				block, err := p.parseInlineCutscene(t)
+				if err != nil {
+					return nil, err
+				}
+				stmts = append(stmts, block)
+				continue
+			}
 			p.consume()
 			stmts = append(stmts, &CommandStatement{Raw: t.Value, SrcPos: t.Pos})
 
@@ -270,6 +282,50 @@ func (p *parser) collectInlines(lineNum int) (cmds []CommandExpr, locKey string)
 		}
 	}
 	return
+}
+
+// parseInlineCutscene parses a <<cutscene [skip:policy]>> ... <<end_cutscene>>
+// block. openTok is the already-consumed opening TokCommand.
+func (p *parser) parseInlineCutscene(openTok Token) (*InlineCutsceneBlock, error) {
+	block := &InlineCutsceneBlock{SrcPos: openTok.Pos}
+
+	// Extract skip: param from opening command args (everything after "cutscene ").
+	inner := openTok.Value
+	if idx := strings.Index(inner, "skip:"); idx >= 0 {
+		rest := inner[idx+5:]
+		if end := strings.IndexAny(rest, " \t"); end >= 0 {
+			block.SkipPolicy = rest[:end]
+		} else {
+			block.SkipPolicy = rest
+		}
+	}
+
+	// Collect body commands until <<end_cutscene>>.
+	var rawCmds []*cut.RawCommand
+	for {
+		p.skipComments()
+		t := p.peek()
+		if t.Kind == TokEOF || t.Kind == TokNodeEnd {
+			return nil, &LexError{Pos: openTok.Pos, Msg: "unclosed <<cutscene>> block (missing <<end_cutscene>>)"}
+		}
+		if t.Kind != TokCommand {
+			p.consume() // skip non-command tokens (shouldn't normally appear here)
+			continue
+		}
+		p.consume()
+		if t.Value == "end_cutscene" {
+			break
+		}
+		rc, err := cut.ParseInlineCommand(t.Pos.File, t.Pos.Line, t.Value)
+		if err != nil {
+			return nil, &LexError{Pos: t.Pos, Msg: err.Error()}
+		}
+		rawCmds = append(rawCmds, rc)
+	}
+
+	cmds := cut.ParseSequence(rawCmds)
+	block.Sequence = cut.ParseSequenceTree(cmds)
+	return block, nil
 }
 
 // splitCSV splits a comma-separated string, trimming whitespace.

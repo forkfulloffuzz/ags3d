@@ -1,5 +1,7 @@
 package dlg
 
+import "github.com/ags3d/ag/internal/cut"
+
 // DialogueFile is the parsed result of a single .agdlg source file.
 // It contains one or more dialogue nodes.
 type DialogueFile struct {
@@ -75,3 +77,14 @@ type CommandExpr struct {
 	Raw    string
 	SrcPos Pos
 }
+
+// InlineCutsceneBlock is a <<cutscene skip:policy>> ... <<end_cutscene>> block
+// embedded inside a dialogue node body. The Sequence holds the fully-parsed
+// cutscene command tree.
+type InlineCutsceneBlock struct {
+	SkipPolicy string        // value of the skip: param (empty if not set)
+	Sequence   *cut.Sequence // parsed command tree
+	SrcPos     Pos
+}
+
+func (b *InlineCutsceneBlock) statPos() Pos { return b.SrcPos }

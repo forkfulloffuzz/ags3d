@@ -307,6 +307,14 @@ func parseHeaderLine(cf *CutsceneFile, pos Pos, line string) error {
 	return nil
 }
 
+// ParseInlineCommand parses the inner content of an inline <<command>> (with
+// angle brackets already stripped) into a RawCommand. filename and lineNum are
+// used only for error position reporting. Use this when the delimiters have
+// already been removed — e.g. by the .agdlg lexer.
+func ParseInlineCommand(filename string, lineNum int, inner string) (*RawCommand, error) {
+	return parseCommandLine(Pos{File: filename, Line: lineNum}, "<<"+inner+">>")
+}
+
 // parseCommandLine parses one <<command args>> body line into a RawCommand.
 // Returns nil if the line is not a command (e.g. blank or comment — handled above).
 func parseCommandLine(pos Pos, line string) (*RawCommand, error) {
