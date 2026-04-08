@@ -29,6 +29,8 @@ from __future__ import annotations
 import os
 import bpy
 
+from . import ags_frame_tags
+
 
 # ------------------------------------------------------------------ #
 # Helpers                                                              #
@@ -180,6 +182,16 @@ class AGS3D_OT_ExportCharacter(bpy.types.Operator):
         if "FINISHED" not in result:
             self.report({"ERROR"}, "AGS3D: GLTF export failed")
             return {"CANCELLED"}
+
+        # T-CUT27: export .aganim sidecar for armature pose markers.
+        if armature is not None:
+            aganim_path = ags_frame_tags.aganim_path_for_glb(self.filepath)
+            char_name = armature.name
+            try:
+                ags_frame_tags.export_aganim(char_name, armature, aganim_path)
+                self.report({"INFO"}, f"AGS3D: wrote frame tags sidecar {aganim_path!r}")
+            except Exception as exc:  # noqa: BLE001
+                self.report({"WARNING"}, f"AGS3D: could not write .aganim sidecar: {exc}")
 
         # Report which animation clips were included.
         if track_names:
