@@ -419,3 +419,196 @@ sequence:
 		t.Errorf("expected 1 entry for shared_key, got %d", count)
 	}
 }
+
+// --------------------------------------------------------------------------
+// FilterLocaleEntries / FindLocaleEntries / GroupLocaleEntries (T-LOC12)
+// --------------------------------------------------------------------------
+
+func TestFilterLocaleEntries_Untranslated(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello", Translated: "Bonjour"},
+		{LocKey: "b", Source: "Goodbye", Translated: ""},
+	}
+	filtered := loc.FilterLocaleEntries(entries, loc.FilterOptions{Untranslated: true})
+	if len(filtered) != 1 {
+		t.Errorf("len = %d, want 1", len(filtered))
+	}
+	if filtered[0].LocKey != "b" {
+		t.Errorf("key = %q, want b", filtered[0].LocKey)
+	}
+}
+
+func TestFilterLocaleEntries_ByCharacter(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Character: "Guard"},
+		{LocKey: "b", Character: "Player"},
+		{LocKey: "c", Character: "Guard"},
+	}
+	filtered := loc.FilterLocaleEntries(entries, loc.FilterOptions{Char: "Guard"})
+	if len(filtered) != 2 {
+		t.Errorf("len = %d, want 2", len(filtered))
+	}
+}
+
+func TestFilterLocaleEntries_ByType(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", LineType: "spoken"},
+		{LocKey: "b", LineType: "narration"},
+	}
+	filtered := loc.FilterLocaleEntries(entries, loc.FilterOptions{Type: "narration"})
+	if len(filtered) != 1 {
+		t.Errorf("len = %d, want 1", len(filtered))
+	}
+}
+
+func TestFilterLocaleEntries_ByNode(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", NodeTitle: "guard_greeting"},
+		{LocKey: "b", NodeTitle: "player_intro"},
+	}
+	filtered := loc.FilterLocaleEntries(entries, loc.FilterOptions{Node: "guard_greeting"})
+	if len(filtered) != 1 {
+		t.Errorf("len = %d, want 1", len(filtered))
+	}
+}
+
+func TestFilterLocaleEntries_AllCriteria(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Character: "Guard", LineType: "spoken", Translated: ""},
+		{LocKey: "b", Character: "Guard", LineType: "narration", Translated: ""},
+		{LocKey: "c", Character: "Guard", LineType: "spoken", Translated: "Bonjour"},
+	}
+	filtered := loc.FilterLocaleEntries(entries, loc.FilterOptions{
+		Char:         "Guard",
+		Type:         "spoken",
+		Untranslated: true,
+	})
+	if len(filtered) != 1 {
+		t.Errorf("len = %d, want 1", len(filtered))
+	}
+	if filtered[0].LocKey != "a" {
+		t.Errorf("key = %q, want a", filtered[0].LocKey)
+	}
+}
+
+func TestFindLocaleEntries_Wildcard(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "guard_greeting:line0", Source: "Hello"},
+		{LocKey: "player_intro:line0", Source: "Bye"},
+	}
+	found := loc.FindLocaleEntries(entries, "guard_*")
+	if len(found) != 1 {
+		t.Errorf("len = %d, want 1", len(found))
+	}
+	if found[0].LocKey != "guard_greeting:line0" {
+		t.Errorf("key = %q", found[0].LocKey)
+	}
+}
+
+func TestFindLocaleEntries_PrefixGlob(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "guard_greeting:line0", Source: "Hello"},
+		{LocKey: "guard_farewell:line0", Source: "Bye"},
+	}
+	found := loc.FindLocaleEntries(entries, "*farewell*")
+	if len(found) != 1 {
+		t.Errorf("len = %d, want 1", len(found))
+	}
+}
+
+func TestFindLocaleEntries_SuffixGlob(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "guard_greeting:line0", Source: "Hello"},
+		{LocKey: "player_intro:line0", Source: "Hello"},
+	}
+	found := loc.FindLocaleEntries(entries, "*:line0")
+	if len(found) != 2 {
+		t.Errorf("len = %d, want 2", len(found))
+	}
+}
+
+func TestFindLocaleEntries_SourceMatch(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello world"},
+		{LocKey: "b", Source: "Goodbye world"},
+	}
+	found := loc.FindLocaleEntries(entries, "*world*")
+	if len(found) != 2 {
+		t.Errorf("len = %d, want 2", len(found))
+	}
+}
+
+func TestGroupLocaleEntries_ByCharacter(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Character: "Guard"},
+		{LocKey: "b", Character: "Player"},
+		{LocKey: "c", Character: "Guard"},
+	}
+	groups := loc.GroupLocaleEntries(entries, "character")
+	if len(groups) != 2 {
+		t.Errorf("group count = %d, want 2 (Guard, Player)", len(groups))
+	}
+	if len(groups["Guard"]) != 2 {
+		t.Errorf("Guard group len = %d, want 2", len(groups["Guard"]))
+	}
+}
+
+func TestGroupLocaleEntries_ByNode(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", NodeTitle: "guard_greeting"},
+		{LocKey: "b", NodeTitle: "guard_greeting"},
+		{LocKey: "c", NodeTitle: "player_intro"},
+	}
+	groups := loc.GroupLocaleEntries(entries, "node")
+	if len(groups["guard_greeting"]) != 2 {
+		t.Errorf("guard_greeting len = %d, want 2", len(groups["guard_greeting"]))
+	}
+}
+
+func TestGroupLocaleEntries_NoCharacter(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Character: ""},
+		{LocKey: "b", Character: "Guard"},
+	}
+	groups := loc.GroupLocaleEntries(entries, "character")
+	if _, ok := groups["(no character)"]; !ok {
+		t.Errorf("missing (no character) group")
+	}
+}
+
+func TestFormatLocaleFind_Grouped(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "guard_greeting:line0", Source: "Hello", NodeTitle: "greet", Character: "Guard", LineType: "spoken"},
+		{LocKey: "guard_farewell:line0", Source: "Bye", NodeTitle: "farewell", Character: "Guard", LineType: "spoken"},
+	}
+	out := loc.FormatLocaleFind(entries, "character")
+	if !strings.Contains(out, "## Guard") {
+		t.Errorf("expected grouped output, got: %s", out[:200])
+	}
+	if !strings.Contains(out, "Hello") {
+		t.Errorf("expected source text in output")
+	}
+}
+
+func TestFormatLocaleFind_Ungrouped(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "guard_greeting:line0", Source: "Hello", Translated: "Bonjour", NodeTitle: "greet", Character: "Guard", LineType: "spoken"},
+	}
+	out := loc.FormatLocaleFind(entries, "")
+	if !strings.Contains(out, "guard_greeting:line0") {
+		t.Errorf("expected loc_key in output, got: %s", out)
+	}
+	if !strings.Contains(out, "Bonjour") {
+		t.Errorf("expected translation in output")
+	}
+}
+
+func TestFormatLocaleFind_Untranslated(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello", Translated: "", NodeTitle: "n", Character: "", LineType: "narration"},
+	}
+	out := loc.FormatLocaleFind(entries, "")
+	if !strings.Contains(out, "(untranslated)") {
+		t.Errorf("expected (untranslated) marker, got: %s", out)
+	}
+}

@@ -922,18 +922,94 @@ func cmdExportVoicescript(localeFilter, charFilter string) error {
 
 func cmdLoc(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("usage: ag loc check|report|import [args]")
+		return fmt.Errorf("usage: ag loc check|find|filter|report|import [args]")
 	}
 	switch args[0] {
 	case "check":
 		return cmdLocCheck(args[1:])
+	case "find":
+		return cmdLocFind(args[1:])
+	case "filter":
+		return cmdLocFilter(args[1:])
 	case "report":
 		return cmdLocReport(args[1:])
 	case "import":
 		return cmdLocImport(args[1:])
 	default:
-		return fmt.Errorf("ag loc: unknown subcommand %q (check|report|import)", args[0])
+		return fmt.Errorf("ag loc: unknown subcommand %q (check|find|filter|report|import)", args[0])
 	}
+}
+
+func cmdLocFind(args []string) error {
+	fs := flag.NewFlagSet("ag loc find", flag.ContinueOnError)
+	locale := fs.String("locale", "en", "locale code")
+	pattern := fs.String("pattern", "*", "glob pattern to match loc_key or source text")
+	groupBy := fs.String("group-by", "", "group results by: character, node, or type")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag loc find <project> [--locale LANG] [--pattern GLOB] [--group-by character|node|type]")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+
+	root := fs.Arg(0)
+	entries, err := loc.CollectAllLocaleEntriesWithTranslations(root, *locale)
+	if err != nil {
+		return fmt.Errorf("collect entries: %w", err)
+	}
+
+	if *pattern != "" && *pattern != "*" {
+		entries = loc.FindLocaleEntries(entries, *pattern)
+	}
+
+	if *groupBy != "" {
+		fmt.Print(loc.FormatLocaleFind(entries, *groupBy))
+	} else {
+		fmt.Print(loc.FormatLocaleFind(entries, ""))
+	}
+
+	fmt.Fprintf(os.Stderr, "\nag loc find: %d entries matching %q\n", len(entries), *pattern)
+	return nil
+}
+
+func cmdLocFilter(args []string) error {
+	fs := flag.NewFlagSet("ag loc filter", flag.ContinueOnError)
+	locale := fs.String("locale", "en", "locale code")
+	untranslated := fs.Bool("untranslated", false, "show only untranslated strings")
+	char := fs.String("char", "", "filter by character name")
+	node := fs.String("node", "", "filter by node/scene name")
+	lineType := fs.String("type", "", "filter by line type (spoken, choice, narration, ui, subtitle)")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag loc filter <project> [--locale LANG] [--untranslated] [--char NAME] [--node NAME] [--type TYPE]")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+
+	root := fs.Arg(0)
+	entries, err := loc.CollectAllLocaleEntriesWithTranslations(root, *locale)
+	if err != nil {
+		return fmt.Errorf("collect entries: %w", err)
+	}
+
+	entries = loc.FilterLocaleEntries(entries, loc.FilterOptions{
+		Untranslated: *untranslated,
+		Type:         *lineType,
+		Char:         *char,
+		Node:         *node,
+	})
+
+	fmt.Print(loc.FormatLocaleFind(entries, ""))
+	fmt.Fprintf(os.Stderr, "\nag loc filter: %d entries\n", len(entries))
+	return nil
 }
 
 func cmdLocCheck(args []string) error {

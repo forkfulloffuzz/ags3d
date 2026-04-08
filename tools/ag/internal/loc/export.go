@@ -133,12 +133,41 @@ func ExportLocaleFiles(root, locale string) ([]string, error) {
 }
 
 type LocaleEntryFull struct {
-	LocKey    string
-	Source    string
-	NodeTitle string
-	Character string
-	LineType  string
-	File      string
+	LocKey     string
+	Source     string
+	Translated string // empty if untranslated
+	NodeTitle  string
+	Character  string
+	LineType   string
+	File       string
+}
+
+func CollectAllLocaleEntriesWithTranslations(root, locale string) ([]LocaleEntryFull, error) {
+	entries, err := CollectAllLocaleEntries(root)
+	if err != nil {
+		return nil, err
+	}
+
+	localePath := findLocaleFile(root, locale)
+	if localePath == "" {
+		return entries, nil
+	}
+
+	data, err := os.ReadFile(localePath)
+	if err != nil {
+		return entries, nil
+	}
+
+	sf, err := Parse(localePath, string(data))
+	if err != nil {
+		return entries, nil
+	}
+
+	for i := range entries {
+		entries[i].Translated = sf.Get(entries[i].LocKey)
+	}
+
+	return entries, nil
 }
 
 func CollectAllLocaleEntries(root string) ([]LocaleEntryFull, error) {
@@ -461,4 +490,109 @@ func findLocaleFile(root, locale string) string {
 		}
 	}
 	return ""
+}
+
+type FilterOptions struct {
+	Untranslated bool
+	Type         string
+	Char         string
+	Node         string
+}
+
+func FilterLocaleEntries(entries []LocaleEntryFull, opts FilterOptions) []LocaleEntryFull {
+	var result []LocaleEntryFull
+	for _, e := range entries {
+		if opts.Untranslated && e.Translated != "" {
+			continue
+		}
+		if opts.Type != "" && e.LineType != opts.Type {
+			continue
+		}
+		if opts.Char != "" && e.Character != opts.Char {
+			continue
+		}
+		if opts.Node != "" && e.NodeTitle != opts.Node {
+			continue
+		}
+		result = append(result, e)
+	}
+	return result
+}
+
+func FindLocaleEntries(entries []LocaleEntryFull, pattern string) []LocaleEntryFull {
+	var result []LocaleEntryFull
+	for _, e := range entries {
+		if globMatch(e.LocKey, pattern) || globMatch(e.Source, pattern) {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
+func GroupLocaleEntries(entries []LocaleEntryFull, by string) map[string][]LocaleEntryFull {
+	groups := make(map[string][]LocaleEntryFull)
+	for _, e := range entries {
+		var key string
+		switch by {
+		case "character":
+			key = e.Character
+			if key == "" {
+				key = "(no character)"
+			}
+		case "node":
+			key = e.NodeTitle
+		case "type":
+			key = e.LineType
+		default:
+			key = "(all)"
+		}
+		groups[key] = append(groups[key], e)
+	}
+	return groups
+}
+
+func globMatch(s, pattern string) bool {
+	if pattern == "" {
+		return true
+	}
+	if pattern == "*" {
+		return true
+	}
+	if strings.HasPrefix(pattern, "*") && strings.HasSuffix(pattern, "*") {
+		return strings.Contains(s, strings.Trim(pattern, "*"))
+	}
+	if strings.HasPrefix(pattern, "*") {
+		return strings.HasSuffix(s, strings.Trim(pattern, "*"))
+	}
+	if strings.HasSuffix(pattern, "*") {
+		return strings.HasPrefix(s, strings.Trim(pattern, "*"))
+	}
+	return s == pattern
+}
+
+func FormatLocaleFind(entries []LocaleEntryFull, groupBy string) string {
+	if groupBy == "" {
+		return formatEntriesList(entries)
+	}
+	groups := GroupLocaleEntries(entries, groupBy)
+	var sb strings.Builder
+	for key, group := range groups {
+		fmt.Fprintf(&sb, "## %s (%d)\n\n", key, len(group))
+		sb.WriteString(formatEntriesList(group))
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+func formatEntriesList(entries []LocaleEntryFull) string {
+	var sb strings.Builder
+	for _, e := range entries {
+		translation := e.Translated
+		if translation == "" {
+			translation = "(untranslated)"
+		}
+		fmt.Fprintf(&sb, "%s  [%s | %s | %s]\n  %s → %s\n\n",
+			e.LocKey, e.NodeTitle, e.Character, e.LineType, e.Source, translation)
+	}
+	return sb.String()
 }
