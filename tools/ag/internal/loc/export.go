@@ -250,9 +250,32 @@ func FormatLocaleReport(entries []LocaleEntryFull, locale string) string {
 	fmt.Fprintf(&sb, "[meta]\nbase_locale    = en\nlocale         = %s\n\n[strings]\n\n", locale)
 
 	for _, e := range entries {
-		fmt.Fprintf(&sb, "# file: %s | node: %s | char: %s | type: %s\n",
-			e.LocKey, e.NodeTitle, e.Character, e.LineType)
-		fmt.Fprintf(&sb, "%s = %q\n\n", e.LocKey, e.Source)
+		translation := e.Translated
+		if translation == "" {
+			translation = e.Source
+		}
+		fmt.Fprintf(&sb, "# char: %s | node: %s | type: %s | translated: %v\n",
+			e.Character, e.NodeTitle, e.LineType, e.Translated != "")
+		fmt.Fprintf(&sb, "%s = %q\n\n", e.LocKey, translation)
+	}
+
+	return sb.String()
+}
+
+func FormatLocaleReportGrouped(entries []LocaleEntryFull, groupBy, locale string) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "# AGS3D Locale Report — %s (grouped by %s)\n\n", locale, groupBy)
+
+	groups := GroupLocaleEntries(entries, groupBy)
+	for key, group := range groups {
+		fmt.Fprintf(&sb, "## %s (%d strings)\n\n", key, len(group))
+		for _, e := range group {
+			translation := e.Translated
+			translated := e.Translated != ""
+			fmt.Fprintf(&sb, "# char: %s | node: %s | type: %s | translated: %v\n",
+				e.Character, e.NodeTitle, e.LineType, translated)
+			fmt.Fprintf(&sb, "%s = %q\n\n", e.LocKey, translation)
+		}
 	}
 
 	return sb.String()

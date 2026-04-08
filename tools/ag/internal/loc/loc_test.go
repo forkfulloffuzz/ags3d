@@ -612,3 +612,57 @@ func TestFormatLocaleFind_Untranslated(t *testing.T) {
 		t.Errorf("expected (untranslated) marker, got: %s", out)
 	}
 }
+
+func TestFormatLocaleReport_ShowsTranslation(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello", Translated: "Bonjour", NodeTitle: "n", Character: "Guard", LineType: "spoken"},
+	}
+	out := loc.FormatLocaleReport(entries, "fr")
+	if !strings.Contains(out, "Bonjour") {
+		t.Errorf("expected translated text in report, got: %s", out)
+	}
+	if !strings.Contains(out, "translated: true") {
+		t.Errorf("expected translated: true flag in report")
+	}
+}
+
+func TestFormatLocaleReport_ShowsUntranslated(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello", Translated: "", NodeTitle: "n", Character: "Guard", LineType: "spoken"},
+	}
+	out := loc.FormatLocaleReport(entries, "fr")
+	if !strings.Contains(out, "Hello") {
+		t.Errorf("expected source text when untranslated, got: %s", out)
+	}
+	if !strings.Contains(out, "translated: false") {
+		t.Errorf("expected translated: false flag in report")
+	}
+}
+
+func TestFormatLocaleReportGrouped_ByCharacter(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello", Translated: "Bonjour", NodeTitle: "n", Character: "Guard", LineType: "spoken"},
+		{LocKey: "b", Source: "Bye", Translated: "", NodeTitle: "n", Character: "Guard", LineType: "spoken"},
+	}
+	out := loc.FormatLocaleReportGrouped(entries, "character", "fr")
+	if !strings.Contains(out, "## Guard") {
+		t.Errorf("expected group header ## Guard, got: %s", out[:200])
+	}
+	if !strings.Contains(out, "Bonjour") {
+		t.Errorf("expected translated text in group")
+	}
+}
+
+func TestFormatLocaleReportGrouped_ByNode(t *testing.T) {
+	entries := []loc.LocaleEntryFull{
+		{LocKey: "a", Source: "Hello", Translated: "", NodeTitle: "greeting", Character: "Guard", LineType: "spoken"},
+		{LocKey: "b", Source: "Bye", Translated: "", NodeTitle: "farewell", Character: "Guard", LineType: "spoken"},
+	}
+	out := loc.FormatLocaleReportGrouped(entries, "node", "fr")
+	if !strings.Contains(out, "## greeting") {
+		t.Errorf("expected group header ## greeting, got: %s", out[:200])
+	}
+	if !strings.Contains(out, "## farewell") {
+		t.Errorf("expected group header ## farewell, got: %s", out[:200])
+	}
+}

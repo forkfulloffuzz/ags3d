@@ -15,7 +15,7 @@ Dependencies: T-GS02 (C++ AGSItem) unblocks T-GS14 → T-GS15; T-BL10 unblocks T
 
 - [x] **T-LOC12** — Go: `ag loc` subcommand — advanced search, filter, sort, and group-by over `.agstrings` files. Commands: `ag loc find <project> --locale fr --pattern "guard_*"`, `ag loc filter <project> --locale fr --untranslated`. Tests in `tools/ag/internal/loc/`. *(depends T-LOC11; find and filter subcommands added with --pattern/--locale/--group-by and --untranslated/--char/--node/--type flags)*
 
-- [ ] **T-LOC13** — Go: `ag loc report` — condition-based report generation. `ag loc report <project> --locale fr --by-character` shows all strings for one character; `--untranslated` shows only empty translations. Tests in `tools/ag/internal/loc/`. *(depends T-LOC12)*
+- [x] **T-LOC13** — Go: `ag loc report` — condition-based report generation. `ag loc report <project> --locale fr --by-character` shows all strings for one character; `--untranslated` shows only empty translations. Tests in `tools/ag/internal/loc/`. *(depends T-LOC12; enhanced with --by-character, --by-node, --untranslated, --group-by flags; FormatLocaleReportGrouped added)*
 
 - [ ] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb`. Emit `AGSRuntime.set_status_text("...")`, `AGSRuntime.set_active_verb("...")`, `AGSRuntime.get_active_verb()`. These are non-blocking. Tests in `tools/ag/internal/emitter/`. *(depends T-GS14 — waits on T-GS02 C++ AGSItem)*
 

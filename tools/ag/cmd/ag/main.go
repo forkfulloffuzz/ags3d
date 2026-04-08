@@ -1066,8 +1066,12 @@ func cmdLocCheck(args []string) error {
 func cmdLocReport(args []string) error {
 	fs := flag.NewFlagSet("ag loc report", flag.ContinueOnError)
 	locale := fs.String("locale", "en", "locale code")
+	byCharacter := fs.String("by-character", "", "show all strings for this character name")
+	byNode := fs.String("by-node", "", "show all strings for this node/scene name")
+	untranslated := fs.Bool("untranslated", false, "show only untranslated strings")
+	groupBy := fs.String("group-by", "", "group report by: character, node, type")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: ag loc report <project> [--locale LANG]")
+		fmt.Fprintln(os.Stderr, "Usage: ag loc report <project> [--locale LANG] [--by-character NAME] [--by-node NAME] [--untranslated] [--group-by character|node|type]")
 	}
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -1078,12 +1082,24 @@ func cmdLocReport(args []string) error {
 	}
 
 	root := fs.Arg(0)
-	entries, err := loc.CollectAllLocaleEntries(root)
+	entries, err := loc.CollectAllLocaleEntriesWithTranslations(root, *locale)
 	if err != nil {
 		return fmt.Errorf("collect entries: %w", err)
 	}
 
-	fmt.Print(loc.FormatLocaleReport(entries, *locale))
+	filterOpts := loc.FilterOptions{
+		Untranslated: *untranslated,
+		Char:         *byCharacter,
+		Node:         *byNode,
+	}
+	entries = loc.FilterLocaleEntries(entries, filterOpts)
+
+	if *groupBy != "" {
+		fmt.Print(loc.FormatLocaleReportGrouped(entries, *groupBy, *locale))
+	} else {
+		fmt.Print(loc.FormatLocaleReport(entries, *locale))
+	}
+
 	fmt.Fprintf(os.Stderr, "\nag loc report: %d strings for locale %s\n", len(entries), *locale)
 	return nil
 }
