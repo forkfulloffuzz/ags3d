@@ -1,4 +1,4 @@
-## ags_audio.gd — Audio manager for AGS3D (T-GS12)
+## ags_audio.gd — Audio manager for AGS3D (T-GS12, T-CUT32)
 ##
 ## Add as an AutoLoad named AGSAudio. This node manages two AudioStreamPlayers:
 ##   - one for music (looping, one active at a time)
@@ -27,6 +27,10 @@ const SFX_POOL_SIZE := 8
 
 var _music_player: AudioStreamPlayer
 var _sfx_pool: Array[AudioStreamPlayer] = []
+
+## T-CUT32 — Duck state: original bus volumes before ducking.
+## Maps bus_name → original volume_db (float).
+var _duck_originals: Dictionary = {}
 
 
 func _ready() -> void:
@@ -75,6 +79,61 @@ func _on_play_sound(name: String) -> void:
 	# All pool slots busy — use the first slot (oldest sound cut off).
 	_sfx_pool[0].stream = stream
 	_sfx_pool[0].play()
+
+
+## Return the music AudioStreamPlayer (used by sequencer fade helpers).
+func get_music_player() -> AudioStreamPlayer:
+	return _music_player
+
+
+# ---------------------------------------------------------------------------
+# T-CUT32 — Dialogue ducking
+# ---------------------------------------------------------------------------
+
+## Lower [param bus_name] volume by [param level_db] dB over [param fade_secs].
+## Stores the original volume so unduck_channel can restore it.
+## If the bus does not exist, does nothing.
+func duck_channel(bus_name: String, level_db: float = -12.0, fade_secs: float = 0.2) -> void:
+	var bus_idx := AudioServer.get_bus_index(bus_name)
+	if bus_idx < 0:
+		push_warning("AGSAudio.duck_channel: bus '%s' not found" % bus_name)
+		return
+	var original_db: float = AudioServer.get_bus_volume_db(bus_idx)
+	if not _duck_originals.has(bus_name):
+		_duck_originals[bus_name] = original_db
+	var target_db: float = original_db + level_db  # level_db is negative (e.g. -12)
+	if fade_secs > 0.0:
+		var tween := create_tween()
+		tween.tween_method(
+			func(v: float) -> void: AudioServer.set_bus_volume_db(bus_idx, v),
+			original_db, target_db, fade_secs
+		)
+		await tween.finished
+	else:
+		AudioServer.set_bus_volume_db(bus_idx, target_db)
+
+
+## Restore [param bus_name] volume to its pre-duck level over [param restore_secs].
+## No-op if duck_channel was never called for this bus.
+func unduck_channel(bus_name: String, restore_secs: float = 0.3) -> void:
+	var bus_idx := AudioServer.get_bus_index(bus_name)
+	if bus_idx < 0:
+		push_warning("AGSAudio.unduck_channel: bus '%s' not found" % bus_name)
+		return
+	if not _duck_originals.has(bus_name):
+		return  # Nothing to restore.
+	var restore_db: float = _duck_originals[bus_name] as float
+	_duck_originals.erase(bus_name)
+	var current_db: float = AudioServer.get_bus_volume_db(bus_idx)
+	if restore_secs > 0.0:
+		var tween := create_tween()
+		tween.tween_method(
+			func(v: float) -> void: AudioServer.set_bus_volume_db(bus_idx, v),
+			current_db, restore_db, restore_secs
+		)
+		await tween.finished
+	else:
+		AudioServer.set_bus_volume_db(bus_idx, restore_db)
 
 
 ## Try each supported extension in each directory and return the first stream found.

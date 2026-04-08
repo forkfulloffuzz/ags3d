@@ -1041,7 +1041,10 @@ func _exec_dialogue(step: Dictionary) -> bool:
 
 
 ## Show a character line via AGSDialogue and wait for player advance.
-## Step: {"type": "dialogue_line", "character": "guard", "text": "Hello", "loc_key": "", "emotion": ""}
+## Step: {"type": "dialogue_line", "character": "guard", "text": "Hello",
+##        "loc_key": "", "emotion": "",
+##        "duck": ["Music"], "duck_level": -12.0, "duck_fade": 0.2, "duck_restore": 0.3}
+## T-CUT32: duck/unduck audio channels around the line.
 func _exec_dialogue_line(step: Dictionary) -> bool:
 	var dlg := _get_dialogue()
 	if dlg == null:
@@ -1054,16 +1057,22 @@ func _exec_dialogue_line(step: Dictionary) -> bool:
 	# Localise if a loc_key is provided.
 	if not loc_key.is_empty() and dlg.has_method("_localise"):
 		text = dlg.call("_localise", loc_key, text) as String
+	# T-CUT32: duck audio channels if requested.
+	await _duck_channels(step)
 	# Emit through the dialogue signal so the UI renders the line.
 	dlg.emit_signal("line_ready", char_name, text, loc_key, emotion)
 	# Wait for player to advance (advance() emits _advance_signal).
 	await dlg.emit_signal("waiting_for_advance")
 	await dlg.get("_advance_signal")
+	# T-CUT32: restore ducked channels.
+	await _unduck_channels(step)
 	return true
 
 
 ## Show a narrator line via AGSDialogue and wait for player advance.
-## Step: {"type": "narrator_line", "text": "...", "loc_key": ""}
+## Step: {"type": "narrator_line", "text": "...", "loc_key": "",
+##        "duck": ["Music"], "duck_level": -12.0, "duck_fade": 0.2, "duck_restore": 0.3}
+## T-CUT32: duck/unduck audio channels around the line.
 func _exec_narrator_line(step: Dictionary) -> bool:
 	var dlg := _get_dialogue()
 	if dlg == null:
@@ -1073,9 +1082,11 @@ func _exec_narrator_line(step: Dictionary) -> bool:
 	var loc_key: String = step.get("loc_key", "")
 	if not loc_key.is_empty() and dlg.has_method("_localise"):
 		text = dlg.call("_localise", loc_key, text) as String
+	await _duck_channels(step)
 	dlg.emit_signal("line_ready", "", text, loc_key, "")
 	await dlg.emit_signal("waiting_for_advance")
 	await dlg.get("_advance_signal")
+	await _unduck_channels(step)
 	return true
 
 
@@ -1183,3 +1194,37 @@ func _exec_dialogue_node(step: Dictionary) -> bool:
 	while not done[0]:
 		await get_tree().process_frame
 	return true
+
+
+# ---------------------------------------------------------------------------
+# T-CUT32 — Dialogue ducking helpers
+# ---------------------------------------------------------------------------
+
+## Duck all channels listed in step["duck"] (Array of bus names).
+## step["duck_level"] (default -12.0 dB), step["duck_fade"] (default 0.2s).
+## No-op when the "duck" field is absent or AGSAudio is unavailable.
+func _duck_channels(step: Dictionary) -> void:
+	var channels: Array = step.get("duck", []) as Array
+	if channels.is_empty():
+		return
+	var audio := _get_audio()
+	if audio == null or not audio.has_method("duck_channel"):
+		return
+	var level: float = step.get("duck_level", -12.0) as float
+	var fade: float = step.get("duck_fade", 0.2) as float
+	for bus: String in channels:
+		await audio.call("duck_channel", bus, level, fade)
+
+
+## Restore all channels listed in step["duck"] after a line finishes.
+## step["duck_restore"] (default 0.3s).
+func _unduck_channels(step: Dictionary) -> void:
+	var channels: Array = step.get("duck", []) as Array
+	if channels.is_empty():
+		return
+	var audio := _get_audio()
+	if audio == null or not audio.has_method("unduck_channel"):
+		return
+	var restore: float = step.get("duck_restore", 0.3) as float
+	for bus: String in channels:
+		await audio.call("unduck_channel", bus, restore)
