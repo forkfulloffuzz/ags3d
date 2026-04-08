@@ -4,6 +4,69 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-LOC03 — `ag export --locale` integration with `.agstrings`
+
+**Setup:** Have `ag` CLI built (`go build ./cmd/ag`). A project with `.agdlg` and `.agcut` files.
+
+- [ ] With a project containing `dialogue/test.agdlg` with loc_keys, running `ag export --locale fr --format agstrings` creates `locale/strings.fr.agstrings`.
+- [ ] The generated `.agstrings` file has correct `[meta]` block with `locale = fr`.
+- [ ] Dialogue loc_keys appear in the `[strings]` section with source text as values.
+- [ ] With a project also containing `cutscenes/intro.agcut` with explicit `loc_key:` arguments, the cutscene keys also appear in the exported file.
+- [ ] Duplicate loc_keys across `.agdlg` and `.agcut` files appear only once in the output.
+- [ ] Running `ag export --locale fr --format agstrings` twice produces the same output (idempotent).
+- [ ] `ag export --locale fr --format po` produces a `.po` file (existing PO format still works).
+- [ ] `ag export --locale fr --format csv` produces a `.csv` file (existing CSV format still works).
+
+---
+
+### T-LOC04 — `ag validate` localisation pass
+
+**Setup:** Have `ag` CLI built. A project with `.agdlg` and `.agcut` files and a locale file.
+
+- [ ] With all loc_keys present in the locale file, `ag validate` produces no locale-related warnings.
+- [ ] With a missing loc_key, `ag validate` prints `[ERROR] file:line: missing loc_key 'x'`.
+- [ ] With an orphan loc_key (in locale but never referenced), `ag validate` prints `[WARN] file:line: orphan loc_key 'x'`.
+- [ ] With missing loc_keys in release mode (`AGSBUILD=release`), `ag validate` exits non-zero.
+- [ ] In dev mode (no `AGSBUILD=release`), missing loc_keys produce warnings but `ag validate` exits zero.
+- [ ] Cutscene loc_keys are validated against locale files.
+- [ ] Dialogue loc_keys are validated against locale files.
+
+---
+
+### T-LOC05 — `ag-loc` translation tool
+
+**Setup:** Have `ag` CLI built. A project with `.agdlg` files and locale files.
+
+- [ ] `ag loc check <project>` runs all localisation validations and reports issues.
+- [ ] `ag loc report <project> --locale en` prints all strings for translation.
+- [ ] `ag loc import <project> --locale fr --file strings.fr.agstrings` merges imported strings.
+
+---
+
+### T-LOC06 — PO/CSV import bridge
+
+**Setup:** Have `ag` CLI built. An existing `.agstrings` file and a `.po` or `.csv` translation file.
+
+- [ ] `ImportPO(root, locale, po_path)` reads a `.po` file and merges translations into existing `.agstrings`.
+- [ ] `ImportCSV(root, locale, csv_path)` reads a `.csv` file and merges translations.
+- [ ] Only translated values are overwritten; untranslated keys are preserved.
+- [ ] Imported keys that don't exist in the project produce a validation error.
+
+---
+
+### T-LOC09 — voice script export grouped by voice_session
+
+**Setup:** Have `ag` CLI built. A project with cutscene files containing `<<voice session:Name>>` and `<<voice character:file>>` commands.
+
+- [ ] Voice script export produces a `voice_sessions.json` file.
+- [ ] The JSON format is `{"sessions": [{"name": "act1", "character": "guard", "lines": ["guard/intro_01", "guard/intro_02"]}]}`.
+- [ ] Lines are grouped by `(session, character)` tuple.
+- [ ] Multiple characters in the same session produce separate session entries.
+
+---
+
+---
+
 ## M10 — Game Systems (Batch 2)
 
 ### T-GS25 — Billboard `.agchar` properties + `ag build` Sprite3D scene
@@ -208,6 +271,17 @@ One test section per TODO task. Update this file immediately after marking a tas
       animations = { idle = "Idle"  walk = "Walk"  talk = "Talk" }
   }
   ```
+
+---
+
+### T-BL11 — `ag build` glb sub-scene embedding
+
+**Setup:** Have `ag` CLI built (`go build ./cmd/ag`). A room directory with both `.agroom` and a `.glb` file.
+
+- [ ] With `rooms/start/start.glb` present alongside `rooms/start/start.agroom`, running `ag build` emits `rooms/start/start.tscn` containing `[ext_resource type="PackedScene" path="res://rooms/start/start.glb" id="RoomVisual"]`.
+- [ ] The generated `.tscn` contains `[node name="Visual" parent="." instance=ExtResource("RoomVisual")]`.
+- [ ] With no `.glb` file present, the generated `.tscn` contains **no** `PackedScene` ext_resource and **no** `Visual` node.
+- [ ] Opening the generated `.tscn` in Godot — the `Visual` node appears as a child of the room root and the `.glb` scene is loaded.
 
 ---
 

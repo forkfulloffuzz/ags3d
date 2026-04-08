@@ -1,6 +1,7 @@
 package loc_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -274,5 +275,147 @@ func TestApply_RoundTripWriteParse(t *testing.T) {
 	}
 	if len(reparsed.Entries) != 2 {
 		t.Errorf("expected 2 entries after round-trip, got %d", len(reparsed.Entries))
+	}
+}
+
+// --------------------------------------------------------------------------
+// ExportLocale
+// --------------------------------------------------------------------------
+
+func TestExportLocale_DialogueEntries(t *testing.T) {
+	tmp := t.TempDir()
+
+	subDir := tmp + "/dialogue"
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	gameAGP := `name = "test"
+start_room = "room1"
+start_character = "player"
+`
+	if err := os.WriteFile(tmp+"/game.agp", []byte(gameAGP), 0644); err != nil {
+		t.Fatalf("write game.agp: %v", err)
+	}
+
+	dlgSrc := `title: test_node
+character: guard
+---
+Guard: Hello there. #loc:guard_hello
+<<end>>
+===
+`
+	if err := os.WriteFile(subDir+"/test.agdlg", []byte(dlgSrc), 0644); err != nil {
+		t.Fatalf("write agdlg: %v", err)
+	}
+
+	sf, err := loc.ExportLocale(tmp, "fr")
+	if err != nil {
+		t.Fatalf("ExportLocale: %v", err)
+	}
+	if sf.Meta.Locale != "fr" {
+		t.Errorf("Meta.Locale = %q, want fr", sf.Meta.Locale)
+	}
+	if len(sf.Entries) == 0 {
+		t.Error("expected at least one entry")
+	}
+}
+
+func TestExportLocale_CutsceneEntries(t *testing.T) {
+	tmp := t.TempDir()
+
+	cutDir := tmp + "/cutscenes"
+	if err := os.MkdirAll(cutDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	gameAGP := `name = "test"
+start_room = "room1"
+start_character = "player"
+`
+	if err := os.WriteFile(tmp+"/game.agp", []byte(gameAGP), 0644); err != nil {
+		t.Fatalf("write game.agp: %v", err)
+	}
+
+	cutSrc := `title: intro
+sequence:
+<<line narrator "Once upon a time." loc_key:narrator_intro>>
+<<end>>
+`
+	if err := os.WriteFile(cutDir+"/intro.agcut", []byte(cutSrc), 0644); err != nil {
+		t.Fatalf("write agcut: %v", err)
+	}
+
+	sf, err := loc.ExportLocale(tmp, "de")
+	if err != nil {
+		t.Fatalf("ExportLocale: %v", err)
+	}
+	if sf.Meta.Locale != "de" {
+		t.Errorf("Meta.Locale = %q, want de", sf.Meta.Locale)
+	}
+	found := false
+	for _, e := range sf.Entries {
+		if e.Key == "narrator_intro" {
+			found = true
+			if e.Value != "Once upon a time." {
+				t.Errorf("entry value = %q, want %q", e.Value, "Once upon a time.")
+			}
+		}
+	}
+	if !found {
+		t.Errorf("expected narrator_intro key, got %+v", sf.Entries)
+	}
+}
+
+func TestExportLocale_DeduplicatesKeys(t *testing.T) {
+	tmp := t.TempDir()
+
+	subDir := tmp + "/dialogue"
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	cutDir := tmp + "/cutscenes"
+	if err := os.MkdirAll(cutDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	gameAGP := `name = "test"
+start_room = "room1"
+start_character = "player"
+`
+	if err := os.WriteFile(tmp+"/game.agp", []byte(gameAGP), 0644); err != nil {
+		t.Fatalf("write game.agp: %v", err)
+	}
+
+	dlgSrc := `title: test_node
+character: guard
+---
+Guard: Hello. #loc:shared_key
+<<end>>
+===
+`
+	if err := os.WriteFile(subDir+"/test.agdlg", []byte(dlgSrc), 0644); err != nil {
+		t.Fatalf("write agdlg: %v", err)
+	}
+
+	cutSrc := `title: intro
+sequence:
+<<line narrator "Hello." loc_key:shared_key>>
+<<end>>
+`
+	if err := os.WriteFile(cutDir+"/intro.agcut", []byte(cutSrc), 0644); err != nil {
+		t.Fatalf("write agcut: %v", err)
+	}
+
+	sf, err := loc.ExportLocale(tmp, "fr")
+	if err != nil {
+		t.Fatalf("ExportLocale: %v", err)
+	}
+
+	count := 0
+	for _, e := range sf.Entries {
+		if e.Key == "shared_key" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Errorf("expected 1 entry for shared_key, got %d", count)
 	}
 }
