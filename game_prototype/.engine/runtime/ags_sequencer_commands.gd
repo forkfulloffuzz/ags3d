@@ -6,12 +6,14 @@
 ## Implemented command types:
 ##   character  — T-CUT17: walk_to, run_to, animation, face_to, spawn_at,
 ##                          hide, show, expression, move_speed
-##   camera     — T-CUT16: set, move_to, look_at, follow, shake, fov, return (stub)
-##   audio      — T-CUT18: music, sound, ambient, voice (stub)
+##   camera     — T-CUT16: set, move_to, look_at, follow, shake, fov, return
+##   audio      — T-CUT18: music, sound, ambient, voice
 ##   visual     — T-CUT19: fade_in, fade_out, flash, vignette, letterbox,
-##                          overlay, video (stub)
-##   flow/state — T-CUT20: parallel, if/else, on event (base wait/action/set are in base class)
-##   dialogue   — T-CUT21: line, narrator, title_card, subtitle, choice, dialogue (stub)
+##                          overlay, video
+##   flow/state — T-CUT20: parallel, if/else, on_event, skip_to (base class),
+##                          cutscene (nested), wait/action/set (base class)
+##   dialogue   — T-CUT21: dialogue_line, narrator_line, title_card, subtitle,
+##                          choice, dialogue
 ##
 ## Step dictionary format — character example:
 ##   {"type": "character", "character": "player", "command": "walk_to", "point": "door"}
@@ -914,9 +916,179 @@ func _exec_nested_cutscene(cutscene_name: String) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# T-CUT21 — Dialogue commands (stub; implemented in T-CUT21)
+# T-CUT21 — Dialogue commands
 # ---------------------------------------------------------------------------
 
+## Access AGSDialogue singleton (may be null if not registered as AutoLoad).
+func _get_dialogue() -> Node:
+	if Engine.has_singleton("AGSDialogue"):
+		return Engine.get_singleton("AGSDialogue") as Node
+	if get_tree() != null:
+		return get_tree().root.get_node_or_null("/root/AGSDialogue")
+	return null
+
+
+## Dispatch all dialogue step types.
 func _exec_dialogue(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: dialogue commands not yet implemented (T-CUT21)")
+	var stype: String = step.get("type", "")
+	match stype:
+		"dialogue_line":
+			return await _exec_dialogue_line(step)
+		"narrator_line":
+			return await _exec_narrator_line(step)
+		"title_card":
+			return await _exec_title_card(step)
+		"subtitle":
+			return await _exec_subtitle(step)
+		"choice":
+			return await _exec_inline_choice(step)
+		"dialogue":
+			return await _exec_dialogue_node(step)
+		_:
+			push_warning("AGSSequencerCommands: unknown dialogue step type '%s'" % stype)
+			return true
+
+
+## Show a character line via AGSDialogue and wait for player advance.
+## Step: {"type": "dialogue_line", "character": "guard", "text": "Hello", "loc_key": "", "emotion": ""}
+func _exec_dialogue_line(step: Dictionary) -> bool:
+	var dlg := _get_dialogue()
+	if dlg == null:
+		push_warning("AGSSequencerCommands: AGSDialogue not found — dialogue_line is a no-op")
+		return true
+	var char_name: String = step.get("character", "")
+	var text: String = step.get("text", "")
+	var loc_key: String = step.get("loc_key", "")
+	var emotion: String = step.get("emotion", "")
+	# Localise if a loc_key is provided.
+	if not loc_key.is_empty() and dlg.has_method("_localise"):
+		text = dlg.call("_localise", loc_key, text) as String
+	# Emit through the dialogue signal so the UI renders the line.
+	dlg.emit_signal("line_ready", char_name, text, loc_key, emotion)
+	# Wait for player to advance (advance() emits _advance_signal).
+	await dlg.emit_signal("waiting_for_advance")
+	await dlg.get("_advance_signal")
+	return true
+
+
+## Show a narrator line via AGSDialogue and wait for player advance.
+## Step: {"type": "narrator_line", "text": "...", "loc_key": ""}
+func _exec_narrator_line(step: Dictionary) -> bool:
+	var dlg := _get_dialogue()
+	if dlg == null:
+		push_warning("AGSSequencerCommands: AGSDialogue not found — narrator_line is a no-op")
+		return true
+	var text: String = step.get("text", "")
+	var loc_key: String = step.get("loc_key", "")
+	if not loc_key.is_empty() and dlg.has_method("_localise"):
+		text = dlg.call("_localise", loc_key, text) as String
+	dlg.emit_signal("line_ready", "", text, loc_key, "")
+	await dlg.emit_signal("waiting_for_advance")
+	await dlg.get("_advance_signal")
+	return true
+
+
+## Show a title card overlay for a set duration.
+## Step: {"type": "title_card", "text": "Chapter 1", "duration": 2.0, "fade_in": 0.3, "fade_out": 0.3}
+func _exec_title_card(step: Dictionary) -> bool:
+	var text: String = step.get("text", "")
+	var duration: float = step.get("duration", 2.0) as float
+	var fade_in_dur: float = step.get("fade_in", 0.3) as float
+	var fade_out_dur: float = step.get("fade_out", 0.3) as float
+	var layer := _get_visual_layer()
+	# Background panel.
+	var panel := ColorRect.new()
+	panel.color = Color(0.0, 0.0, 0.0, 0.0)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(panel)
+	if panel.get_viewport() != null:
+		panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Title label.
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(label)
+	if label.get_viewport() != null:
+		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Fade in.
+	if fade_in_dur > 0.0:
+		var tween := create_tween()
+		tween.tween_property(panel, "color:a", 0.85, fade_in_dur)
+		await tween.finished
+	else:
+		panel.color.a = 0.85
+	# Hold.
+	if duration > 0.0:
+		await get_tree().create_timer(duration).timeout
+	# Fade out.
+	if fade_out_dur > 0.0:
+		var tween := create_tween()
+		tween.tween_property(panel, "color:a", 0.0, fade_out_dur)
+		await tween.finished
+	panel.queue_free()
+	return true
+
+
+## Show a subtitle overlay for a set duration.
+## Step: {"type": "subtitle", "text": "...", "duration": 3.0}
+func _exec_subtitle(step: Dictionary) -> bool:
+	var text: String = step.get("text", "")
+	var duration: float = step.get("duration", 3.0) as float
+	var layer := _get_visual_layer()
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(label)
+	if label.get_viewport() != null:
+		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if duration > 0.0:
+		await get_tree().create_timer(duration).timeout
+	label.queue_free()
+	return true
+
+
+## Present inline choices via AGSDialogue and wait for the player to select one.
+## Step: {"type": "choice", "options": ["Option A", "Option B"], "skip": false}
+func _exec_inline_choice(step: Dictionary) -> bool:
+	var dlg := _get_dialogue()
+	if dlg == null:
+		push_warning("AGSSequencerCommands: AGSDialogue not found — choice is a no-op")
+		return true
+	var options: Array = step.get("options", [])
+	if options.is_empty():
+		return true
+	# Build options array in the format AGSDialogue uses.
+	var opts: Array = []
+	for i in options.size():
+		var opt: Variant = options[i]
+		if opt is String:
+			opts.append({"text": opt, "index": i, "available": true})
+		elif opt is Dictionary:
+			opts.append(opt)
+	dlg.emit_signal("choices_ready", opts)
+	await dlg.get("_advance_signal")
+	return true
+
+
+## Start a dialogue node and wait for it to finish.
+## Step: {"type": "dialogue", "node": "node_title"} or {"type": "dialogue", "file": "name"}
+func _exec_dialogue_node(step: Dictionary) -> bool:
+	var dlg := _get_dialogue()
+	if dlg == null:
+		push_warning("AGSSequencerCommands: AGSDialogue not found — dialogue is a no-op")
+		return true
+	var node_title: String = step.get("node", step.get("file", ""))
+	if node_title.is_empty():
+		push_warning("AGSSequencerCommands: dialogue step missing 'node' or 'file'")
+		return true
+	# Wait for dialogue to end.
+	var done := [false]
+	dlg.dialogue_ended.connect(func(_t: String) -> void: done[0] = true, CONNECT_ONE_SHOT)
+	dlg.call("_execute_node", node_title)
+	while not done[0]:
+		await get_tree().process_frame
 	return true
