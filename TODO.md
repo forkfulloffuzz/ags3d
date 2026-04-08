@@ -3,39 +3,35 @@
 This file tracks the active batch of tasks. Update status as work progresses.
 When all tasks are done, ask Claude to pick the next 10.
 
-## M10 / M11 / M-LOC — Phase 8
+## Phase 9 — Infrastructure, Localisation & Runtime
 
-Dependencies: T-GS02 (C++ AGSItem) unblocks T-GS14 → T-GS15; T-BL10 unblocks T-BL12/T-BL13; T-LOC10 → T-LOC11 → T-LOC12 → T-LOC13.
+Dependencies: TEST-INFRA-02 unblocks CI; T-CUT30 unblocks T-LOC16; T40/T-FINAL are runtime build tasks.
 
-- [x] **T-E05** — Go: `ag validate` cross-reference checks. Ensure `ag validate` checks: start_room/start_character files exist, initial_camera matches Camera block in same room, SpawnPoint.character matches .agchar, WalkTo/FaceTo point names resolve, inventory item references resolve. Exit non-zero on errors. Tests in `tools/ag/internal/validate/`. *(depends T-E01, T-E03 — both done; checks 1-6 already done, check 7 (character receiver refs in .agscript method calls) added)*
+- [ ] **TEST-INFRA-02** — CI: GitHub Actions workflow that builds AGS3D and runs the full test suite on every push and PR. Create `.github/workflows/test.yml`. Run `scons platform=linuxbsd`, then `agstests/run_tests.gd` headlessly. Cache SCons build objects. *(independent)*
 
-- [x] **T-LOC10** — Design: author context annotations in `.agdlg` and `.agcut`. Design `#ctx:` comment syntax to attach translator notes to individual strings. Document in `docs/localisation-milestone.md`. *(independent; design complete — syntax: trailing `#ctx:` on string lines, stored in LocEntry.Ctx, exported as PO `#. ctx:` comment and CSV `context` column)*
+- [ ] **T-CUT30** — Go: cutscene localisation pipeline. `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands in `.agcut` files participate in the loc_key pipeline using cutscene title as namespace. Lines appear in `ag export --locale` output. `voice_session` header groups lines in `ag export --voicescript`. Tests in `tools/ag/internal/cut/`. *(depends T-CUT09, T-DLG08)*
 
-- [x] **T-LOC11** — Design: string taxonomy and source metadata in `.agstrings`. Design `type:` (spoken/choice/narration/ui/subtitle), `char:`, `scene:` metadata fields per entry. Document in `docs/localisation-milestone.md`. *(depends T-LOC10; design complete — metadata as comment lines above key, type/char/scene/ctx fields, backward-compatible, CSV header extended)*
+- [ ] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage tracking. Connect recorded voice audio files to their loc_keys so the pipeline knows which lines have been recorded, which are missing, and which are stale (recorded against old source text). Machine-readable `voice_coverage.json` listing `(loc_key, file_path, duration_ms, hash)` for each recorded line. Tests in `tools/ag/internal/cut/`. *(depends T-CUT30)*
 
-- [x] **T-LOC12** — Go: `ag loc` subcommand — advanced search, filter, sort, and group-by over `.agstrings` files. Commands: `ag loc find <project> --locale fr --pattern "guard_*"`, `ag loc filter <project> --locale fr --untranslated`. Tests in `tools/ag/internal/loc/`. *(depends T-LOC11; find and filter subcommands added with --pattern/--locale/--group-by and --untranslated/--char/--node/--type flags)*
+- [ ] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool. A terminal/TUI tool for authoring translations directly in `.agstrings` files with live validation feedback. Shows source text, character, scene context; marks entries complete on save. Partial implementation exists (check/report/import done). Full interactive TUI still needed. Tests in `tools/ag/`. *(depends T-LOC04)*
 
-- [x] **T-LOC13** — Go: `ag loc report` — condition-based report generation. `ag loc report <project> --locale fr --by-character` shows all strings for one character; `--untranslated` shows only empty translations. Tests in `tools/ag/internal/loc/`. *(depends T-LOC12; enhanced with --by-character, --by-node, --untranslated, --group-by flags; FormatLocaleReportGrouped added)*
+- [ ] **T40** — C++/GDScript: disable AGSRuntime trace in production builds. Add `#if DEBUG` guards around `trace()` calls so they are compiled out in release. *(independent)*
 
-- [x] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb`. Emit `AGSRuntime.set_status_text("...")`, `AGSRuntime.set_active_verb("...")`, `AGSRuntime.get_active_verb()`. These are non-blocking. Tests in `tools/ag/internal/emitter/`. *(done — commit 92ca49d49d)*
+- [ ] **T-FINAL** — C++ build: embed `.engine/runtime/` GDScripts into the C++ module at build time so they are part of the module binary and don't need to be installed separately. *(depends on having all runtime GDScripts finalized)*
 
-- [x] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`. `SetPlayerControl(false)` emits `AGSRuntime.set_player_control(false)`. `FadeIn()`/`FadeOut()` emit `AGSCutscene.fade_in()`/`fade_out()`. `Wait(seconds)` emits `await get_tree().create_timer(seconds).timeout`. Tests in `tools/ag/internal/emitter/`. *(done — commit 8f25de5701)*
+- [ ] **T-E19** — GDScript: billboard camera warnings as gizmo overlays. Show elevation angle warning (>30°), arc width warning for 4-angle sprites, and sprite_locked indicator in the Room editor 3D viewport. Tests in `agstests/`. *(depends T-CE09 — AG Studio Room editor main screen)*
 
-- [x] **T-BL12** — Go: `.agchar` animation clip wiring in generated `.tscn`. Parse `mesh` and `animations` fields from `.agchar`; emit `anim_idle`, `anim_walk`, `anim_talk` properties on the character root node in the `.tscn`. Tests in `tools/ag/internal/scene/`. *(done — commit 846e74ab88)*
+- [ ] **T-BL14** — GDScript: Room editor "Re-import from Blender" button. Detects when `.glb` is newer than `.tscn`, runs `ag build`, shows conflict banner when `.agroom` was edited in AG Studio after last Blender export. Tests in `agstests/`. *(depends T-CE08)*
 
-- [x] **T-BL13** — GDScript: `ags_character.gd` drives AnimationPlayer on state transitions. When velocity > 0 play `walk` clip; when `say()` called play `talk` clip; idle when stationary. Uses `anim_walk`/`anim_idle`/`anim_talk` from `.tscn` properties. Tests in `agstests/`. *(done — commit de169b4f4c)*
+- [ ] **T-GS21** — GDScript: Room editor `RoomItem` gizmo + placement. Toolbar "Add Item" button; sprite icon appears at chosen position. Inspector shows item reference + visible toggle. `HideRoomItem`/`ShowRoomItem` script autocomplete. Tests in `agstests/`. *(depends T-CE07)*
 
-- [x] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine`. `InventoryBar` auto-populates from character inventory and refreshes on add/remove. `VerbBar` buttons call `AGSRuntime.set_active_verb()`. `StatusLine` displays text via `AGSRuntime.set_status_text()`. Tests in `agstests/`. *(done — commit 959448b337)*
+- [ ] **T-BL16** — Blender: animation frame tags — trigger events (sounds, signals) on specific keyframes. Exports `.aganim` sidecar with frame tag events. Feasibility not yet assessed — mark as STUB if not viable. *(depends T-BL12, T-BL13)*
 
 ## Notes
 
-- T-LOC10 is independent (design only).
-- T-LOC11 depends on T-LOC10.
-- T-LOC12 depends on T-LOC11.
-- T-LOC13 depends on T-LOC12.
-- T-E05 is independent (already mostly implemented).
-- T-GS14/T-GS15 depend on T-GS02 (C++ AGSItem) — high priority for C++ implementor.
-- T-GS19 depends on T-GS18 (GDScript cutscene runtime) — Editor milestone dependency.
-- T-BL12 depends on T-BL10 (character export operator).
-- T-BL13 depends on T-BL12.
-- After this batch: M12 (AG Studio custom editor UI), remaining M11 Blender tasks.
+- TEST-INFRA-02 is independent (CI infrastructure).
+- T-CUT30 is the critical path for T-LOC16.
+- T40 and T-FINAL are runtime build tasks.
+- T-E19, T-BL14, T-GS21 depend on AG Studio (M12) editor features.
+- T-BL16 is a STUB — assess feasibility first.
+- After Phase 9: M12 AG Studio remaining tasks, then M13 (audio system).
