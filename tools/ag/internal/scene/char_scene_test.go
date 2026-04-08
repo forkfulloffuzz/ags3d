@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ags3d/ag/internal/aganim"
 	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/scene"
 )
@@ -18,7 +19,7 @@ func genChar(t *testing.T, src string) string {
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	return scene.GenerateCharScene(cd)
+	return scene.GenerateCharScene(cd, nil)
 }
 
 // --------------------------------------------------------------------------
@@ -181,5 +182,72 @@ func TestCharPascalCaseRootName(t *testing.T) {
 		if !strings.Contains(out, c.want) {
 			t.Errorf("for character %q: output does not contain %q\n%s", c.name, c.want, out)
 		}
+	}
+}
+
+// --------------------------------------------------------------------------
+// T-CUT28 — frame tag metadata injection
+// --------------------------------------------------------------------------
+
+func TestFrameTagInjection_NilAnim(t *testing.T) {
+	// nil anim → no metadata line emitted.
+	out := genChar(t, `Character "player" {}`)
+	if strings.Contains(out, "anim_frame_tags") {
+		t.Error("expected no anim_frame_tags when anim is nil")
+	}
+}
+
+func TestFrameTagInjection_EmptyClips(t *testing.T) {
+	// AnimFile with no clips → no metadata line emitted.
+	cd, _ := char.ParseChar("t.agchar", `Character "player" {}`)
+	af := &aganim.AnimFile{Character: "player", Clips: nil}
+	out := scene.GenerateCharScene(cd, af)
+	if strings.Contains(out, "anim_frame_tags") {
+		t.Error("expected no anim_frame_tags when clips is empty")
+	}
+}
+
+func TestFrameTagInjection_WithTags(t *testing.T) {
+	cd, _ := char.ParseChar("t.agchar", `Character "player" { mesh = "characters/player/player.glb" }`)
+	af := &aganim.AnimFile{
+		Character: "player",
+		Clips: []aganim.Clip{
+			{
+				Name: "Walk",
+				FrameTags: []aganim.FrameTag{
+					{Name: "footstep_left", Frame: 12},
+				},
+			},
+		},
+	}
+	out := scene.GenerateCharScene(cd, af)
+	if !strings.Contains(out, "anim_frame_tags") {
+		t.Errorf("expected anim_frame_tags in output:\n%s", out)
+	}
+	if !strings.Contains(out, `"Walk"`) {
+		t.Errorf("expected clip name Walk in metadata:\n%s", out)
+	}
+	if !strings.Contains(out, `"footstep_left"`) {
+		t.Errorf("expected tag name footstep_left in metadata:\n%s", out)
+	}
+	if !strings.Contains(out, `12`) {
+		t.Errorf("expected frame 12 in metadata:\n%s", out)
+	}
+}
+
+func TestFrameTagInjection_2DCharacter(t *testing.T) {
+	cd, _ := char.ParseChar("t.agchar", `Character "sprite_npc" { type = "2d" }`)
+	af := &aganim.AnimFile{
+		Character: "sprite_npc",
+		Clips: []aganim.Clip{
+			{Name: "Run", FrameTags: []aganim.FrameTag{{Name: "step", Frame: 5}}},
+		},
+	}
+	out := scene.GenerateCharScene(cd, af)
+	if !strings.Contains(out, "anim_frame_tags") {
+		t.Errorf("expected anim_frame_tags in 2D output:\n%s", out)
+	}
+	if !strings.Contains(out, `"Run"`) {
+		t.Errorf("expected clip name Run in 2D metadata:\n%s", out)
 	}
 }

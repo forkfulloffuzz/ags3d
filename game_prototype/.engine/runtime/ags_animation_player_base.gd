@@ -36,3 +36,33 @@ func set_state(state: String) -> void:
 ## [param label] format: "sound:<name>", "signal:<name>", or "script:<fn>".
 func on_anim_event(label: String) -> void:
 	pass  # Default: ignore unhandled events; subclasses may override.
+
+
+## T-CUT28 — Frame tag lookup.
+##
+## Returns the tag name at [param frame] in animation clip [param anim_name],
+## or "" if no tag is defined at that frame.
+##
+## Frame tags are stored in the node metadata key "anim_frame_tags" injected by
+## ag build from the .aganim sidecar. Format (GDScript Dictionary):
+##   { "Walk": [{"frame": 12, "name": "footstep_left"}, ...], ... }
+func get_frame_tag(anim_name: String, frame: int) -> String:
+	if not has_meta("anim_frame_tags"):
+		# Try parent node (the character root holds the metadata).
+		var parent: Node = get_parent()
+		if parent == null or not parent.has_meta("anim_frame_tags"):
+			return ""
+		return _lookup_frame_tag(parent.get_meta("anim_frame_tags"), anim_name, frame)
+	return _lookup_frame_tag(get_meta("anim_frame_tags"), anim_name, frame)
+
+
+func _lookup_frame_tag(tags: Dictionary, anim_name: String, frame: int) -> String:
+	var clip: Variant = tags.get(anim_name)
+	if not clip is Array:
+		return ""
+	for entry: Variant in (clip as Array):
+		if entry is Dictionary:
+			var e: Dictionary = entry as Dictionary
+			if e.get("frame", -1) == frame:
+				return String(e.get("name", ""))
+	return ""

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ags3d/ag/internal/aganim"
 	"github.com/ags3d/ag/internal/char"
 )
 
@@ -13,12 +14,15 @@ import (
 // The generated scene is a standalone file that can be instantiated by the
 // runtime at a SpawnPoint. It does not include a world position — that is set
 // by the SpawnPoint at load time.
-func GenerateCharScene(cd *char.CharData) string {
+//
+// If anim is non-nil the frame tags from the .aganim sidecar are injected as
+// metadata/anim_frame_tags on the root node (T-CUT28).
+func GenerateCharScene(cd *char.CharData, anim *aganim.AnimFile) string {
 	switch cd.Type {
 	case "2d":
-		return generate2DCharScene(cd)
+		return generate2DCharScene(cd, anim)
 	default:
-		return generate3DCharScene(cd)
+		return generate3DCharScene(cd, anim)
 	}
 }
 
@@ -26,7 +30,7 @@ func GenerateCharScene(cd *char.CharData) string {
 // 3D character
 // --------------------------------------------------------------------------
 
-func generate3DCharScene(cd *char.CharData) string {
+func generate3DCharScene(cd *char.CharData, anim *aganim.AnimFile) string {
 	var out strings.Builder
 
 	rootName := toPascalCase(cd.Name)
@@ -98,6 +102,13 @@ func generate3DCharScene(cd *char.CharData) string {
 	fmt.Fprintln(&out, `shape = SubResource("BodyShape")`)
 	fmt.Fprintln(&out)
 
+	// T-CUT28: inject frame tags metadata on the root node.
+	if anim != nil && len(anim.Clips) > 0 {
+		fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter3D\"]\n", rootName)
+		fmt.Fprintf(&out, "metadata/anim_frame_tags = %s\n", anim.GDScriptLiteral())
+		fmt.Fprintln(&out)
+	}
+
 	return out.String()
 }
 
@@ -105,7 +116,7 @@ func generate3DCharScene(cd *char.CharData) string {
 // 2D billboard character
 // --------------------------------------------------------------------------
 
-func generate2DCharScene(cd *char.CharData) string {
+func generate2DCharScene(cd *char.CharData, anim *aganim.AnimFile) string {
 	var out strings.Builder
 
 	rootName := toPascalCase(cd.Name)
@@ -157,6 +168,13 @@ func generate2DCharScene(cd *char.CharData) string {
 	fmt.Fprintln(&out, `transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)`)
 	fmt.Fprintln(&out, `shape = SubResource("BodyShape")`)
 	fmt.Fprintln(&out)
+
+	// T-CUT28: inject frame tags metadata on the root node.
+	if anim != nil && len(anim.Clips) > 0 {
+		fmt.Fprintf(&out, "[node name=%q type=\"AGSCharacter2D\"]\n", rootName)
+		fmt.Fprintf(&out, "metadata/anim_frame_tags = %s\n", anim.GDScriptLiteral())
+		fmt.Fprintln(&out)
+	}
 
 	return out.String()
 }

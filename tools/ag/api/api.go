@@ -404,7 +404,7 @@ func GenerateCharScene(filename, src string) string {
 	if err != nil {
 		return "-- parse error: " + err.Error()
 	}
-	return scene.GenerateCharScene(cd)
+	return scene.GenerateCharScene(cd, nil)
 }
 
 // -------------------------------------------------------------------

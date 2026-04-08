@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ags3d/ag/internal/aganim"
 	"github.com/ags3d/ag/internal/char"
 	"github.com/ags3d/ag/internal/cut"
 	"github.com/ags3d/ag/internal/dlg"
@@ -335,7 +336,28 @@ func build(root string, force bool, trace bool) error {
 			errs = append(errs, err)
 			continue
 		}
-		tscnText := scene.GenerateCharScene(cd)
+		// T-CUT28: load .aganim sidecar if the .agchar references a .glb mesh.
+		var animFile *aganim.AnimFile
+		if cd.Mesh != "" {
+			sidecarPath := aganim.SidecarPath(cd.Mesh)
+			// Resolve relative to the project root (src.Path parent → root).
+			// cd.Mesh is project-relative (e.g. "characters/player/player.glb").
+			// src.Path is absolute; walk up to find the project root.
+			absDir := filepath.Dir(src.Path)
+			// Try the directory containing the .agchar first, then one level up.
+			for _, candidate := range []string{
+				filepath.Join(absDir, filepath.Base(sidecarPath)),
+				filepath.Join(filepath.Dir(absDir), sidecarPath),
+				sidecarPath,
+			} {
+				if af, err2 := aganim.ParseFile(candidate); err2 == nil {
+					animFile = af
+					break
+				}
+			}
+		}
+
+		tscnText := scene.GenerateCharScene(cd, animFile)
 
 		// Write .tscn beside the .agchar source file.
 		outPath := strings.TrimSuffix(src.Path, ".agchar") + ".tscn"
