@@ -170,3 +170,44 @@ func groupKeys(m map[string]string) []string {
 	}
 	return keys
 }
+
+// --- ExportVoiceSessionsJSON ---
+
+func TestExportVoiceSessionsJSON_Basic(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nvoice_session: act1\nsequence:\n<<line guard \"Stop!\">>\n<<end>>\n")
+	jsonStr, err := cut.ExportVoiceSessionsJSON([]*cut.CutsceneFile{cf})
+	if err != nil {
+		t.Fatalf("ExportVoiceSessionsJSON: %v", err)
+	}
+	if !strings.Contains(jsonStr, `"name": "act1"`) {
+		t.Errorf("JSON missing session name: %s", jsonStr)
+	}
+	if !strings.Contains(jsonStr, `"character": "guard"`) {
+		t.Errorf("JSON missing character: %s", jsonStr)
+	}
+	if !strings.Contains(jsonStr, `"lines"`) {
+		t.Errorf("JSON missing lines array: %s", jsonStr)
+	}
+}
+
+func TestExportVoiceSessionsJSON_NoSession(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nsequence:\n<<line guard \"Stop!\">>\n<<end>>\n")
+	jsonStr, err := cut.ExportVoiceSessionsJSON([]*cut.CutsceneFile{cf})
+	if err != nil {
+		t.Fatalf("ExportVoiceSessionsJSON: %v", err)
+	}
+	if !strings.Contains(jsonStr, `"sessions"`) {
+		t.Errorf("Expected sessions field, got: %s", jsonStr)
+	}
+}
+
+func TestExportVoiceSessionsJSON_MultipleLines(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nvoice_session: act1\nsequence:\n<<line guard \"Stop!\">>\n<<line guard \"Who goes there?\">>\n<<end>>\n")
+	jsonStr, err := cut.ExportVoiceSessionsJSON([]*cut.CutsceneFile{cf})
+	if err != nil {
+		t.Fatalf("ExportVoiceSessionsJSON: %v", err)
+	}
+	if !strings.Contains(jsonStr, `"name": "act1"`) {
+		t.Errorf("JSON missing session name: %s", jsonStr)
+	}
+}

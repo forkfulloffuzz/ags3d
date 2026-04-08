@@ -1,18 +1,19 @@
 package cut
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
 // VoiceLine is one <<line character "text">> entry collected for a voicescript.
 type VoiceLine struct {
-	LocKey   string // loc_key: param or auto-generated from title+index
-	Session  string // voice_session from the cutscene header (may be empty)
-	Cutscene string // cf.Title
-	Char     string // first positional of <<line>>
-	Text     string // quoted string arg of <<line>>
-	Emotion  string // emotion: param if present
+	LocKey    string // loc_key: param or auto-generated from title+index
+	Session   string // voice_session from the cutscene header (may be empty)
+	Cutscene  string // cf.Title
+	Char      string // first positional of <<line>>
+	Text      string // quoted string arg of <<line>>
+	Emotion   string // emotion: param if present
 	Preceding string // summary of the command immediately before this line
 }
 
@@ -165,4 +166,49 @@ func renderGroup(char, session string, lines []VoiceLine, translations map[strin
 		fmt.Fprintln(&sb)
 	}
 	return sb.String()
+}
+
+type VoiceSessionEntry struct {
+	Name      string   `json:"name"`
+	Character string   `json:"character"`
+	Lines     []string `json:"lines"`
+}
+
+type VoiceSessionsJSON struct {
+	Sessions []VoiceSessionEntry `json:"sessions"`
+}
+
+func ExportVoiceSessionsJSON(files []*CutsceneFile) (string, error) {
+	lines := CollectVoiceLines(files)
+
+	type groupKey struct {
+		session string
+		char    string
+	}
+	groups := make(map[groupKey][]string)
+
+	for _, vl := range lines {
+		if vl.Session == "" {
+			continue
+		}
+		k := groupKey{session: vl.Session, char: vl.Char}
+		lineID := vl.Char + "/" + vl.LocKey
+		groups[k] = append(groups[k], lineID)
+	}
+
+	var sessions []VoiceSessionEntry
+	for k, lineIDs := range groups {
+		sessions = append(sessions, VoiceSessionEntry{
+			Name:      k.session,
+			Character: k.char,
+			Lines:     lineIDs,
+		})
+	}
+
+	data := VoiceSessionsJSON{Sessions: sessions}
+	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("marshal voice sessions: %w", err)
+	}
+	return string(jsonBytes), nil
 }
