@@ -147,12 +147,224 @@ func _resolve_point(point_name: String) -> Vector3:
 
 
 # ---------------------------------------------------------------------------
-# T-CUT16 — Camera commands (stub; implemented in T-CUT16)
+# T-CUT16 — Camera commands
 # ---------------------------------------------------------------------------
 
+## Resolve the active Camera3D from the viewport (or null in headless).
+func _get_active_camera() -> Camera3D:
+	if get_viewport() == null:
+		return null
+	return get_viewport().get_camera_3d()
+
+## Resolve a camera node by name via AGSRuntime, or return the active camera.
+## [param cam_name]: if non-empty, looks up that name; otherwise returns active camera.
+func _get_camera(cam_name: String) -> Camera3D:
+	if not cam_name.is_empty() and Engine.has_singleton("AGSRuntime"):
+		var runtime: Object = Engine.get_singleton("AGSRuntime")
+		var cam: Object = runtime.call("get_camera", cam_name)
+		if cam != null:
+			return cam as Camera3D
+	return _get_active_camera()
+
+## Parse an ease type string to a Tween.EaseType constant.
+func _parse_ease(ease_str: String) -> Tween.EaseType:
+	match ease_str:
+		"ease_in":    return Tween.EASE_IN
+		"ease_out":   return Tween.EASE_OUT
+		"linear":     return Tween.EASE_IN_OUT  # closest linear approx
+		_:            return Tween.EASE_IN_OUT
+
+## Parse a trans type string to a Tween.TransitionType constant.
+func _parse_trans(trans_str: String) -> Tween.TransitionType:
+	match trans_str:
+		"linear":  return Tween.TRANS_LINEAR
+		"sine":    return Tween.TRANS_SINE
+		"cubic":   return Tween.TRANS_CUBIC
+		"expo":    return Tween.TRANS_EXPO
+		_:         return Tween.TRANS_SINE
+
+
 func _exec_camera(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: camera commands not yet implemented (T-CUT16)")
-	return true
+	var cam_name: String = step.get("camera", "")
+	var cmd: String = step.get("command", "")
+
+	match cmd:
+		"set":
+			# Instantly activate a named camera (switch to it) and optionally
+			# override FOV and rotation.
+			var target_name: String = step.get("point", cam_name)
+			if not target_name.is_empty() and Engine.has_singleton("AGSRuntime"):
+				var runtime: Object = Engine.get_singleton("AGSRuntime")
+				runtime.call("set_camera", target_name)
+			var cam: Camera3D = _get_camera(target_name if not target_name.is_empty() else cam_name)
+			if cam == null:
+				push_warning("AGSSequencerCommands: camera 'set' — no camera found")
+				return true
+			if step.has("fov"):
+				cam.fov = step.get("fov") as float
+			if step.has("rotation"):
+				var r: Array = step.get("rotation") as Array
+				if r.size() == 3:
+					cam.rotation_degrees = Vector3(r[0], r[1], r[2])
+			return true
+
+		"move_to":
+			# Tween the active camera to the named camera's position/transform.
+			var cam: Camera3D = _get_camera(cam_name)
+			if cam == null:
+				push_warning("AGSSequencerCommands: camera 'move_to' — no camera found")
+				return true
+			var target_cam: Camera3D = _get_camera(step.get("point", ""))
+			if target_cam == null or target_cam == cam:
+				return true
+			var duration: float = step.get("duration", 1.0) as float
+			var tween := create_tween()
+			tween.set_ease(_parse_ease(step.get("ease", "")))
+			tween.set_trans(_parse_trans(step.get("ease", "")))
+			tween.tween_property(cam, "global_position", target_cam.global_position, duration)
+			tween.parallel().tween_property(cam, "global_rotation", target_cam.global_rotation, duration)
+			if step.has("fov"):
+				tween.parallel().tween_property(cam, "fov", step.get("fov") as float, duration)
+			await tween.finished
+			return true
+
+		"look_at":
+			# Tween camera to face a target (character or point name).
+			var cam: Camera3D = _get_camera(cam_name)
+			if cam == null:
+				push_warning("AGSSequencerCommands: camera 'look_at' — no camera found")
+				return true
+			var target_name: String = step.get("target", "")
+			var target_pos: Vector3 = _resolve_look_at_target(target_name)
+			var duration: float = step.get("duration", 0.0) as float
+			if duration <= 0.0:
+				cam.look_at(target_pos)
+			else:
+				var target_basis := Basis.looking_at(target_pos - cam.global_position)
+				var target_rot: Vector3 = target_basis.get_euler()
+				var tween := create_tween()
+				tween.set_ease(_parse_ease(step.get("ease", "")))
+				tween.tween_property(cam, "global_rotation", target_rot, duration)
+				await tween.finished
+			return true
+
+		"follow":
+			# Follow a character for 'duration' seconds (0 = one frame, then return).
+			var cam: Camera3D = _get_camera(cam_name)
+			if cam == null:
+				push_warning("AGSSequencerCommands: camera 'follow' — no camera found")
+				return true
+			var char_name: String = step.get("character", "")
+			var ch: Node = _get_character(char_name)
+			if ch == null:
+				return false
+			var offset_arr: Array = step.get("offset", [0.0, 2.0, -4.0]) as Array
+			var offset := Vector3(
+				offset_arr[0] if offset_arr.size() > 0 else 0.0,
+				offset_arr[1] if offset_arr.size() > 1 else 2.0,
+				offset_arr[2] if offset_arr.size() > 2 else -4.0
+			)
+			var duration: float = step.get("duration", 0.0) as float
+			var elapsed: float = 0.0
+			while elapsed < duration or duration <= 0.0:
+				cam.global_position = (ch as Node3D).global_position + offset
+				cam.look_at((ch as Node3D).global_position)
+				if duration <= 0.0:
+					break
+				await get_tree().process_frame
+				elapsed += get_process_delta_time()
+			return true
+
+		"shake":
+			# Shake the active camera for 'duration' seconds.
+			var cam: Camera3D = _get_camera(cam_name)
+			if cam == null:
+				push_warning("AGSSequencerCommands: camera 'shake' — no camera found")
+				return true
+			var intensity: float = step.get("intensity", 0.1) as float
+			var duration: float = step.get("duration", 0.3) as float
+			var falloff: bool = step.get("falloff", true)
+			var origin: Vector3 = cam.global_position
+			var elapsed: float = 0.0
+			while elapsed < duration:
+				await get_tree().process_frame
+				elapsed += get_process_delta_time()
+				var t: float = elapsed / duration
+				var scale: float = (1.0 - t) if falloff else 1.0
+				cam.global_position = origin + Vector3(
+					randf_range(-intensity, intensity) * scale,
+					randf_range(-intensity, intensity) * scale,
+					0.0
+				)
+			cam.global_position = origin
+			return true
+
+		"fov":
+			# Change camera FOV, optionally over a duration.
+			var cam: Camera3D = _get_camera(cam_name)
+			if cam == null:
+				push_warning("AGSSequencerCommands: camera 'fov' — no camera found")
+				return true
+			var target_fov: float = step.get("value", 75.0) as float
+			var duration: float = step.get("duration", 0.0) as float
+			if duration <= 0.0:
+				cam.fov = target_fov
+			else:
+				var tween := create_tween()
+				tween.set_ease(_parse_ease(step.get("ease", "")))
+				tween.tween_property(cam, "fov", target_fov, duration)
+				await tween.finished
+			return true
+
+		"return":
+			# Return to the room's initial camera, optionally tweened.
+			var initial: String = _get_initial_camera_name()
+			if initial.is_empty():
+				push_warning("AGSSequencerCommands: camera 'return' — no initial camera in current room")
+				return true
+			if Engine.has_singleton("AGSRuntime"):
+				var runtime: Object = Engine.get_singleton("AGSRuntime")
+				runtime.call("set_camera", initial)
+			var target_cam: Camera3D = _get_camera(initial)
+			var cam: Camera3D = _get_active_camera()
+			var duration: float = step.get("duration", 0.0) as float
+			if cam == null or target_cam == null or duration <= 0.0:
+				return true
+			var tween := create_tween()
+			tween.set_ease(_parse_ease(step.get("ease", "")))
+			tween.tween_property(cam, "global_position", target_cam.global_position, duration)
+			tween.parallel().tween_property(cam, "global_rotation", target_cam.global_rotation, duration)
+			await tween.finished
+			return true
+
+		_:
+			push_warning("AGSSequencerCommands: unknown camera command '%s'" % cmd)
+			return true
+
+
+## Resolve a look_at target to a world-space Vector3.
+## Checks characters first, then falls back to named points.
+func _resolve_look_at_target(name: String) -> Vector3:
+	if Engine.has_singleton("AGSRuntime"):
+		var runtime: Object = Engine.get_singleton("AGSRuntime")
+		var ch: Object = runtime.call("get_character", name)
+		if ch != null:
+			return (ch as Node3D).global_position
+	return _resolve_point(name)
+
+
+## Return the initial camera name for the current room (empty string if unavailable).
+func _get_initial_camera_name() -> String:
+	if not Engine.has_singleton("AGSRuntime"):
+		return ""
+	var runtime: Object = Engine.get_singleton("AGSRuntime")
+	var room_name: String = runtime.call("get_current_room") as String
+	if room_name.is_empty():
+		return ""
+	var room: Object = runtime.call("get_room", room_name)
+	if room == null:
+		return ""
+	return room.call("get_initial_camera") as String
 
 
 # ---------------------------------------------------------------------------

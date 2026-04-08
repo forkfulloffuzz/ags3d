@@ -54,6 +54,7 @@ const ASYNC_SUITES: Array[String] = [
 	"m_cut/test_sequencer_timeout.gd",              # T-CUT14
 	"m_cut/test_sequencer_fallback.gd",             # T-CUT15
 	"m_cut/test_char_commands.gd",                  # T-CUT17
+	"m_cut/test_camera_commands.gd",               # T-CUT16
 	"m_dlg/test_dialogue_engine.gd",           # T-DLG14
 	"m_dlg/test_localisation.gd",              # T-DLG17
 	"m_dlg/test_dialogue_state.gd",            # T-DLG15
