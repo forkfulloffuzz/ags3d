@@ -7,6 +7,33 @@ extends AGSCharacter3D
 ## Animation clip name for the talk state.
 @export var anim_talk: String = ""
 
+## Emitted when a cutscene <<character X expression name>> command fires.
+## The portrait system (or any listener) should react to this.
+signal expression_changed(expression_name: String)
+
+## Set the character expression and notify listeners.
+## Called by the cutscene sequencer for <<character X expression name>> commands.
+func set_expression(expression_name: String) -> void:
+	expression_changed.emit(expression_name)
+
+## Play a raw AnimationPlayer clip by name (for <<character X animation play:clip>>).
+## If loop is false, awaits animation_finished before returning.
+## If loop is true, starts the clip and returns immediately.
+## Returns true if the clip was found, false if the AnimationPlayer or clip is missing.
+func play_clip(clip_name: String, loop: bool) -> bool:
+	if _anim_player == null:
+		_anim_player = _find_anim_player(self)
+	if _anim_player == null:
+		push_warning("ags_character.play_clip: no AnimationPlayer found on '%s'" % character_name)
+		return false
+	if not _anim_player.has_animation(clip_name):
+		push_warning("ags_character.play_clip: clip '%s' not found on '%s'" % [clip_name, character_name])
+		return false
+	_anim_player.play(clip_name)
+	if not loop:
+		await _anim_player.animation_finished
+	return true
+
 var _nav_agent: NavigationAgent3D
 var _navigating: bool = false
 var _anim_player: AnimationPlayer = null
