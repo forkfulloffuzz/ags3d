@@ -211,3 +211,58 @@ func TestExportVoiceSessionsJSON_MultipleLines(t *testing.T) {
 		t.Errorf("JSON missing session name: %s", jsonStr)
 	}
 }
+
+// --- T-LOC16: Voice coverage ---
+
+func TestBuildCoverage_Covered(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nsequence:\n<<line guard \"Stop!\">>\n<<end>>\n")
+	lines := cut.CollectVoiceLines([]*cut.CutsceneFile{cf})
+	audio := []cut.VoiceCoverageEntry{
+		{LocKey: lines[0].LocKey, File: "audio/en/guard/intro_001.ogg"},
+	}
+	report := cut.BuildVoiceCoverageReport([]*cut.CutsceneFile{cf}, audio, nil)
+	if len(report.Covered) != 1 {
+		t.Errorf("Covered = %d, want 1", len(report.Covered))
+	}
+	if len(report.Missing) != 0 {
+		t.Errorf("Missing = %d, want 0", len(report.Missing))
+	}
+	if len(report.Stale) != 0 {
+		t.Errorf("Stale = %d, want 0", len(report.Stale))
+	}
+}
+
+func TestBuildCoverage_Missing(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nsequence:\n<<line guard \"Stop!\">>\n<<end>>\n")
+	report := cut.BuildVoiceCoverageReport([]*cut.CutsceneFile{cf}, nil, nil)
+	if len(report.Missing) != 1 {
+		t.Errorf("Missing = %d, want 1", len(report.Missing))
+	}
+	if len(report.Covered) != 0 {
+		t.Errorf("Covered = %d, want 0", len(report.Covered))
+	}
+}
+
+func TestBuildCoverage_StaleDetected(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nsequence:\n<<line guard \"Stop!\">>\n<<end>>\n")
+	lines := cut.CollectVoiceLines([]*cut.CutsceneFile{cf})
+	oldText := map[string]string{lines[0].LocKey: "Old text"}
+	audio := []cut.VoiceCoverageEntry{
+		{LocKey: lines[0].LocKey, File: "audio/en/guard/intro_001.ogg"},
+	}
+	report := cut.BuildVoiceCoverageReport([]*cut.CutsceneFile{cf}, audio, oldText)
+	if len(report.Stale) != 1 {
+		t.Errorf("Stale = %d, want 1", len(report.Stale))
+	}
+	if len(report.Covered) != 0 {
+		t.Errorf("Covered = %d, want 0", len(report.Covered))
+	}
+}
+
+func TestBuildCoverage_NoAudioDir(t *testing.T) {
+	cf := mustParseVS(t, "title: intro\nsequence:\n<<line guard \"Stop!\">>\n<<end>>\n")
+	report := cut.BuildVoiceCoverageReport([]*cut.CutsceneFile{cf}, nil, nil)
+	if len(report.Missing) != 1 {
+		t.Errorf("Missing = %d, want 1", len(report.Missing))
+	}
+}

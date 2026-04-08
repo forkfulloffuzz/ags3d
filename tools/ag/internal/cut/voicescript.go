@@ -1,8 +1,11 @@
 package cut
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -211,4 +214,222 @@ func ExportVoiceSessionsJSON(files []*CutsceneFile) (string, error) {
 		return "", fmt.Errorf("marshal voice sessions: %w", err)
 	}
 	return string(jsonBytes), nil
+}
+
+// ---------------------------------------------------------------------------
+// T-LOC16 — Voice coverage tracking
+// ---------------------------------------------------------------------------
+
+type VoiceCoverageEntry struct {
+	LocKey     string `json:"loc_key"`
+	File       string `json:"file"`
+	DurationMs int    `json:"duration_ms,omitempty"`
+	Hash       string `json:"hash,omitempty"`
+}
+
+type VoiceCoverageFile struct {
+	Version int                  `json:"version"`
+	Locale  string               `json:"locale"`
+	Entries []VoiceCoverageEntry `json:"entries"`
+}
+
+type VoiceCoverageReport struct {
+	Covered []VoiceCoverageEntry // lines with recorded audio
+	Missing []VoiceLine          // lines with no recorded audio
+	Stale   []StaleVoiceEntry    // lines recorded but source text changed
+}
+
+type StaleVoiceEntry struct {
+	VoiceLine
+	OldHash string `json:"old_hash"`
+}
+
+func LoadVoiceCoverage(path string) (*VoiceCoverageFile, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read voice coverage file: %w", err)
+	}
+	var cf VoiceCoverageFile
+	if err := json.Unmarshal(data, &cf); err != nil {
+		return nil, fmt.Errorf("parse voice_coverage.json: %w", err)
+	}
+	return &cf, nil
+}
+
+func ScanVoiceDirectory(root, locale string) ([]VoiceCoverageEntry, error) {
+	dir := filepath.Join(root, "audio", "voice", locale)
+	info, err := os.Stat(dir)
+	if err != nil || !info.IsDir() {
+		return nil, nil
+	}
+
+	var entries []VoiceCoverageEntry
+	err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		ext := strings.ToLower(filepath.Ext(path))
+		if !isAudioExt(ext) {
+			return nil
+		}
+		rel, _ := filepath.Rel(root, path)
+
+		hash, _ := fileHash(path)
+		size := fileSize(path)
+		duration := estimateDuration(size, ext)
+
+		locKey := inferLocKeyFromPath(rel)
+
+		entries = append(entries, VoiceCoverageEntry{
+			LocKey:     locKey,
+			File:       rel,
+			DurationMs: duration,
+			Hash:       hash,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return entries, nil
+}
+
+func inferLocKeyFromPath(rel string) string {
+	rel = filepath.ToSlash(rel)
+	parts := strings.Split(rel, "/")
+	if len(parts) < 2 {
+		return ""
+	}
+	filename := parts[len(parts)-1]
+	ext := filepath.Ext(filename)
+	base := strings.TrimSuffix(filename, ext)
+	parts = parts[:len(parts)-1]
+	char := parts[len(parts)-1]
+	return fmt.Sprintf("%s/%s", char, base)
+}
+
+func BuildVoiceCoverageReport(cutsceneFiles []*CutsceneFile, audioEntries []VoiceCoverageEntry, localeMap map[string]string) *VoiceCoverageReport {
+	lines := CollectVoiceLines(cutsceneFiles)
+	lineMap := make(map[string]VoiceLine, len(lines))
+	for _, l := range lines {
+		lineMap[l.LocKey] = l
+	}
+
+	coveredMap := make(map[string]VoiceCoverageEntry, len(audioEntries))
+	for _, ae := range audioEntries {
+		coveredMap[ae.LocKey] = ae
+	}
+
+	report := &VoiceCoverageReport{}
+	for _, ae := range audioEntries {
+		if line, ok := lineMap[ae.LocKey]; ok {
+			if localeMap != nil && localeMap[ae.LocKey] != "" && localeMap[ae.LocKey] != line.Text {
+				report.Stale = append(report.Stale, StaleVoiceEntry{VoiceLine: line, OldHash: ae.Hash})
+			} else {
+				report.Covered = append(report.Covered, ae)
+			}
+		}
+	}
+
+	for _, line := range lines {
+		if _, ok := coveredMap[line.LocKey]; !ok {
+			report.Missing = append(report.Missing, line)
+		}
+	}
+
+	return report
+}
+
+func WriteVoiceCoverageJSON(report *VoiceCoverageReport, w *strings.Builder, locale string) {
+	fmt.Fprintf(w, "# AGS3D Voice Coverage Report — %s\n\n", locale)
+	fmt.Fprintf(w, "## Coverage Summary\n\n")
+	total := len(report.Covered) + len(report.Missing) + len(report.Stale)
+	fmt.Fprintf(w, "- **Recorded:** %d / %d (%.0f%%)\n", len(report.Covered), total, float64(len(report.Covered))/float64(total)*100)
+	fmt.Fprintf(w, "- **Missing:** %d\n", len(report.Missing))
+	fmt.Fprintf(w, "- **Stale:** %d\n\n", len(report.Stale))
+
+	if len(report.Stale) > 0 {
+		fmt.Fprintf(w, "## Stale Recordings (source text changed)\n\n")
+		for _, s := range report.Stale {
+			fmt.Fprintf(w, "- **%s** [%s] — %q → %q\n", s.LocKey, s.Cutscene, s.Text, "")
+			fmt.Fprintf(w, "  Old hash: `%s`\n\n", s.OldHash)
+		}
+	}
+
+	if len(report.Missing) > 0 {
+		fmt.Fprintf(w, "## Missing Recordings\n\n")
+		grouped := groupMissingByCharacter(report.Missing)
+		for char, lines := range grouped {
+			fmt.Fprintf(w, "### %s (%d lines)\n\n", char, len(lines))
+			for _, line := range lines {
+				fmt.Fprintf(w, "- **%s** [%s] — %q\n", line.LocKey, line.Cutscene, line.Text)
+				if line.Emotion != "" {
+					fmt.Fprintf(w, "  emotion: %s\n", line.Emotion)
+				}
+			}
+			fmt.Fprintf(w, "\n")
+		}
+	}
+
+	if len(report.Covered) > 0 {
+		fmt.Fprintf(w, "## Recorded Lines\n\n")
+		for _, c := range report.Covered {
+			fmt.Fprintf(w, "- **%s** — %s (%.1fs)\n", c.LocKey, c.File, float64(c.DurationMs)/1000.0)
+		}
+		fmt.Fprintf(w, "\n")
+	}
+}
+
+func groupMissingByCharacter(lines []VoiceLine) map[string][]VoiceLine {
+	m := make(map[string][]VoiceLine)
+	for _, l := range lines {
+		char := l.Char
+		if char == "" {
+			char = "(no character)"
+		}
+		m[char] = append(m[char], l)
+	}
+	return m
+}
+
+func isAudioExt(ext string) bool {
+	return ext == ".ogg" || ext == ".opus" || ext == ".mp3" || ext == ".wav" || ext == ".flac"
+}
+
+func fileHash(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	h := sha256.Sum256(data)
+	return fmt.Sprintf("sha256:%x", h[:8]), nil
+}
+
+func fileSize(path string) int64 {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	return info.Size()
+}
+
+func estimateDuration(size int64, ext string) int {
+	var bps int
+	switch ext {
+	case ".ogg", ".opus":
+		bps = 16000
+	case ".mp3":
+		bps = 32000
+	case ".wav":
+		bps = 176400
+	case ".flac":
+		bps = 88200
+	default:
+		bps = 16000
+	}
+	if bps == 0 {
+		return 0
+	}
+	ms := (size * 8 * 1000) / int64(bps)
+	return int(ms)
 }

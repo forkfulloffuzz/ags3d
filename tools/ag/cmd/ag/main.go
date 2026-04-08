@@ -63,6 +63,8 @@ func main() {
 		err = cmdViz(os.Args[2:])
 	case "loc":
 		err = cmdLoc(os.Args[2:])
+	case "voice":
+		err = cmdVoice(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "ag: unknown command %q\n\n", os.Args[1])
 		usage()
@@ -938,6 +940,103 @@ func cmdLoc(args []string) error {
 	default:
 		return fmt.Errorf("ag loc: unknown subcommand %q (check|find|filter|report|import)", args[0])
 	}
+}
+
+// ag voice — voice file coverage tracking
+
+func cmdVoice(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("usage: ag voice coverage [args]")
+	}
+	switch args[0] {
+	case "coverage":
+		return cmdVoiceCoverage(args[1:])
+	default:
+		return fmt.Errorf("ag voice: unknown subcommand %q (coverage)", args[0])
+	}
+}
+
+func cmdVoiceCoverage(args []string) error {
+	fs := flag.NewFlagSet("ag voice coverage", flag.ContinueOnError)
+	locale := fs.String("locale", "en", "locale code")
+	scan := fs.Bool("scan", false, "scan audio directory and output voice_coverage.json manifest")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag voice coverage <project> [--locale LANG] [--scan]")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+
+	root := fs.Arg(0)
+
+	cutFiles, err := collectCutsceneFiles(root)
+	if err != nil {
+		return fmt.Errorf("scan cutscenes: %w", err)
+	}
+
+	if *scan {
+		entries, err := cut.ScanVoiceDirectory(root, *locale)
+		if err != nil {
+			return fmt.Errorf("scan audio directory: %w", err)
+		}
+		data, _ := json.MarshalIndent(map[string]interface{}{
+			"version": 1,
+			"locale":  *locale,
+			"entries": entries,
+		}, "", "  ")
+		fmt.Println(string(data))
+		return nil
+	}
+
+	entries, _ := cut.ScanVoiceDirectory(root, *locale)
+	report := cut.BuildVoiceCoverageReport(cutFiles, entries, nil)
+
+	var sb strings.Builder
+	cut.WriteVoiceCoverageJSON(report, &sb, *locale)
+	fmt.Print(sb.String())
+
+	missing := len(report.Missing)
+	covered := len(report.Covered)
+	stale := len(report.Stale)
+	total := missing + covered + stale
+	if total == 0 {
+		fmt.Fprintf(os.Stderr, "\nag voice coverage: no voice lines found in project\n")
+		return nil
+	}
+	pct := float64(covered) / float64(total) * 100
+	fmt.Fprintf(os.Stderr, "\nag voice coverage: %d/%d recorded (%.0f%%), %d missing, %d stale\n",
+		covered, total, pct, missing, stale)
+	return nil
+}
+
+func collectCutsceneFiles(root string) ([]*cut.CutsceneFile, error) {
+	cutDir := filepath.Join(root, "cutscenes")
+	info, err := os.Stat(cutDir)
+	if err != nil || !info.IsDir() {
+		return nil, nil
+	}
+	var files []*cut.CutsceneFile
+	err = filepath.WalkDir(cutDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || filepath.Ext(path) != ".agcut" {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		rel, _ := filepath.Rel(root, path)
+		cf, err := cut.Parse(rel, string(data))
+		if err != nil {
+			return nil
+		}
+		files = append(files, cf)
+		return nil
+	})
+	return files, err
 }
 
 func cmdLocFind(args []string) error {

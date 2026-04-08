@@ -7,11 +7,11 @@ When all tasks are done, ask Claude to pick the next 10.
 
 Dependencies: TEST-INFRA-02 unblocks CI; T-CUT30 unblocks T-LOC16; T40/T-FINAL are runtime build tasks.
 
-- [ ] **TEST-INFRA-02** — CI: GitHub Actions workflow that builds AGS3D and runs the full test suite on every push and PR. Create `.github/workflows/test.yml`. Run `scons platform=linuxbsd`, then `agstests/run_tests.gd` headlessly. Cache SCons build objects. *(independent)*
+- [x] **TEST-INFRA-02** — CI: GitHub Actions workflow that builds AGS3D and runs the full test suite on every push and PR. Create `.github/workflows/test.yml`. Run `scons platform=linuxbsd`, then `agstests/run_tests.gd` headlessly. Cache SCons build objects. *(independent; done — commit 67ac49d150)*
 
 - [ ] **T-CUT30** — Go: cutscene localisation pipeline. `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands in `.agcut` files participate in the loc_key pipeline using cutscene title as namespace. Lines appear in `ag export --locale` output. `voice_session` header groups lines in `ag export --voicescript`. Tests in `tools/ag/internal/cut/`. *(depends T-CUT09, T-DLG08)*
 
-- [ ] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage tracking. Connect recorded voice audio files to their loc_keys so the pipeline knows which lines have been recorded, which are missing, and which are stale (recorded against old source text). Machine-readable `voice_coverage.json` listing `(loc_key, file_path, duration_ms, hash)` for each recorded line. Tests in `tools/ag/internal/cut/`. *(depends T-CUT30)*
+- [x] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage tracking. Connect recorded voice audio files to their loc_keys so the pipeline knows which lines have been recorded, which are missing, and which are stale (recorded against old source text). Machine-readable `voice_coverage.json` listing `(loc_key, file_path, duration_ms, hash)` for each recorded line. Tests in `tools/ag/internal/cut/`. *(depends T-CUT30; VoiceCoverageEntry/BuildVoiceCoverageReport/ScanVoiceDirectory added; ag voice coverage CLI command)*
 
 - [ ] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool. A terminal/TUI tool for authoring translations directly in `.agstrings` files with live validation feedback. Shows source text, character, scene context; marks entries complete on save. Partial implementation exists (check/report/import done). Full interactive TUI still needed. Tests in `tools/ag/`. *(depends T-LOC04)*
 
