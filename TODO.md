@@ -9,7 +9,7 @@ Dependencies: T-GS02 (C++ AGSItem) unblocks T-GS14 → T-GS15; T-BL10 unblocks T
 
 - [x] **T-E05** — Go: `ag validate` cross-reference checks. Ensure `ag validate` checks: start_room/start_character files exist, initial_camera matches Camera block in same room, SpawnPoint.character matches .agchar, WalkTo/FaceTo point names resolve, inventory item references resolve. Exit non-zero on errors. Tests in `tools/ag/internal/validate/`. *(depends T-E01, T-E03 — both done; checks 1-6 already done, check 7 (character receiver refs in .agscript method calls) added)*
 
-- [ ] **T-LOC10** — Design: author context annotations in `.agdlg` and `.agcut`. Design `#ctx:` comment syntax to attach translator notes to individual strings. Document in `docs/localisation-milestone.md`. *(independent)*
+- [x] **T-LOC10** — Design: author context annotations in `.agdlg` and `.agcut`. Design `#ctx:` comment syntax to attach translator notes to individual strings. Document in `docs/localisation-milestone.md`. *(independent; design complete — syntax: trailing `#ctx:` on string lines, stored in LocEntry.Ctx, exported as PO `#. ctx:` comment and CSV `context` column)*
 
 - [ ] **T-LOC11** — Design: string taxonomy and source metadata in `.agstrings`. Design `type:` (spoken/choice/narration/ui/subtitle), `char:`, `scene:` metadata fields per entry. Document in `docs/localisation-milestone.md`. *(depends T-LOC10)*
 

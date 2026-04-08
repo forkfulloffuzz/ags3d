@@ -159,6 +159,131 @@ GDScript LocalisationRuntime.load_locale("fr")
 
 ---
 
+## T-LOC10 — Author Context Annotations (`#ctx:`)
+
+### Problem
+
+Translators often need more than the raw string to produce an accurate translation.
+A line like `"That's not a problem."` is ambiguous — it could be dismissive,
+reassuring, or sarcastic. Without scene context, a translator may pick the wrong
+tone, resulting in an awkward or incorrect localisation.
+
+### Solution
+
+A `#ctx:` inline comment suffix that authors attach to any localizable string.
+The annotation is ignored by the game engine but is harvested during `ag export`
+and written into `.agstrings` files (or PO/CSV) as a translator note.
+
+### Syntax
+
+`#ctx:` is a trailing inline comment on the same line as the string it describes.
+It is separated from the string by whitespace, and from any `#loc:` annotation by
+whitespace. The `#ctx:` value extends to the end of the line.
+
+```
+// .agdlg
+title: guard_greeting
+---
+Guard: Halt!  #ctx: guard is suspicious, not yet hostile
+<<end>>
+===
+
+// .agcut
+<<line guard "Stop right there!" #ctx:guard is threatening - firm, authoritative tone>>
+```
+
+**Rules:**
+- `#ctx:` must appear on the same line as the string it annotates.
+- Multiple `#ctx:` on the same line are concatenated (first wins for display).
+- A `#ctx:` value containing spaces should be quoted (`"..."`). Unquoted
+  `#ctx:` values are terminated at the first whitespace.
+- `#ctx:` is stripped from the actual translatable string.
+- `#ctx:` is optional on every string. Strings without it have no translator note.
+
+### Supported File Types
+
+| File type | Placement |
+|-----------|-----------|
+| `.agdlg` | On the same line as the speaker line, narration, or choice text |
+| `.agcut` | On the same line as `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands |
+
+### `.agstrings` Export Format
+
+When `ag export` runs, each `#ctx:` value is written into the PO file as a
+`#.` comment (translator note) above the `msgctxt`/`msgid`/`msgstr` block, and
+into CSV as a separate `context` column:
+
+```po
+#. Context: guard is suspicious, not yet hostile
+#. Type: spoken
+#. Node: guard_greeting
+msgctxt "guard_greeting:line0:aabb1122"
+msgid "Halt!"
+msgstr ""
+
+```
+
+```csv
+loc_key,node,character,type,source_text,translation,context
+guard_greeting:line0:aabb1122,guard_greeting,Guard,spoken,"Halt!","",guard is suspicious not yet hostile
+```
+
+### Parser Requirements
+
+**`.agdlg` parser changes:**
+- `SpeakerLine`, `NarrationLine`, `OptionBranch` structs gain a `Ctx string` field.
+- During lexing/parsing, trailing `#ctx:` content on the text line is extracted,
+  the `#ctx:` portion is stripped from the text, and the remainder is stored in `Ctx`.
+- If both `#loc:` and `#ctx:` appear on the same line, both are extracted:
+  `#loc:mykey #ctx:some context` → `LocKey = "mykey"`, `Ctx = "some context"`.
+
+**`.agcut` parser changes:**
+- `RawCommand.Args` (the raw string of arguments) is post-processed to extract
+  `#ctx:` values. The `collectLocArgs()` helper in `cut/loc.go` is extended to
+  also return a `context` string.
+- The `LocEntry` struct in `cut/loc.go` gains a `Ctx string` field.
+
+### `LocEntry` Struct Changes
+
+```go
+// dlg/export.go
+type LocEntry struct {
+    LocKey    string
+    NodeTitle string
+    Character string
+    LineType  string // "spoken" | "choice" | "narration"
+    Source    string
+    Ctx       string // T-LOC10: author context / translator note
+}
+
+// cut/loc.go
+type LocEntry struct {
+    LocKey  string
+    Source  string
+    CmdName string
+    Pos     Pos
+    Ctx     string // T-LOC10: author context / translator note
+}
+```
+
+### PO Export Changes
+
+`dlg.ExportPO()` writes `# ctx:` comments (already uses `#.` prefix for other
+metadata). `cut.WriteAgstringsTemplate()` stores context in a `// ctx:` comment
+prefix on each key line.
+
+### Implementation Plan
+
+1. **Parser** (`dlg/` + `cut/`): Add `Ctx` field to `LocEntry`. Extract `#ctx:`
+   in `collectStmtEntries()` (dlg) and `CollectLocEntries()` (cut).
+2. **Export** (`dlg/export.go`): Include `Ctx` in PO comment output and CSV
+   `context` column.
+3. **Export** (`cut/loc.go`): Include `Ctx` in `WriteAgstringsTemplate()` output.
+4. **Validate** (optional future): A `DLG-LOC-W004` warning when a string
+   exceeds N characters without a `#ctx:` (configurable threshold, off by default).
+
+---
+
 ## Out of Scope
 
 - Machine translation integration
