@@ -52,10 +52,13 @@ var blockingMethodNames = map[string]bool{
 // blockingNamespaceMethods is the set of "Namespace.Method" pairs that are
 // blocking coroutines (emitter must prefix with `await`).
 // T-DLG18: dialogue.Start variants.
+// T-CUT29: cutscene.Play and cutscene.WaitFor.
 var blockingNamespaceMethods = map[string]bool{
 	"dialogue.Start":        true,
 	"dialogue.StartDefault": true,
 	"dialogue.StartItem":    true,
+	"cutscene.Play":         true,
+	"cutscene.WaitFor":      true,
 }
 
 // IsBlockingNamespaceMethod reports whether the "Namespace.Method" pair is blocking.

@@ -315,3 +315,121 @@ function interact() { start_talk(); }
 		t.Errorf("caller of blocking dialogue.Start function should emit await, got:\n%s", out)
 	}
 }
+
+// ─── T-CUT29 — cutscene.* namespace API emission ──────────────────────────────
+
+func TestUT_CUT29_01_CutscenePlayEmitsAwait(t *testing.T) {
+	src := `function intro() { cutscene.Play("opening"); }`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await AGSSequencer.play") {
+		t.Errorf("cutscene.Play should emit await AGSSequencer.play, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_02_CutscenePlayAsyncNoAwait(t *testing.T) {
+	src := `function start_bg() { cutscene.PlayAsync("background_loop"); }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.PlayAsync should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.play_async") {
+		t.Errorf("cutscene.PlayAsync should emit AGSSequencer.play_async, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_03_CutsceneStopNoAwait(t *testing.T) {
+	src := `function skip_it() { cutscene.Stop(); }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.Stop should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.stop") {
+		t.Errorf("cutscene.Stop should emit AGSSequencer.stop, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_04_CutsceneViewedNoAwait(t *testing.T) {
+	src := `function check() { if (cutscene.Viewed("opening")) { return; } }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.Viewed should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.viewed") {
+		t.Errorf("cutscene.Viewed should emit AGSSequencer.viewed, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_05_CutsceneSkippedNoAwait(t *testing.T) {
+	src := `function check() { if (cutscene.Skipped("opening")) { return; } }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.Skipped should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.skipped") {
+		t.Errorf("cutscene.Skipped should emit AGSSequencer.skipped, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_06_CutsceneViewCountNoAwait(t *testing.T) {
+	src := `function check() { int n = cutscene.ViewCount("opening"); }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.ViewCount should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.view_count") {
+		t.Errorf("cutscene.ViewCount should emit AGSSequencer.view_count, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_07_CutsceneIsPlayingNoAwait(t *testing.T) {
+	src := `function check() { if (cutscene.IsPlaying()) { return; } }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.IsPlaying should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.is_playing") {
+		t.Errorf("cutscene.IsPlaying should emit AGSSequencer.is_playing, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_08_CutsceneSetSkipPolicyNoAwait(t *testing.T) {
+	src := `function setup() { cutscene.SetSkipPolicy("opening", "always"); }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.SetSkipPolicy should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSSequencer.set_skip_policy") {
+		t.Errorf("cutscene.SetSkipPolicy should emit AGSSequencer.set_skip_policy, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_09_CutsceneEmitEventNoAwait(t *testing.T) {
+	src := `function fire() { cutscene.EmitEvent("cutscene:start"); }`
+	out := emitUT(t, src)
+	if strings.Contains(out, "await") {
+		t.Errorf("cutscene.EmitEvent should not emit await, got:\n%s", out)
+	}
+	if !strings.Contains(out, "AGSEventBusSurface.emit_event") {
+		t.Errorf("cutscene.EmitEvent should emit AGSEventBusSurface.emit_event, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_10_CutsceneWaitForEmitsAwait(t *testing.T) {
+	src := `function wait_trigger() { cutscene.WaitFor("door:opened"); }`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await AGSEventBusSurface.wait_for") {
+		t.Errorf("cutscene.WaitFor should emit await AGSEventBusSurface.wait_for, got:\n%s", out)
+	}
+}
+
+func TestUT_CUT29_11_CutscenePlayBlockingPropagates(t *testing.T) {
+	// A function that calls cutscene.Play should be blocking when called from another function.
+	src := `
+function run_intro() { cutscene.Play("opening"); }
+function on_start() { run_intro(); }
+`
+	out := emitUT(t, src)
+	if !strings.Contains(out, "await run_intro()") {
+		t.Errorf("caller of blocking cutscene.Play function should emit await, got:\n%s", out)
+	}
+}

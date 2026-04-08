@@ -423,3 +423,48 @@ func bg_step_state(id: String) -> String:
 ## Returns all currently tracked background step ids.
 func bg_step_ids() -> Array:
 	return _bg_steps.keys()
+
+# ---------------------------------------------------------------------------
+# T-CUT29 — cutscene.* runtime API
+# ---------------------------------------------------------------------------
+
+## True while a sequence is active. Alias for is_active() (T-CUT29).
+func is_playing() -> bool:
+	return _active
+
+## Stop the current sequence immediately. Emits sequence_failed("stopped").
+func stop() -> void:
+	if _active:
+		_halt("stopped")
+
+## Play a cutscene without blocking the caller (fire-and-forget).
+func play_async(title: String) -> void:
+	var steps: Array = _cutscenes.get(title, [])
+	if steps.is_empty():
+		push_warning("AGSSequencer.play_async: cutscene not found: " + title)
+		return
+	_play_async_impl(title, steps)
+
+func _play_async_impl(_title: String, steps: Array) -> void:
+	await run(steps)
+
+## Returns true if the cutscene with [param title] has been viewed at least once.
+## Tracking is stubbed; returns false until T-CUT26 implements persistence.
+func viewed(_title: String) -> bool:
+	return false
+
+## Returns true if the last play of [param title] was interrupted by skip.
+## Tracking is stubbed; returns false until T-CUT23 implements skip state.
+func skipped(_title: String) -> bool:
+	return false
+
+## Returns how many times the cutscene with [param title] has completed.
+## Tracking is stubbed; returns 0 until T-CUT26 implements persistence.
+func view_count(_title: String) -> int:
+	return 0
+
+## Override the skip policy for a specific cutscene at runtime.
+## Policy strings: "always", "never", "after_first_view", "author_controlled".
+## Stubbed — will apply once T-CUT23 skip system is implemented.
+func set_skip_policy(_title: String, _policy: String) -> void:
+	pass  # T-CUT23

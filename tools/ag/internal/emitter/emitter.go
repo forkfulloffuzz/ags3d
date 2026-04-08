@@ -768,6 +768,18 @@ var namespaceBuiltinMethods = map[string]struct {
 	"dialogue.OptionSeen":  {gd: "AGSDialogueState.option_seen", blocking: false},
 	// Game.SetLocale — non-blocking.
 	"Game.SetLocale": {gd: "AGSLocalisation.set_locale", blocking: false},
+	// T-CUT29 — cutscene.* → AGSSequencer / AGSEventBusSurface.
+	// Blocking: Play (awaits until cutscene finishes), WaitFor (awaits event).
+	"cutscene.Play":           {gd: "AGSSequencer.play", blocking: true},
+	"cutscene.PlayAsync":      {gd: "AGSSequencer.play_async", blocking: false},
+	"cutscene.Stop":           {gd: "AGSSequencer.stop", blocking: false},
+	"cutscene.Viewed":         {gd: "AGSSequencer.viewed", blocking: false},
+	"cutscene.Skipped":        {gd: "AGSSequencer.skipped", blocking: false},
+	"cutscene.ViewCount":      {gd: "AGSSequencer.view_count", blocking: false},
+	"cutscene.IsPlaying":      {gd: "AGSSequencer.is_playing", blocking: false},
+	"cutscene.SetSkipPolicy":  {gd: "AGSSequencer.set_skip_policy", blocking: false},
+	"cutscene.EmitEvent":      {gd: "AGSEventBusSurface.emit_event", blocking: false},
+	"cutscene.WaitFor":        {gd: "AGSEventBusSurface.wait_for", blocking: true},
 }
 
 // namespaceBuiltinCallee returns (gdscript_call_prefix, is_blocking, true) when
