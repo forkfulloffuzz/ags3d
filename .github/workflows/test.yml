@@ -1,0 +1,115 @@
+name: 🧪 Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}|${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  SCONS_FLAGS: >-
+    dev_mode=yes
+    module_text_server_fb_enabled=yes
+  SCONS_CACHE: ${{ github.workspace }}/.scons_cache/
+
+jobs:
+  go-tests:
+    name: Go tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: tools/ag/go.sum
+
+      - name: Go — tools/ag
+        run: cd tools/ag && go test ./...
+
+      - name: Go — tools/agui
+        run: |
+          if [ -d tools/agui ]; then
+            cd tools/agui && go test ./...
+          else
+            echo "tools/agui not found, skipping"
+          fi
+
+  godot-tests:
+    name: GDScript tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwayland-bin \
+            mesa-vulkan-drivers \
+            libx11-dev \
+            libxext-dev \
+            libxrender-dev \
+            libxi-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxkbcommon-dev \
+            libgl1-mesa-dev \
+            libasound2-dev \
+            xvfb
+
+      - name: Setup Python and SCons
+        uses: ./.github/actions/godot-deps
+
+      - name: Restore SCons cache
+        uses: ./.github/actions/godot-cache-restore
+        with:
+          cache-name: godot-linux-tests
+          scons-cache: ${{ env.SCONS_CACHE }}
+
+      - name: Free disk space
+        run: |
+          echo "Disk usage before:" && df -h
+          sudo rm -rf /usr/local/lib/android
+          echo "Disk usage after:" && df -h
+
+      - name: Build Godot
+        uses: ./.github/actions/godot-build
+        with:
+          platform: linuxbsd
+          target: editor
+          scons-flags: ${{ env.SCONS_FLAGS }}
+          scons-cache: ${{ env.SCONS_CACHE }}
+
+      - name: Save SCons cache
+        uses: ./.github/actions/godot-cache-save
+        with:
+          cache-name: godot-linux-tests
+          scons-cache: ${{ env.SCONS_CACHE }}
+
+      - name: Clear Godot bytecode cache
+        run: rm -rf agstests/.godot game_prototype/.godot
+
+      - name: GDScript — agstests
+        run: |
+          xvfb-run bin/godot.linuxbsd.editor.x86_64 \
+            --headless \
+            --path agstests \
+            --script run_tests.gd
+
+      - name: GDScript — game_prototype plugin
+        run: |
+          xvfb-run bin/godot.linuxbsd.editor.x86_64 \
+            --headless \
+            --path game_prototype \
+            --script test_plugin.gd
