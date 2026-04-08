@@ -1037,40 +1037,31 @@ func cmdLocImport(args []string) error {
 
 	root := fs.Arg(0)
 
-	data, err := os.ReadFile(*file)
+	ext := filepath.Ext(*file)
+	var result *loc.ImportResult
+	var err error
+	switch ext {
+	case ".po":
+		result, err = loc.ImportPO(root, *locale, *file)
+	case ".csv":
+		result, err = loc.ImportCSV(root, *locale, *file)
+	default:
+		return fmt.Errorf("unsupported file format %q (use .po or .csv)", ext)
+	}
 	if err != nil {
-		return fmt.Errorf("read file: %w", err)
+		return fmt.Errorf("import: %w", err)
 	}
 
-	sf, parseErr := loc.Parse(*file, string(data))
-	if parseErr != nil {
-		return fmt.Errorf("parse locale file: %w", parseErr)
+	fmt.Printf("ag loc import: processed %d entries from %s\n", result.Imported+result.Skipped+result.Invalid, *file)
+	fmt.Printf("  imported: %d\n", result.Imported)
+	if result.Skipped > 0 {
+		fmt.Printf("  skipped (empty): %d\n", result.Skipped)
 	}
-
-	usedKeys, usedErr := loc.CollectUsedLocKeys(root)
-	if usedErr != nil {
-		return fmt.Errorf("collect used keys: %w", usedErr)
-	}
-
-	var imported, missing int
-	for _, e := range sf.Entries {
-		if !usedKeys[e.Key] {
-			missing++
-			continue
+	if result.Invalid > 0 {
+		fmt.Fprintf(os.Stderr, "  invalid (not in project): %d\n", result.Invalid)
+		for _, e := range result.Errors {
+			fmt.Fprintf(os.Stderr, "    %s\n", e)
 		}
-		if e.Value != "" {
-			imported++
-		}
-	}
-
-	fmt.Printf("ag loc import: processed %d entries from %s\n", len(sf.Entries), *file)
-	fmt.Printf("  imported: %d (already had translations)\n", imported)
-	if missing > 0 {
-		fmt.Fprintf(os.Stderr, "  skipped: %d (keys not found in project)\n", missing)
-	}
-
-	if imported == 0 && missing > 0 {
-		return fmt.Errorf("no entries imported (all keys missing from project)")
 	}
 
 	fmt.Println("ag loc import: merge complete")

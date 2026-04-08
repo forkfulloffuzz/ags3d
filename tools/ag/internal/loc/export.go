@@ -306,3 +306,159 @@ func CollectUsedLocKeys(root string) (map[string]bool, error) {
 
 	return usedKeys, nil
 }
+
+type ImportResult struct {
+	Imported int
+	Skipped  int
+	Invalid  int
+	Errors   []string
+}
+
+func ImportPO(root, locale, poPath string) (*ImportResult, error) {
+	data, err := os.ReadFile(poPath)
+	if err != nil {
+		return nil, fmt.Errorf("read PO file: %w", err)
+	}
+
+	translations := dlg.ParsePOTranslations(string(data))
+	usedKeys, err := CollectUsedLocKeys(root)
+	if err != nil {
+		return nil, fmt.Errorf("collect used keys: %w", err)
+	}
+
+	result := &ImportResult{}
+	localePath := findLocaleFile(root, locale)
+	var sf *StringsFile
+	if localePath != "" {
+		existing, err := os.ReadFile(localePath)
+		if err == nil {
+			sf, err = Parse(localePath, string(existing))
+			if err != nil {
+				sf = nil
+			}
+		}
+	}
+	if sf == nil {
+		sf = &StringsFile{
+			Meta: Meta{
+				BaseLocale: "en",
+				Locale:     locale,
+			},
+			index: make(map[string]int),
+		}
+	}
+
+	for key, translation := range translations {
+		if !usedKeys[key] {
+			result.Invalid++
+			result.Errors = append(result.Errors, fmt.Sprintf("key %q not found in project", key))
+			continue
+		}
+		if translation == "" {
+			continue
+		}
+		if idx, ok := sf.index[key]; ok {
+			sf.Entries[idx].Value = translation
+		} else {
+			sf.index[key] = len(sf.Entries)
+			sf.Entries = append(sf.Entries, Entry{Key: key, Value: translation})
+		}
+		result.Imported++
+	}
+
+	if localePath == "" {
+		localeDir := filepath.Join(root, "locale")
+		if err := os.MkdirAll(localeDir, 0755); err != nil {
+			return nil, fmt.Errorf("create locale dir: %w", err)
+		}
+		localePath = filepath.Join(localeDir, "strings."+locale+".agstrings")
+	}
+
+	if err := os.WriteFile(localePath, []byte(Write(sf)), 0644); err != nil {
+		return nil, fmt.Errorf("write locale file: %w", err)
+	}
+
+	return result, nil
+}
+
+func ImportCSV(root, locale, csvPath string) (*ImportResult, error) {
+	data, err := os.ReadFile(csvPath)
+	if err != nil {
+		return nil, fmt.Errorf("read CSV file: %w", err)
+	}
+
+	translations := dlg.ParseCSVTranslations(string(data))
+	usedKeys, err := CollectUsedLocKeys(root)
+	if err != nil {
+		return nil, fmt.Errorf("collect used keys: %w", err)
+	}
+
+	result := &ImportResult{}
+	localePath := findLocaleFile(root, locale)
+	var sf *StringsFile
+	if localePath != "" {
+		existing, err := os.ReadFile(localePath)
+		if err == nil {
+			sf, err = Parse(localePath, string(existing))
+			if err != nil {
+				sf = nil
+			}
+		}
+	}
+	if sf == nil {
+		sf = &StringsFile{
+			Meta: Meta{
+				BaseLocale: "en",
+				Locale:     locale,
+			},
+			index: make(map[string]int),
+		}
+	}
+
+	for key, translation := range translations {
+		if !usedKeys[key] {
+			result.Invalid++
+			result.Errors = append(result.Errors, fmt.Sprintf("key %q not found in project", key))
+			continue
+		}
+		if translation == "" {
+			continue
+		}
+		if idx, ok := sf.index[key]; ok {
+			sf.Entries[idx].Value = translation
+		} else {
+			sf.index[key] = len(sf.Entries)
+			sf.Entries = append(sf.Entries, Entry{Key: key, Value: translation})
+		}
+		result.Imported++
+	}
+
+	if localePath == "" {
+		localeDir := filepath.Join(root, "locale")
+		if err := os.MkdirAll(localeDir, 0755); err != nil {
+			return nil, fmt.Errorf("create locale dir: %w", err)
+		}
+		localePath = filepath.Join(localeDir, "strings."+locale+".agstrings")
+	}
+
+	if err := os.WriteFile(localePath, []byte(Write(sf)), 0644); err != nil {
+		return nil, fmt.Errorf("write locale file: %w", err)
+	}
+
+	return result, nil
+}
+
+func findLocaleFile(root, locale string) string {
+	patterns := []string{
+		filepath.Join(root, "locale", "strings."+locale+".agstrings"),
+		filepath.Join(root, "locale", locale+".agstrings"),
+		filepath.Join(root, "locale", locale+".po"),
+		filepath.Join(root, "locale", locale+".csv"),
+	}
+	for _, p := range patterns {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return ""
+}
