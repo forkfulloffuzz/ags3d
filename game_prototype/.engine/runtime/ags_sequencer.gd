@@ -35,6 +35,9 @@ signal step_complete(id: String)
 signal step_failed(id: String)
 signal sequence_complete
 signal sequence_failed(reason: String)
+## Emitted when external input requests a cutscene skip (T-CUT22).
+## T-CUT23 connects to this signal to decide whether to skip.
+signal skip_requested
 
 # ---------------------------------------------------------------------------
 # Step state constants
@@ -468,3 +471,10 @@ func view_count(_title: String) -> int:
 ## Stubbed — will apply once T-CUT23 skip system is implemented.
 func set_skip_policy(_title: String, _policy: String) -> void:
 	pass  # T-CUT23
+
+## Request a cutscene skip from external input (T-CUT22).
+## Emits skip_requested; T-CUT23 connects to decide whether to act.
+## No-op if no sequence is active.
+func request_skip() -> void:
+	if _active:
+		skip_requested.emit()
