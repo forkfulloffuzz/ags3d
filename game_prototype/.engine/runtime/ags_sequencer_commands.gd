@@ -85,12 +85,24 @@ func _exec_character(step: Dictionary) -> bool:
 	var cmd: String = step.get("command", "")
 	match cmd:
 		"walk_to":
+			# T-CUT23: on skip, teleport to destination instead of walking.
+			if _skip_active:
+				var pos: Vector3 = _resolve_point(step.get("point", ""))
+				if pos != Vector3.ZERO:
+					ch.global_position = pos
+				return true
 			await ch.walk_to(step.get("point", ""))
 			return true
 
 		"run_to":
 			var original_speed: float = ch.move_speed
 			var run_speed: float = step.get("speed", original_speed * 2.0) as float
+			# T-CUT23: on skip, teleport.
+			if _skip_active:
+				var pos: Vector3 = _resolve_point(step.get("point", ""))
+				if pos != Vector3.ZERO:
+					ch.global_position = pos
+				return true
 			ch.move_speed = run_speed
 			await ch.walk_to(step.get("point", ""))
 			ch.move_speed = original_speed
@@ -102,6 +114,9 @@ func _exec_character(step: Dictionary) -> bool:
 			if clip.is_empty():
 				push_warning("AGSSequencerCommands: animation command missing 'clip'")
 				return false
+			# T-CUT23: on skip, cut to end frame (return true immediately).
+			if _skip_active:
+				return true
 			return await ch.play_clip(clip, loop)
 
 		"face_to":
@@ -220,6 +235,13 @@ func _exec_camera(step: Dictionary) -> bool:
 				return true
 			var target_cam: Camera3D = _get_camera(step.get("point", ""))
 			if target_cam == null or target_cam == cam:
+				return true
+			# T-CUT23: on skip, teleport camera instantly.
+			if _skip_active:
+				cam.global_position = target_cam.global_position
+				cam.global_rotation = target_cam.global_rotation
+				if step.has("fov"):
+					cam.fov = step.get("fov") as float
 				return true
 			var duration: float = step.get("duration", 1.0) as float
 			var tween := create_tween()
@@ -405,6 +427,7 @@ func _exec_audio(step: Dictionary) -> bool:
 	match cmd:
 		"music":
 			# Play music: <<music name fade_in? volume? loop?>>
+			# T-CUT23: on skip, music still starts but at the end fade it out in 0.3s.
 			var name: String = step.get("name", "")
 			if name.is_empty():
 				push_warning("AGSSequencerCommands: music command missing 'name'")
@@ -793,6 +816,9 @@ func _exec_visual(step: Dictionary) -> bool:
 			return true
 
 		"video":
+			# T-CUT23: on skip, skip video entirely.
+			if _skip_active:
+				return true
 			# Play a video file (blocks until finished or skipped).
 			var file: String = step.get("file", "")
 			if file.is_empty():
@@ -810,7 +836,12 @@ func _exec_visual(step: Dictionary) -> bool:
 			if player.get_viewport() != null:
 				player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			player.play()
-			await player.finished
+			# Stop on skip.
+			while player.is_playing():
+				if _skip_active:
+					player.stop()
+					break
+				await get_tree().process_frame
 			player.queue_free()
 			return true
 

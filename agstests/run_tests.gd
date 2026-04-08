@@ -60,6 +60,7 @@ const ASYNC_SUITES: Array[String] = [
 	"m_cut/test_flow_commands.gd",               # T-CUT20
 	"m_cut/test_dialogue_commands.gd",          # T-CUT21
 	"m_cut/test_skip_input.gd",                 # T-CUT22
+	"m_cut/test_skip_system.gd",                # T-CUT23
 	"m_dlg/test_dialogue_engine.gd",           # T-DLG14
 	"m_dlg/test_localisation.gd",              # T-DLG17
 	"m_dlg/test_dialogue_state.gd",            # T-DLG15

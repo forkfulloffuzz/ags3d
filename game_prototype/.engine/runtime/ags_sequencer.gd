@@ -64,6 +64,24 @@ var _bg_steps: Dictionary = {}  # id → { state, done_signal }
 var _cutscenes: Dictionary = {}  # title → Array[Dictionary]
 
 # ---------------------------------------------------------------------------
+# T-CUT23 — Skip system state
+# ---------------------------------------------------------------------------
+
+## True while the skip system is actively skipping steps.
+## Set by _on_skip_requested() and cleared at sequence end.
+var _skip_active: bool = false
+
+## Skip policy for the current cutscene. Set from cutscene header or at runtime.
+## Values: "always", "never", "after_first_view", "author_controlled".
+var skip_policy: String = "always"
+
+## Title of the currently-running cutscene (set by play(), cleared on done).
+var _current_title: String = ""
+
+## True when the sequencer is currently at an author-controlled skip point (a <<label>>).
+var _at_skip_point: bool = false
+
+# ---------------------------------------------------------------------------
 # Loading
 # ---------------------------------------------------------------------------
 
@@ -108,7 +126,13 @@ func play(title: String) -> void:
 	if steps.is_empty():
 		push_warning("AGSSequencer.play: cutscene not found: " + title)
 		return
+	_current_title = title
 	await run(steps)
+	_current_title = ""
+
+func _ready() -> void:
+	# Wire skip handler permanently so request_skip() works at any time.
+	skip_requested.connect(_on_skip_requested)
 
 ## Execute a list of step Dictionaries directly (blocking coroutine).
 ## This is the core execution engine.
@@ -117,6 +141,8 @@ func run(steps: Array) -> void:
 		push_warning("AGSSequencer.run: a sequence is already active, ignoring")
 		return
 	_active = true
+	_skip_active = false
+	_at_skip_point = false
 	_bg_steps.clear()
 	_retry_tracker.clear()
 
@@ -134,8 +160,12 @@ func run(steps: Array) -> void:
 			break
 
 		if stype == "label":
+			# Labels are author_controlled skip points (T-CUT23).
+			_at_skip_point = true
 			i += 1
 			continue
+		else:
+			_at_skip_point = false
 
 		if stype == "skip_to":
 			var target_label: String = step.get("label", step.get("name", ""))
@@ -174,6 +204,8 @@ func run(steps: Array) -> void:
 	await _sync_all_bg()
 
 	_active = false
+	_skip_active = false
+	_at_skip_point = false
 	_bg_steps.clear()
 	_retry_tracker.clear()
 	sequence_complete.emit()
@@ -280,8 +312,13 @@ func _dispatch_step(step: Dictionary) -> bool:
 	match stype:
 		"wait":
 			var seconds: float = step.get("duration", 0.0) as float
-			if get_tree() != null:
-				await get_tree().create_timer(seconds).timeout
+			# T-CUT23: skip_active skips wait entirely (poll each frame for skip signal).
+			if seconds <= 0.0 or get_tree() == null:
+				return true
+			var elapsed: float = 0.0
+			while elapsed < seconds and not _skip_active:
+				await get_tree().process_frame
+				elapsed += get_process_delta_time()
 			return true
 		"action", "set":
 			# Fire command signal for the game to handle.
@@ -367,6 +404,8 @@ func _fire_state_changes(step: Dictionary) -> void:
 ## Tear down active state and emit sequence_failed.
 func _halt(reason: String) -> void:
 	_active = false
+	_skip_active = false
+	_at_skip_point = false
 	_bg_steps.clear()
 	_retry_tracker.clear()
 	sequence_failed.emit(reason)
@@ -478,3 +517,21 @@ func set_skip_policy(_title: String, _policy: String) -> void:
 func request_skip() -> void:
 	if _active:
 		skip_requested.emit()
+
+## Decide whether to activate skip based on current policy (T-CUT23).
+func _on_skip_requested() -> void:
+	match skip_policy:
+		"never":
+			pass  # Skip input ignored.
+		"always":
+			_skip_active = true
+		"after_first_view":
+			# Require at least one prior view. Depends on T-CUT26 persistence.
+			if viewed(_current_title):
+				_skip_active = true
+		"author_controlled":
+			# Skip only when at an explicit <<label>> position.
+			if _at_skip_point:
+				_skip_active = true
+		_:
+			_skip_active = true  # Unknown policy: treat as "always".
