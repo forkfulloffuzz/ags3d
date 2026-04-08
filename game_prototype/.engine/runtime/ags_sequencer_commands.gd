@@ -596,12 +596,223 @@ func _set_music_volume(volume_db: float) -> void:
 
 
 # ---------------------------------------------------------------------------
-# T-CUT19 — Visual commands (stub; implemented in T-CUT19)
+# T-CUT19 — Visual commands
 # ---------------------------------------------------------------------------
 
+## Shared CanvasLayer for all visual overlays (layer 99, below AGSCutscene's 100).
+var _visual_layer: CanvasLayer = null
+
+## Letterbox bar nodes (top and bottom), created on first use.
+var _letterbox_top: ColorRect = null
+var _letterbox_bottom: ColorRect = null
+
+## Current image overlay node (one at a time).
+var _current_overlay: TextureRect = null
+
+
+## Return (creating if needed) the visual overlay CanvasLayer.
+func _get_visual_layer() -> CanvasLayer:
+	if _visual_layer == null or not is_instance_valid(_visual_layer):
+		_visual_layer = CanvasLayer.new()
+		_visual_layer.layer = 99
+		add_child(_visual_layer)
+	return _visual_layer
+
+
+## Parse a color from a step field. [param field] is an Array [r,g,b,a] or missing.
+func _parse_color(step: Dictionary, field: String, default_color: Color) -> Color:
+	if not step.has(field):
+		return default_color
+	var arr: Array = step.get(field) as Array
+	if arr.size() < 3:
+		return default_color
+	return Color(
+		arr[0] if arr.size() > 0 else default_color.r,
+		arr[1] if arr.size() > 1 else default_color.g,
+		arr[2] if arr.size() > 2 else default_color.b,
+		arr[3] if arr.size() > 3 else 1.0
+	)
+
+
 func _exec_visual(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: visual commands not yet implemented (T-CUT19)")
-	return true
+	var cmd: String = step.get("command", "")
+
+	match cmd:
+		"fade_in":
+			# Fade from color to transparent.
+			var duration: float = step.get("duration", 0.5) as float
+			var color: Color = _parse_color(step, "color", Color.BLACK)
+			# Delegate to AGSCutscene if available and default black.
+			if Engine.has_singleton("AGSCutscene") and color == Color.BLACK:
+				var cs: Node = Engine.get_singleton("AGSCutscene") as Node
+				await cs.call("fade_in", duration)
+				return true
+			# Otherwise use our own overlay.
+			var layer := _get_visual_layer()
+			var rect := ColorRect.new()
+			rect.color = Color(color.r, color.g, color.b, 1.0)
+			layer.add_child(rect)
+			if rect.get_viewport() != null:
+				rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			var tween := create_tween()
+			tween.tween_property(rect, "color:a", 0.0, duration)
+			await tween.finished
+			rect.queue_free()
+			return true
+
+		"fade_out":
+			# Fade to color.
+			var duration: float = step.get("duration", 0.5) as float
+			var color: Color = _parse_color(step, "color", Color.BLACK)
+			if Engine.has_singleton("AGSCutscene") and color == Color.BLACK:
+				var cs: Node = Engine.get_singleton("AGSCutscene") as Node
+				await cs.call("fade_out", duration)
+				return true
+			var layer := _get_visual_layer()
+			var rect := ColorRect.new()
+			rect.color = Color(color.r, color.g, color.b, 0.0)
+			layer.add_child(rect)
+			if rect.get_viewport() != null:
+				rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			var tween := create_tween()
+			tween.tween_property(rect, "color:a", 1.0, duration)
+			await tween.finished
+			# Leave the rect visible (screen stays dark until fade_in).
+			return true
+
+		"flash":
+			# Flash to color then back.
+			var color: Color = _parse_color(step, "color", Color.WHITE)
+			var duration: float = step.get("duration", 0.1) as float
+			var layer := _get_visual_layer()
+			var rect := ColorRect.new()
+			rect.color = color
+			layer.add_child(rect)
+			if rect.get_viewport() != null:
+				rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			var tween := create_tween()
+			tween.tween_property(rect, "color:a", 0.0, duration)
+			await tween.finished
+			rect.queue_free()
+			return true
+
+		"vignette":
+			# Semi-transparent dark border overlay (simplified vignette).
+			var intensity: float = step.get("intensity", 0.5) as float
+			var duration: float = step.get("duration", 0.0) as float
+			var layer := _get_visual_layer()
+			var rect := ColorRect.new()
+			rect.color = Color(0.0, 0.0, 0.0, 0.0)
+			layer.add_child(rect)
+			if rect.get_viewport() != null:
+				rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			var tween := create_tween()
+			tween.tween_property(rect, "color:a", intensity * 0.5, duration if duration > 0.0 else 0.0)
+			await tween.finished
+			# Vignette persists until next fade_in or sequence end.
+			return true
+
+		"letterbox":
+			# Add or remove letterbox bars.
+			var enable: bool = step.get("enable", true)
+			var duration: float = step.get("duration", 0.3) as float
+			var layer := _get_visual_layer()
+			if enable:
+				if _letterbox_top == null or not is_instance_valid(_letterbox_top):
+					_letterbox_top = ColorRect.new()
+					_letterbox_top.color = Color.BLACK
+					_letterbox_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+					layer.add_child(_letterbox_top)
+					_letterbox_bottom = ColorRect.new()
+					_letterbox_bottom.color = Color.BLACK
+					_letterbox_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+					layer.add_child(_letterbox_bottom)
+				# Size bars to 10% of screen height each.
+				if _letterbox_top.get_viewport() != null:
+					var vp_size: Vector2 = _letterbox_top.get_viewport().get_visible_rect().size
+					_letterbox_top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+					_letterbox_top.size.y = vp_size.y * 0.1
+					_letterbox_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+					_letterbox_bottom.size.y = vp_size.y * 0.1
+				var tween := create_tween()
+				tween.tween_property(_letterbox_top, "color:a", 1.0, duration)
+				tween.parallel().tween_property(_letterbox_bottom, "color:a", 1.0, duration)
+				await tween.finished
+			else:
+				if _letterbox_top != null and is_instance_valid(_letterbox_top):
+					var tween := create_tween()
+					tween.tween_property(_letterbox_top, "color:a", 0.0, duration)
+					tween.parallel().tween_property(_letterbox_bottom, "color:a", 0.0, duration)
+					await tween.finished
+					_letterbox_top.queue_free()
+					_letterbox_bottom.queue_free()
+					_letterbox_top = null
+					_letterbox_bottom = null
+			return true
+
+		"overlay":
+			# Show an image overlay for 'duration' seconds with optional fade.
+			var image_path: String = step.get("image", "")
+			var duration: float = step.get("duration", 0.0) as float
+			var fade_in_dur: float = step.get("fade_in", 0.0) as float
+			var fade_out_dur: float = step.get("fade_out", 0.0) as float
+			# Remove any existing overlay.
+			if _current_overlay != null and is_instance_valid(_current_overlay):
+				_current_overlay.queue_free()
+				_current_overlay = null
+			var layer := _get_visual_layer()
+			_current_overlay = TextureRect.new()
+			_current_overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			_current_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			if image_path != "" and ResourceLoader.exists(image_path):
+				_current_overlay.texture = ResourceLoader.load(image_path) as Texture2D
+			layer.add_child(_current_overlay)
+			if _current_overlay.get_viewport() != null:
+				_current_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			# Fade in.
+			if fade_in_dur > 0.0:
+				_current_overlay.modulate.a = 0.0
+				var tween := create_tween()
+				tween.tween_property(_current_overlay, "modulate:a", 1.0, fade_in_dur)
+				await tween.finished
+			# Hold.
+			if duration > 0.0:
+				await get_tree().create_timer(duration).timeout
+			# Fade out.
+			if fade_out_dur > 0.0:
+				var tween := create_tween()
+				tween.tween_property(_current_overlay, "modulate:a", 0.0, fade_out_dur)
+				await tween.finished
+			if _current_overlay != null and is_instance_valid(_current_overlay):
+				_current_overlay.queue_free()
+				_current_overlay = null
+			return true
+
+		"video":
+			# Play a video file (blocks until finished or skipped).
+			var file: String = step.get("file", "")
+			if file.is_empty():
+				push_warning("AGSSequencerCommands: video command missing 'file'")
+				return true
+			if not ResourceLoader.exists(file):
+				push_warning("AGSSequencerCommands: video file not found: '%s'" % file)
+				return true
+			var layer := _get_visual_layer()
+			var player := VideoStreamPlayer.new()
+			player.stream = ResourceLoader.load(file) as VideoStream
+			if _current_overlay != null and is_instance_valid(_current_overlay):
+				_current_overlay.get_viewport()  # ensure size-hint
+			layer.add_child(player)
+			if player.get_viewport() != null:
+				player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			player.play()
+			await player.finished
+			player.queue_free()
+			return true
+
+		_:
+			push_warning("AGSSequencerCommands: unknown visual command '%s'" % cmd)
+			return true
 
 
 # ---------------------------------------------------------------------------

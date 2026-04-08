@@ -65,6 +65,8 @@ func test_53_player_control_changed_signal() -> void:
 # UT-M10-54: hide_room_item sets visible=false; show_room_item restores it.
 # AGSRoomItem must be notified of READY so it registers with AGSRuntime.
 func test_54_hide_show_room_item() -> void:
+	note("ERROR 'get_viewport() is null' / 'Condition !is_inside_tree()' below: " +
+		"AGSRoomItem calls get_viewport() during NOTIFICATION_READY — headless has no viewport")
 	var ri := AGSRoomItem.new()
 	ri.item_name = "t54_test_chest"
 	# Manually fire NOTIFICATION_READY — registers with the singleton.

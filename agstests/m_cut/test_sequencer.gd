@@ -117,6 +117,7 @@ func test_09_sync_named_waits_for_id() -> void:
 
 # UT-CUT12-10: run() while already active is ignored (no crash, no double-complete).
 func test_10_reentrant_run_ignored() -> void:
+	note("WARNING 'a sequence is already active' below: intentional — testing reentrant protection")
 	var seq := _make_seq()
 	var complete_count := [0]
 	seq.sequence_complete.connect(func() -> void: complete_count[0] += 1)

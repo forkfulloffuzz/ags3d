@@ -156,6 +156,7 @@ func test_95_unknown_clip_warns_not_crash() -> void:
 	ch.add_child(anim_player)
 	root.add_child(ch)
 
+	note("WARNING 'clip DoesNotExist not found in AnimationPlayer' below: intentional — testing graceful unknown clip handling")
 	ch.call("_play_anim_state", "idle")  # clip "DoesNotExist" → warning, not crash
 	assert_true(true, "no crash when clip name not found in AnimationPlayer")
 	root.free()

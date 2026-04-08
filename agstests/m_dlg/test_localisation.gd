@@ -57,7 +57,7 @@ func test_05_fallback_chain_used() -> void:
 	_inject_table(loc, "es", {})  # empty Spanish table — key absent
 	_inject_table(loc, "fr", {"greeting:0:abc": "Bonjour"})
 	_inject_table(loc, "en", {"greeting:0:abc": "Hello"})
-	loc.fallback_chain = ["fr"]
+	(loc.fallback_chain as Array).append("fr")
 	loc.base_locale = "en"
 	loc.set_locale("es")
 	var result: String = loc.get_string("greeting:0:abc", "fallback")

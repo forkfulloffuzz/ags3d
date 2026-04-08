@@ -55,7 +55,10 @@ func _has_autoload(name: String) -> bool:
 	return Engine.get_main_loop() != null and Engine.get_main_loop().root.has_node("/root/" + name)
 
 func _get_autoload(name: String) -> Node:
-	var root := Engine.get_main_loop().root if Engine.get_main_loop() != null else null
+	var loop := Engine.get_main_loop()
+	if loop == null:
+		return null
+	var root: Node = (loop as SceneTree).root
 	if root == null:
 		return null
 	return root.get_node_or_null("/root/" + name)
