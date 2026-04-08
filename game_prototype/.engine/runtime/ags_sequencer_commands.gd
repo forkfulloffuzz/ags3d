@@ -49,6 +49,8 @@ func _dispatch_step(step: Dictionary) -> bool:
 			return await _exec_on_event(step)
 		"dialogue_line", "narrator_line", "title_card", "subtitle", "choice", "dialogue":
 			return await _exec_dialogue(step)
+		"cutscene":
+			return await _exec_nested_cutscene(step.get("name", ""))
 		_:
 			# Delegate all other types (wait, action, set, fail, unknown) to base class.
 			return await super._dispatch_step(step)
@@ -816,25 +818,98 @@ func _exec_visual(step: Dictionary) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# T-CUT20 — Flow/state commands (stub for complex types; T-CUT20)
+# T-CUT20 — Flow/state commands
 # ---------------------------------------------------------------------------
 
 ## Execute a <<parallel>> block: all sub-steps fire simultaneously.
-## Completes when the longest sub-step completes.
+## Completes when ALL sub-steps complete.
+## Step format: {"type": "parallel", "steps": [...]}.
 func _exec_parallel(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: parallel blocks not yet implemented (T-CUT20)")
+	var sub_steps: Array = step.get("steps", [])
+	if sub_steps.is_empty():
+		return true
+	var done_count := [0]
+	var total := sub_steps.size()
+	for sub_step: Dictionary in sub_steps:
+		var result_box := [false]
+		_dispatch_step_async(sub_step, result_box, func() -> void: done_count[0] += 1)
+	while done_count[0] < total:
+		await get_tree().process_frame
 	return true
 
 
-## Evaluate <<if>> / <<else>> / <<end_if>>.
+## Evaluate <<if condition>> / <<else>> / <<end_if>>.
+## Step format: {"type": "if", "condition": "expr", "then": [...], "else": [...]}.
 func _exec_if(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: if blocks not yet implemented (T-CUT20)")
+	var condition: String = step.get("condition", "")
+	var then_steps: Array = step.get("then", [])
+	var else_steps: Array = step.get("else", [])
+	var branch: Array = then_steps if _eval_condition(condition) else else_steps
+	for sub_step: Dictionary in branch:
+		await _execute_step(sub_step)
 	return true
 
 
-## Register <<on event:>> handler.
+## Evaluate a simple boolean condition string.
+## Supports: "true"/"false" literals, and AGSRuntime.eval_condition() if available.
+func _eval_condition(expr: String) -> bool:
+	if expr.is_empty():
+		return false
+	# Delegate to runtime if it supports condition evaluation.
+	if Engine.has_singleton("AGSRuntime"):
+		var runtime: Object = Engine.get_singleton("AGSRuntime")
+		if runtime.has_method("eval_condition"):
+			return runtime.call("eval_condition", expr) as bool
+	# Literal boolean shortcuts for tests and simple scripts.
+	match expr.strip_edges().to_lower():
+		"true", "1", "yes":  return true
+		"false", "0", "no":  return false
+	return false
+
+
+## Register a <<on event: name>> handler.
+## The step completes immediately; sub-steps fire when the named event is emitted.
+## Step format: {"type": "on_event", "event": "name", "steps": [...]}.
 func _exec_on_event(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: on_event not yet implemented (T-CUT20)")
+	var event_name: String = step.get("event", "")
+	var sub_steps: Array = step.get("steps", [])
+	if event_name.is_empty():
+		push_warning("AGSSequencerCommands: on_event missing 'event' field")
+		return true
+	var bus: Node = _get_event_bus()
+	if bus == null:
+		push_warning("AGSSequencerCommands: AGSEventBusSurface not found — on_event ignored")
+		return true
+	# Register a one-shot handler that executes sub-steps when the event fires.
+	bus.call("on_event", event_name, func(_payload: Dictionary) -> void:
+		for sub: Dictionary in sub_steps:
+			_dispatch_step(sub)
+	, true)  # true = one-shot
+	return true
+
+
+## Access AGSEventBusSurface singleton (may be null if not registered).
+func _get_event_bus() -> Node:
+	if Engine.has_singleton("AGSEventBusSurface"):
+		return Engine.get_singleton("AGSEventBusSurface") as Node
+	# Fall back to AutoLoad path.
+	if get_tree() != null:
+		return get_tree().root.get_node_or_null("/root/AGSEventBusSurface")
+	return null
+
+
+## Execute a nested cutscene by name.
+## Step format: {"type": "cutscene", "name": "cutscene_title"}.
+func _exec_nested_cutscene(cutscene_name: String) -> bool:
+	var steps: Array = get_steps(cutscene_name)
+	if steps.is_empty():
+		push_warning("AGSSequencerCommands: nested cutscene '%s' not found" % cutscene_name)
+		return true  # Not found is a no-op, not a failure.
+	# Temporarily clear _active so sub-run() doesn't reject us.
+	var was_active := _active
+	_active = false
+	await run(steps)
+	_active = was_active
 	return true
 
 

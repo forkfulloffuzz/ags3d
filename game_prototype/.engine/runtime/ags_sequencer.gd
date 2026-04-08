@@ -134,6 +134,16 @@ func run(steps: Array) -> void:
 			i += 1
 			continue
 
+		if stype == "skip_to":
+			var target_label: String = step.get("label", step.get("name", ""))
+			var target := _find_label(steps, target_label)
+			if target >= 0:
+				i = target
+			else:
+				push_warning("AGSSequencer: skip_to label '%s' not found" % target_label)
+				i += 1
+			continue
+
 		var bg_id: String = step.get("bg", "")
 		if bg_id != "":
 			# Background step: fire without awaiting.
