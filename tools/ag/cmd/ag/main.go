@@ -31,13 +31,13 @@ import (
 	"github.com/ags3d/ag/internal/dlg"
 	"github.com/ags3d/ag/internal/emitter"
 	"github.com/ags3d/ag/internal/gui"
-	"github.com/ags3d/ag/internal/loc"
 	"github.com/ags3d/ag/internal/item"
+	"github.com/ags3d/ag/internal/loc"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
 	"github.com/ags3d/ag/internal/room"
-	"github.com/ags3d/ag/internal/scene"
 	"github.com/ags3d/ag/internal/scanner"
+	"github.com/ags3d/ag/internal/scene"
 	"github.com/ags3d/ag/internal/validate"
 	"github.com/ags3d/ag/internal/viz"
 )
@@ -61,6 +61,8 @@ func main() {
 		err = cmdNew(os.Args[2:])
 	case "viz":
 		err = cmdViz(os.Args[2:])
+	case "loc":
+		err = cmdLoc(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "ag: unknown command %q\n\n", os.Args[1])
 		usage()
@@ -917,6 +919,163 @@ func cmdExportVoicescript(localeFilter, charFilter string) error {
 // -------------------------------------------------------------------
 // ag new
 // -------------------------------------------------------------------
+
+func cmdLoc(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("usage: ag loc check|report|import [args]")
+	}
+	switch args[0] {
+	case "check":
+		return cmdLocCheck(args[1:])
+	case "report":
+		return cmdLocReport(args[1:])
+	case "import":
+		return cmdLocImport(args[1:])
+	default:
+		return fmt.Errorf("ag loc: unknown subcommand %q (check|report|import)", args[0])
+	}
+}
+
+func cmdLocCheck(args []string) error {
+	fs := flag.NewFlagSet("ag loc check", flag.ContinueOnError)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag loc check <project>")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+
+	root := fs.Arg(0)
+	_, loadErr := project.Load(root)
+	if loadErr != nil {
+		return fmt.Errorf("load project: %w", loadErr)
+	}
+
+	files, scanErr := project.Scan(root)
+	if scanErr != nil {
+		return fmt.Errorf("scan project: %w", scanErr)
+	}
+
+	issues, validateErr := validate.ValidateFiles(files)
+	if validateErr != nil {
+		return fmt.Errorf("validate: %w", validateErr)
+	}
+
+	if len(issues) == 0 {
+		fmt.Println("ag loc check: no localisation issues found")
+		return nil
+	}
+
+	var errors, warnings int
+	for _, issue := range issues {
+		if issue.Severity == "error" {
+			errors++
+		} else {
+			warnings++
+		}
+		fmt.Printf("%s\n", issue)
+	}
+
+	fmt.Fprintf(os.Stderr, "\n%d errors, %d warnings\n", errors, warnings)
+	if errors > 0 {
+		return fmt.Errorf("validation failed")
+	}
+	return nil
+}
+
+func cmdLocReport(args []string) error {
+	fs := flag.NewFlagSet("ag loc report", flag.ContinueOnError)
+	locale := fs.String("locale", "en", "locale code")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag loc report <project> [--locale LANG]")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+
+	root := fs.Arg(0)
+	entries, err := loc.CollectAllLocaleEntries(root)
+	if err != nil {
+		return fmt.Errorf("collect entries: %w", err)
+	}
+
+	fmt.Print(loc.FormatLocaleReport(entries, *locale))
+	fmt.Fprintf(os.Stderr, "\nag loc report: %d strings for locale %s\n", len(entries), *locale)
+	return nil
+}
+
+func cmdLocImport(args []string) error {
+	fs := flag.NewFlagSet("ag loc import", flag.ContinueOnError)
+	locale := fs.String("locale", "", "locale code (required)")
+	file := fs.String("file", "", "import file path (required)")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag loc import <project> --locale LANG --file PATH")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+	if *locale == "" {
+		fs.Usage()
+		return fmt.Errorf("--locale is required")
+	}
+	if *file == "" {
+		fs.Usage()
+		return fmt.Errorf("--file is required")
+	}
+
+	root := fs.Arg(0)
+
+	data, err := os.ReadFile(*file)
+	if err != nil {
+		return fmt.Errorf("read file: %w", err)
+	}
+
+	sf, parseErr := loc.Parse(*file, string(data))
+	if parseErr != nil {
+		return fmt.Errorf("parse locale file: %w", parseErr)
+	}
+
+	usedKeys, usedErr := loc.CollectUsedLocKeys(root)
+	if usedErr != nil {
+		return fmt.Errorf("collect used keys: %w", usedErr)
+	}
+
+	var imported, missing int
+	for _, e := range sf.Entries {
+		if !usedKeys[e.Key] {
+			missing++
+			continue
+		}
+		if e.Value != "" {
+			imported++
+		}
+	}
+
+	fmt.Printf("ag loc import: processed %d entries from %s\n", len(sf.Entries), *file)
+	fmt.Printf("  imported: %d (already had translations)\n", imported)
+	if missing > 0 {
+		fmt.Fprintf(os.Stderr, "  skipped: %d (keys not found in project)\n", missing)
+	}
+
+	if imported == 0 && missing > 0 {
+		return fmt.Errorf("no entries imported (all keys missing from project)")
+	}
+
+	fmt.Println("ag loc import: merge complete")
+	return nil
+}
 
 func cmdNew(args []string) error {
 	if len(args) != 1 {
