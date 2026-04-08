@@ -1,4 +1,4 @@
-## ags_save_load.gd — Save/load wrapper with cutscene blocking (T-CUT25)
+## ags_save_load.gd — Save/load wrapper with cutscene blocking and state (T-CUT25, T-CUT26)
 ##
 ## Add as an AutoLoad named AGSSaveLoad.
 ##
@@ -63,10 +63,18 @@ func save_game(slot: int) -> bool:
 	return true
 
 ## Load from [param slot]. Delegates to AGSRuntime.load_game().
+## After loading, restores cutscene view/skip state from the save file (T-CUT26).
 func load_game(slot: int) -> void:
 	var runtime := _get_runtime()
-	if runtime != null:
-		runtime.call("load_game", slot)
+	if runtime == null:
+		return
+	runtime.call("load_game", slot)
+	# Restore cutscene state directly from the save file (avoids signal ordering issues).
+	var data: Dictionary = _read_save_file(slot)
+	if data.has("cutscenes"):
+		var seq := _get_sequencer()
+		if seq != null and seq.has_method("restore_cutscene_state"):
+			seq.call("restore_cutscene_state", data["cutscenes"])
 
 ## Returns true if [param slot] has a save file. Delegates to AGSRuntime.
 func game_saved(slot: int) -> bool:
@@ -121,8 +129,42 @@ func _flush_queued_save() -> void:
 
 func _do_save(slot: int) -> void:
 	var runtime := _get_runtime()
-	if runtime != null:
-		runtime.call("save_game", slot)
+	if runtime == null:
+		return
+	runtime.call("save_game", slot)
+	# T-CUT26: inject cutscene state into the save file.
+	_inject_cutscene_state(slot)
+
+## Read the save file for [param slot] and return its parsed Dictionary.
+## Returns empty dict if the file doesn't exist or can't be parsed.
+func _read_save_file(slot: int) -> Dictionary:
+	var path := "user://save_%d.json" % slot
+	if not FileAccess.file_exists(path):
+		return {}
+	var fa := FileAccess.open(path, FileAccess.READ)
+	if fa == null:
+		return {}
+	var text := fa.get_as_text()
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed is Dictionary:
+		return parsed as Dictionary
+	return {}
+
+## Read the C++ save, add the cutscene state key, write back.
+func _inject_cutscene_state(slot: int) -> void:
+	var seq := _get_sequencer()
+	if seq == null or not seq.has_method("get_cutscene_state"):
+		return
+	var path := "user://save_%d.json" % slot
+	var data: Dictionary = _read_save_file(slot)
+	if data.is_empty():
+		return  # File not created by runtime (e.g. no AGSRuntime available).
+	data["cutscenes"] = seq.call("get_cutscene_state")
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	if fa == null:
+		push_warning("AGSSaveLoad._inject_cutscene_state: could not write '%s'" % path)
+		return
+	fa.store_string(JSON.stringify(data, "\t"))
 
 func _is_cutscene_active() -> bool:
 	var seq := _get_sequencer()

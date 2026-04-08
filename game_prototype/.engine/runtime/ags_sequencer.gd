@@ -121,13 +121,22 @@ func get_steps(title: String) -> Array:
 
 ## Execute a cutscene by title (blocking coroutine).
 ## Resolves steps from the compiled cutscene data.
+## Records view count and skip state for T-CUT26 persistence.
 func play(title: String) -> void:
 	var steps: Array = _cutscenes.get(title, [])
 	if steps.is_empty():
 		push_warning("AGSSequencer.play: cutscene not found: " + title)
 		return
 	_current_title = title
+	# Apply per-title skip policy if set (T-CUT26).
+	var saved_policy := skip_policy
+	if _title_policies.has(title):
+		skip_policy = _title_policies[title]
 	await run(steps)
+	skip_policy = saved_policy
+	# T-CUT26: record that this cutscene was played.
+	_view_counts[title] = _view_counts.get(title, 0) + 1
+	_skipped_titles[title] = _skip_active
 	_current_title = ""
 
 func _ready() -> void:
@@ -494,6 +503,22 @@ func bg_step_ids() -> Array:
 	return _bg_steps.keys()
 
 # ---------------------------------------------------------------------------
+# T-CUT26 — Per-cutscene view/skip tracking
+# ---------------------------------------------------------------------------
+
+## Number of times each titled cutscene has been viewed (completed or skipped).
+## Maps title → int.
+var _view_counts: Dictionary = {}
+
+## Whether the last play of each titled cutscene ended via skip.
+## Maps title → bool.
+var _skipped_titles: Dictionary = {}
+
+## Per-title skip policy overrides set by set_skip_policy().
+## Maps title → policy string. Falls back to skip_policy when not set.
+var _title_policies: Dictionary = {}
+
+# ---------------------------------------------------------------------------
 # T-CUT29 — cutscene.* runtime API
 # ---------------------------------------------------------------------------
 
@@ -518,25 +543,26 @@ func _play_async_impl(_title: String, steps: Array) -> void:
 	await run(steps)
 
 ## Returns true if the cutscene with [param title] has been viewed at least once.
-## Tracking is stubbed; returns false until T-CUT26 implements persistence.
-func viewed(_title: String) -> bool:
-	return false
+func viewed(title: String) -> bool:
+	return _view_counts.get(title, 0) > 0
 
 ## Returns true if the last play of [param title] was interrupted by skip.
-## Tracking is stubbed; returns false until T-CUT23 implements skip state.
-func skipped(_title: String) -> bool:
-	return false
+func skipped(title: String) -> bool:
+	return _skipped_titles.get(title, false) as bool
 
-## Returns how many times the cutscene with [param title] has completed.
-## Tracking is stubbed; returns 0 until T-CUT26 implements persistence.
-func view_count(_title: String) -> int:
-	return 0
+## Returns how many times the cutscene with [param title] has been played.
+func view_count(title: String) -> int:
+	return _view_counts.get(title, 0) as int
 
 ## Override the skip policy for a specific cutscene at runtime.
 ## Policy strings: "always", "never", "after_first_view", "author_controlled".
-## Stubbed — will apply once T-CUT23 skip system is implemented.
-func set_skip_policy(_title: String, _policy: String) -> void:
-	pass  # T-CUT23
+func set_skip_policy(title: String, policy: String) -> void:
+	_title_policies[title] = policy
+
+## Return the effective skip policy for [param title].
+## Per-title override takes precedence over the global skip_policy.
+func _effective_skip_policy(title: String) -> String:
+	return _title_policies.get(title, skip_policy) as String
 
 ## Request a cutscene skip from external input (T-CUT22).
 ## Emits skip_requested; T-CUT23 connects to decide whether to act.
@@ -545,15 +571,16 @@ func request_skip() -> void:
 	if _active:
 		skip_requested.emit()
 
-## Decide whether to activate skip based on current policy (T-CUT23).
+## Decide whether to activate skip based on current policy (T-CUT23 / T-CUT26).
 func _on_skip_requested() -> void:
-	match skip_policy:
+	var policy := _effective_skip_policy(_current_title)
+	match policy:
 		"never":
 			pass  # Skip input ignored.
 		"always":
 			_skip_active = true
 		"after_first_view":
-			# Require at least one prior view. Depends on T-CUT26 persistence.
+			# Require at least one prior view (T-CUT26 now tracks this).
 			if viewed(_current_title):
 				_skip_active = true
 		"author_controlled":
@@ -562,3 +589,30 @@ func _on_skip_requested() -> void:
 				_skip_active = true
 		_:
 			_skip_active = true  # Unknown policy: treat as "always".
+
+# ---------------------------------------------------------------------------
+# T-CUT26 — Save/load helpers for cutscene state
+# ---------------------------------------------------------------------------
+
+## Return a snapshot of all tracked cutscene state (for AGSSaveLoad).
+func get_cutscene_state() -> Dictionary:
+	return {
+		"view_counts": _view_counts.duplicate(),
+		"skipped": _skipped_titles.duplicate(),
+		"title_policies": _title_policies.duplicate(),
+	}
+
+## Restore cutscene state from a previously saved snapshot.
+func restore_cutscene_state(data: Dictionary) -> void:
+	if data.has("view_counts"):
+		var vc: Dictionary = data["view_counts"] as Dictionary
+		for k: String in vc:
+			_view_counts[k] = int(vc[k])
+	if data.has("skipped"):
+		var sk: Dictionary = data["skipped"] as Dictionary
+		for k: String in sk:
+			_skipped_titles[k] = bool(sk[k])
+	if data.has("title_policies"):
+		var tp: Dictionary = data["title_policies"] as Dictionary
+		for k: String in tp:
+			_title_policies[k] = String(tp[k])
