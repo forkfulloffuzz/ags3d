@@ -228,3 +228,81 @@ func FormatLocaleReport(entries []LocaleEntryFull, locale string) string {
 
 	return sb.String()
 }
+
+type LocaleValidationIssue struct {
+	Code    string
+	LocKey  string
+	Message string
+}
+
+func FindOrphanKeys(sf *StringsFile, usedKeys map[string]bool) []LocaleValidationIssue {
+	var issues []LocaleValidationIssue
+	for _, e := range sf.Entries {
+		if e.Orphan {
+			continue
+		}
+		if !usedKeys[e.Key] {
+			issues = append(issues, LocaleValidationIssue{
+				Code:    "LOC-W002",
+				LocKey:  e.Key,
+				Message: fmt.Sprintf("orphan loc_key %q (in locale file but never referenced in .agdlg or .agcut)", e.Key),
+			})
+		}
+	}
+	return issues
+}
+
+func CollectUsedLocKeys(root string) (map[string]bool, error) {
+	usedKeys := make(map[string]bool)
+
+	files, err := project.Scan(root)
+	if err != nil {
+		return nil, err
+	}
+
+	var dlgFiles []*dlg.DialogueFile
+
+	for _, f := range files {
+		switch f.Ext {
+		case ".agdlg":
+			df, err := dlg.ParseFile(f.Path)
+			if err != nil {
+				continue
+			}
+			dlgFiles = append(dlgFiles, df)
+		}
+	}
+
+	if err := walkCutscenes(root, func(path string) error {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(root, path)
+		cf, err := cut.Parse(rel, string(data))
+		if err != nil {
+			return nil
+		}
+		for _, e := range cut.CollectLocEntries(cf) {
+			if e.LocKey != "" {
+				usedKeys[e.LocKey] = true
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	if len(dlgFiles) > 0 {
+		lp, err := dlg.Link(dlgFiles)
+		if err == nil {
+			for _, e := range dlg.CollectLocEntries(lp) {
+				if e.LocKey != "" {
+					usedKeys[e.LocKey] = true
+				}
+			}
+		}
+	}
+
+	return usedKeys, nil
+}

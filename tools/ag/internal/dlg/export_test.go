@@ -206,3 +206,68 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+// --- ValidateLocKeys ---
+
+func TestValidateLocKeys_MissingKey(t *testing.T) {
+	files := mustParseFiles(t, "title: a\ncharacter: guard\n---\nGuard: Hi. #loc:guard_hi\n<<end>>\n===")
+	lp, err := dlg.Link(files)
+	if err != nil {
+		t.Fatalf("Link error: %v", err)
+	}
+	localeMap := map[string]string{
+		"other_key": "Bonjour.",
+	}
+	issues := dlg.ValidateLocKeys(lp, localeMap)
+	if len(issues) != 1 {
+		t.Fatalf("expected 1 issue, got %d", len(issues))
+	}
+	if issues[0].LocKey != "guard_hi" {
+		t.Errorf("LocKey = %q, want guard_hi", issues[0].LocKey)
+	}
+}
+
+func TestValidateLocKeys_KeyPresent(t *testing.T) {
+	files := mustParseFiles(t, "title: a\ncharacter: guard\n---\nGuard: Hi. #loc:guard_hi\n<<end>>\n===")
+	lp, err := dlg.Link(files)
+	if err != nil {
+		t.Fatalf("Link error: %v", err)
+	}
+	localeMap := map[string]string{
+		"guard_hi": "Bonjour.",
+	}
+	issues := dlg.ValidateLocKeys(lp, localeMap)
+	if len(issues) != 0 {
+		t.Errorf("expected 0 issues, got %d", len(issues))
+	}
+}
+
+func TestValidateLocKeys_AutoKeyNotValidated(t *testing.T) {
+	files := mustParseFiles(t, "title: a\ncharacter: guard\n---\nGuard: Hi.\n<<end>>\n===")
+	lp, err := dlg.Link(files)
+	if err != nil {
+		t.Fatalf("Link error: %v", err)
+	}
+	localeMap := map[string]string{}
+	issues := dlg.ValidateLocKeys(lp, localeMap)
+	if len(issues) != 0 {
+		t.Errorf("expected 0 issues for auto-generated keys, got %d", len(issues))
+	}
+}
+
+func TestValidateLocKeys_NarrationAndOption(t *testing.T) {
+	files := mustParseFiles(t, "title: a\n---\n-> Option text #loc:opt_key\n   <<end>>\n===\ntitle: b\n---\nNarration text #loc:narr_key\n<<end>>\n===")
+	lp, err := dlg.Link(files)
+	if err != nil {
+		t.Fatalf("Link error: %v", err)
+	}
+	localeMap := map[string]string{}
+	issues := dlg.ValidateLocKeys(lp, localeMap)
+	if len(issues) != 2 {
+		t.Fatalf("expected 2 issues, got %d", len(issues))
+	}
+	keys := map[string]bool{issues[0].LocKey: true, issues[1].LocKey: true}
+	if !keys["opt_key"] || !keys["narr_key"] {
+		t.Errorf("expected opt_key and narr_key, got %v", keys)
+	}
+}

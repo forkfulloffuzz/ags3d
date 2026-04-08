@@ -250,3 +250,68 @@ func sourceHash(text string) string {
 	_, _ = h.Write([]byte(text))
 	return fmt.Sprintf("%08x", h.Sum32())
 }
+
+// ValidateLocKeys checks that every explicit loc_key: used in the linked
+// dialogue project is present in the provided locale map (key → translated value).
+// Returns one ValidationIssue per missing key.
+//
+// Only lines with an explicit loc_key: annotation are validated; auto-generated
+// keys (empty LocKey) are always considered valid.
+func ValidateLocKeys(lp *LinkedProject, localeMap map[string]string) []ValidationIssue {
+	var issues []ValidationIssue
+	for _, f := range lp.Files {
+		for _, n := range f.Nodes {
+			validateNodeLocKeys(n, &issues, localeMap)
+		}
+	}
+	return issues
+}
+
+func validateNodeLocKeys(n *DialogueNode, issues *[]ValidationIssue, localeMap map[string]string) {
+	validateStmtLocKeys(n.Title, n.Body, issues, localeMap)
+}
+
+func validateStmtLocKeys(nodeTitle string, stmts []Statement, issues *[]ValidationIssue, localeMap map[string]string) {
+	for _, s := range stmts {
+		switch st := s.(type) {
+		case *SpeakerLine:
+			if st.LocKey != "" {
+				if _, ok := localeMap[st.LocKey]; !ok {
+					*issues = append(*issues, ValidationIssue{
+						Pos:    st.SrcPos,
+						LocKey: st.LocKey,
+						Msg:    fmt.Sprintf("dialogue node %q: loc_key %q not found in locale file", nodeTitle, st.LocKey),
+					})
+				}
+			}
+		case *NarrationLine:
+			if st.LocKey != "" {
+				if _, ok := localeMap[st.LocKey]; !ok {
+					*issues = append(*issues, ValidationIssue{
+						Pos:    st.SrcPos,
+						LocKey: st.LocKey,
+						Msg:    fmt.Sprintf("dialogue node %q: loc_key %q not found in locale file", nodeTitle, st.LocKey),
+					})
+				}
+			}
+		case *OptionBranch:
+			if st.LocKey != "" {
+				if _, ok := localeMap[st.LocKey]; !ok {
+					*issues = append(*issues, ValidationIssue{
+						Pos:    st.SrcPos,
+						LocKey: st.LocKey,
+						Msg:    fmt.Sprintf("dialogue node %q: loc_key %q not found in locale file", nodeTitle, st.LocKey),
+					})
+				}
+			}
+			validateStmtLocKeys(nodeTitle, st.Body, issues, localeMap)
+		}
+	}
+}
+
+// ValidationIssue represents a localisation validation error with source location.
+type ValidationIssue struct {
+	Pos    Pos
+	LocKey string
+	Msg    string
+}

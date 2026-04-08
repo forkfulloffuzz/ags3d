@@ -30,7 +30,7 @@ import (
 // Issue is a single validation finding with source location.
 type Issue struct {
 	File     string
-	Line     int // 0 = no line info
+	Line     int    // 0 = no line info
 	Severity string // "error" | "warning"
 	Message  string
 }
@@ -214,6 +214,9 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 	// --- Cutscene localisation validation (T-CUT30) ---
 	issues = append(issues, validateCutsceneLocKeys(files)...)
 
+	// --- Dialogue localisation validation (T-LOC04) ---
+	issues = append(issues, validateDialogueLocKeys(files)...)
+
 	return issues, nil
 }
 
@@ -276,6 +279,84 @@ func validateCutsceneLocKeys(files []project.SourceFile) []Issue {
 		}
 	}
 	return issues
+}
+
+// validateDialogueLocKeys parses all .agdlg files and validates that every
+// explicit loc_key: annotation is present in at least one .agstrings locale file.
+// Missing keys are reported as warnings (not errors) in dev mode and errors in
+// release mode.
+func validateDialogueLocKeys(files []project.SourceFile) []Issue {
+	var issues []Issue
+
+	localeMap := buildLocaleMap(files)
+	if len(localeMap) == 0 {
+		return nil
+	}
+
+	releaseMode := os.Getenv("AGSBUILD") == "release"
+
+	var dlgFiles []*dlg.DialogueFile
+	for _, f := range files {
+		if f.Ext != ".agdlg" {
+			continue
+		}
+		if _, err := os.Stat(f.Path); err != nil {
+			continue
+		}
+		df, err := dlg.ParseFile(f.Path)
+		if err != nil {
+			continue
+		}
+		dlgFiles = append(dlgFiles, df)
+	}
+	if len(dlgFiles) == 0 {
+		return nil
+	}
+
+	lp, err := dlg.Link(dlgFiles)
+	if err != nil {
+		return nil
+	}
+
+	for _, vi := range dlg.ValidateLocKeys(lp, localeMap) {
+		sev := "warning"
+		if releaseMode {
+			sev = "error"
+		}
+		issues = append(issues, Issue{
+			File:     vi.Pos.File,
+			Line:     vi.Pos.Line,
+			Severity: sev,
+			Message:  fmt.Sprintf("DLG-LOC-W001: %s", vi.Msg),
+		})
+	}
+
+	return issues
+}
+
+// buildLocaleMap merges all loc_key → translation entries from every .agstrings
+// file in the project into a single map.
+func buildLocaleMap(files []project.SourceFile) map[string]string {
+	localeMap := make(map[string]string)
+	for _, f := range files {
+		if f.Ext != ".agstrings" {
+			continue
+		}
+		data, err := os.ReadFile(f.Path)
+		if err != nil {
+			continue
+		}
+		sf, parseErr := loc.Parse(f.Rel, string(data))
+		if parseErr != nil {
+			continue
+		}
+		for _, e := range sf.Entries {
+			if !e.Orphan {
+				localeMap[e.Key] = e.Value
+			}
+		}
+	}
+	return localeMap
 }
 
 // validateCutscenes parses all .agcut files and runs CUT-E/W and SEQ-E/W checks.
