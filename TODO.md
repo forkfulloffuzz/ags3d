@@ -11,7 +11,7 @@ Dependencies: T-GS02 (C++ AGSItem) unblocks T-GS14 → T-GS15; T-BL10 unblocks T
 
 - [x] **T-LOC10** — Design: author context annotations in `.agdlg` and `.agcut`. Design `#ctx:` comment syntax to attach translator notes to individual strings. Document in `docs/localisation-milestone.md`. *(independent; design complete — syntax: trailing `#ctx:` on string lines, stored in LocEntry.Ctx, exported as PO `#. ctx:` comment and CSV `context` column)*
 
-- [ ] **T-LOC11** — Design: string taxonomy and source metadata in `.agstrings`. Design `type:` (spoken/choice/narration/ui/subtitle), `char:`, `scene:` metadata fields per entry. Document in `docs/localisation-milestone.md`. *(depends T-LOC10)*
+- [x] **T-LOC11** — Design: string taxonomy and source metadata in `.agstrings`. Design `type:` (spoken/choice/narration/ui/subtitle), `char:`, `scene:` metadata fields per entry. Document in `docs/localisation-milestone.md`. *(depends T-LOC10; design complete — metadata as comment lines above key, type/char/scene/ctx fields, backward-compatible, CSV header extended)*
 
 - [ ] **T-LOC12** — Go: `ag loc` subcommand — advanced search, filter, sort, and group-by over `.agstrings` files. Commands: `ag loc find <project> --locale fr --pattern "guard_*"`, `ag loc filter <project> --locale fr --untranslated`. Tests in `tools/ag/internal/loc/`. *(depends T-LOC11)*
 

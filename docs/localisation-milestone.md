@@ -284,6 +284,151 @@ prefix on each key line.
 
 ---
 
+## T-LOC11 — String Taxonomy and Source Metadata
+
+### Goal
+
+Extend `.agstrings` entries with structured metadata fields (`type:`, `char:`, `scene:`)
+so translators and tooling can filter, group, and search strings without needing to
+parse the source files. This builds on the `#ctx:` context annotations from T-LOC10.
+
+### Proposed `.agstrings` Format
+
+Metadata is written as `// key: value` comments directly above the key line.
+All metadata is optional and absent fields are omitted (not written as empty comments).
+
+```
+// locale/fr.agstrings
+
+[meta]
+base_locale    = en
+locale         = fr
+locale_name    = French
+rtl            = false
+fallback_chain = en
+
+[strings]
+
+// type: spoken
+// char: Guard
+// scene: guard_greeting
+// ctx: guard is suspicious, not yet hostile
+guard_greeting:line0:a1b2c3d4 = "Vous. Arrêtez."
+
+// type: choice
+// char:
+// scene: guard_greeting
+guard_greeting:line1:e5f6a7b8 = "Show me your pass."
+
+// type: ui
+// char:
+// scene: hud
+hud_health_label:line0:b1c2d3e4 = "Health:"
+```
+
+### Metadata Fields
+
+| Field | Source | Description |
+|-------|--------|-------------|
+| `type` | `LocEntry.LineType` | String category: `spoken`, `choice`, `narration`, `ui`, `subtitle`, `title_card` |
+| `char` | `LocEntry.Character` | Character name who speaks this string (empty for narration/UI) |
+| `scene` | `LocEntry.NodeTitle` | Dialogue node or cutscene title this string originates from |
+| `ctx` | `LocEntry.Ctx` | Author context note from `#ctx:` annotation (T-LOC10) |
+
+### Design Decisions
+
+**Metadata as comments, not structure.** The key-value format `key = "value"` is
+preserved. Metadata is comment lines directly above the key line. This keeps the
+format diff-friendly (changing a translation only changes one line) and avoids
+requiring a format migration for existing `.agstrings` files.
+
+**Backward compatibility.** Entries without metadata (from older exports) are
+still valid. `ag export` re-generates metadata on export, so metadata is
+"best-effort" — it may be missing on entries that haven't been re-exported.
+
+**`scene:` vs `nodeTitle`.** The field is named `scene` to be neutral across
+dialogue (node title) and cutscene (cutscene title) sources.
+
+**`type` values are an enumeration.** Unknown type values are silently ignored
+by the parser and treated as absent. Types:
+
+| Type | Source | Notes |
+|------|--------|-------|
+| `spoken` | `SpeakerLine` | Character dialogue |
+| `choice` | `OptionBranch` | Player dialogue choice |
+| `narration` | `NarrationLine` | Author narration / description |
+| `ui` | GUI strings, HUD labels | From `.aggui` and built-in UI |
+| `subtitle` | `<<subtitle>>` in `.agcut` | |
+| `title_card` | `<<title_card>>` in `.agcut` | |
+
+### Parser Requirements
+
+**`LocEntry` struct changes (dlg + cut):**
+
+```go
+type LocEntry struct {
+    LocKey    string
+    NodeTitle string // used as "scene" in export
+    Character string
+    LineType  string
+    Source    string
+    Ctx       string // T-LOC10
+
+    // T-LOC11: formal taxonomy fields (populated during collection)
+    Scene string // always = NodeTitle (alias for clarity in .agstrings)
+    Type  string // always = LineType (alias for clarity in .agstrings)
+}
+```
+
+**`agstrings` format changes:**
+- `loc.Parse()` is unchanged — it only reads `key = value` pairs.
+- `loc.Write()` (used by `ag export`) writes metadata comments above each entry.
+- Existing `.agstrings` files without metadata are still valid input.
+- During `ag export --locale fr`, existing translation values are preserved;
+  metadata comments are regenerated from source.
+
+**CSV export changes:**
+- Header gains additional columns: `scene,context`.
+- Example: `loc_key,node,character,type,source_text,translation,scene,context`
+
+**PO export changes:**
+- Already emits `#. Type:` and `#. Node:` as comments — these are the `type`
+  and `scene` fields. The `#. Character:` comment already exists for `char`.
+
+### `agstrings` Writer Changes
+
+`loc.Write()` is extended to accept a slice of enriched `LocEntry` values:
+
+```go
+// WriteStringsFile writes a .agstrings file with optional per-entry metadata.
+// Each entry may have Ctx, Character, LineType, NodeTitle set.
+func WriteStringsFile(entries []LocEntry, w io.Writer) error
+```
+
+When any metadata field is non-empty on an entry, the writer emits comment lines
+before the key line. When all metadata fields are empty (legacy entry), it emits
+the bare `key = "value"` line for backward compatibility.
+
+### Diff Semantics (unchanged)
+
+`ag export --locale fr` still:
+- Adds new keys with empty value.
+- Preserves existing translations.
+- Marks stale keys with `// [stale]`.
+- Marks orphaned keys with `// [orphan]`.
+- **Now also regenerates metadata comments** above each entry (non-diff-affecting
+  comment-only changes; translators' workflow is unchanged).
+
+### Future Work (out of scope for T-LOC11)
+
+- Per-entry metadata in the Go `LocEntry` struct (T-LOC11 struct changes above)
+  are implemented as part of T-LOC11. Runtime GDScript loading of metadata
+  fields is a separate task (T-LOC14 in M12).
+- Filtering/grouping by metadata fields: T-LOC12 (`ag loc` subcommand).
+- Condition-based reports: T-LOC13 (`ag loc report`).
+
+---
+
 ## Out of Scope
 
 - Machine translation integration
