@@ -1,4 +1,4 @@
-## ags_sequencer_commands.gd — Command executor extension for AGSSequencer (T-CUT16–T-CUT21)
+## ags_sequencer_commands.gd — Command executor extension for AGSSequencer (T-CUT16–T-CUT21, T-CUT31)
 ##
 ## Extends the base AGSSequencer with game-command dispatch. Use this script
 ## as the AutoLoad (instead of ags_sequencer.gd) for full cutscene support.
@@ -14,6 +14,7 @@
 ##                          cutscene (nested), wait/action/set (base class)
 ##   dialogue   — T-CUT21: dialogue_line, narrator_line, title_card, subtitle,
 ##                          choice, dialogue
+##   cleanup    — T-CUT31: fade-out cutscene-owned audio channels on sequence end/skip
 ##
 ## Step dictionary format — character example:
 ##   {"type": "character", "character": "player", "command": "walk_to", "point": "door"}
@@ -27,6 +28,24 @@
 ##   {"type": "character", "character": "player", "command": "run_to", "point": "exit", "speed": 8.0}
 
 extends "ags_sequencer.gd"
+
+# ---------------------------------------------------------------------------
+# T-CUT31 — Audio cleanup signal
+# ---------------------------------------------------------------------------
+
+## Emitted after all cutscene-owned audio channels have been faded out and
+## stopped at sequence end or skip.
+signal audio_cleanup_complete
+
+# ---------------------------------------------------------------------------
+# run() override — hook cleanup after sequence finishes
+# ---------------------------------------------------------------------------
+
+## Override run() to perform audio leak cleanup after every sequence ends,
+## regardless of whether it completed normally, was skipped, or was halted.
+func run(steps: Array) -> void:
+	await super.run(steps)
+	await _cleanup_audio_channels()
 
 # ---------------------------------------------------------------------------
 # Step dispatch — override base class to add command types
@@ -435,7 +454,8 @@ func _exec_audio(step: Dictionary) -> bool:
 			var runtime := _get_runtime()
 			if runtime != null:
 				runtime.call("play_music", name)
-			_audio_channels["music"] = {"type": "music", "name": name}
+			_audio_channels["music"] = {"type": "music", "name": name,
+				"scope": step.get("audio_scope", "cutscene")}
 			# Fade-in: tween the music player volume from -80 to target.
 			var fade_in: float = step.get("fade_in", 0.0) as float
 			var target_vol: float = step.get("volume", 0.0) as float
@@ -482,7 +502,8 @@ func _exec_audio(step: Dictionary) -> bool:
 			if stream == null:
 				push_warning("AGSSequencerCommands: ambient stream '%s' not found" % name)
 				# Track the channel anyway so T-CUT31 can check.
-				_audio_channels[channel_key] = {"type": "ambient", "name": name}
+				_audio_channels[channel_key] = {"type": "ambient", "name": name,
+					"scope": step.get("audio_scope", "cutscene")}
 				return true
 			player.stream = stream
 			var target_vol: float = step.get("volume", 0.0) as float
@@ -496,7 +517,8 @@ func _exec_audio(step: Dictionary) -> bool:
 			else:
 				player.volume_db = target_vol
 				player.play()
-			_audio_channels[channel_key] = {"type": "ambient", "name": name}
+			_audio_channels[channel_key] = {"type": "ambient", "name": name,
+				"scope": step.get("audio_scope", "cutscene")}
 			return true
 
 		"ambient_stop":
@@ -620,6 +642,44 @@ func _set_music_volume(volume_db: float) -> void:
 		var player: AudioStreamPlayer = audio.call("get_music_player") as AudioStreamPlayer
 		if player != null:
 			player.volume_db = volume_db
+
+
+# ---------------------------------------------------------------------------
+# T-CUT31 — Audio leak cleanup
+# ---------------------------------------------------------------------------
+
+## Fade out and stop all cutscene-owned audio channels in 0.3s.
+## Channels with scope "room" are left running.
+## Emits audio_cleanup_complete when done.
+func _cleanup_audio_channels() -> void:
+	const FADE_TIME := 0.3
+	var had_channels := false
+	# Snapshot the keys — we will clear as we go.
+	var keys: Array = _audio_channels.keys().duplicate()
+	for key: String in keys:
+		var ch: Dictionary = _audio_channels.get(key, {})
+		var scope: String = ch.get("scope", "cutscene")
+		if scope == "room":
+			continue  # Room channels survive cutscene end.
+		had_channels = true
+		var ch_type: String = ch.get("type", "")
+		if ch_type == "music":
+			await _fade_music_out(FADE_TIME)
+			var runtime := _get_runtime()
+			if runtime != null:
+				runtime.call("stop_music")
+		elif ch_type == "ambient":
+			var channel_key := key as String
+			if _ambient_players.has(channel_key):
+				var player: AudioStreamPlayer = _ambient_players[channel_key]
+				if is_instance_valid(player) and player.playing:
+					var tween := create_tween()
+					tween.tween_property(player, "volume_db", -80.0, FADE_TIME)
+					await tween.finished
+					player.stop()
+				_ambient_players.erase(channel_key)
+		_audio_channels.erase(key)
+	audio_cleanup_complete.emit()
 
 
 # ---------------------------------------------------------------------------
