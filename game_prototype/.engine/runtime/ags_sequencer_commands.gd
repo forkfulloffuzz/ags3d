@@ -368,12 +368,231 @@ func _get_initial_camera_name() -> String:
 
 
 # ---------------------------------------------------------------------------
-# T-CUT18 — Audio commands (stub; implemented in T-CUT18)
+# T-CUT18 — Audio commands
 # ---------------------------------------------------------------------------
 
+## Tracks audio channels started by the current cutscene.
+## Key: channel name (e.g. "music", "ambient_forest"), Value: { "type": String }
+## Populated by audio commands; cleared on sequence completion.
+## T-CUT31 uses this to stop any leaked channels at sequence end.
+var _audio_channels: Dictionary = {}
+
+## Ambient audio players managed directly by the sequencer.
+## Each key is the ambient channel name; value is an AudioStreamPlayer.
+var _ambient_players: Dictionary = {}
+
+
+## Access AGSAudio singleton (may be null if not registered as AutoLoad).
+func _get_audio() -> Node:
+	if Engine.has_singleton("AGSAudio"):
+		return Engine.get_singleton("AGSAudio") as Node
+	return null
+
+## Access AGSRuntime singleton.
+func _get_runtime() -> Object:
+	if Engine.has_singleton("AGSRuntime"):
+		return Engine.get_singleton("AGSRuntime")
+	return null
+
+
 func _exec_audio(step: Dictionary) -> bool:
-	push_warning("AGSSequencerCommands: audio commands not yet implemented (T-CUT18)")
-	return true
+	var cmd: String = step.get("command", "")
+
+	match cmd:
+		"music":
+			# Play music: <<music name fade_in? volume? loop?>>
+			var name: String = step.get("name", "")
+			if name.is_empty():
+				push_warning("AGSSequencerCommands: music command missing 'name'")
+				return true
+			var runtime := _get_runtime()
+			if runtime != null:
+				runtime.call("play_music", name)
+			_audio_channels["music"] = {"type": "music", "name": name}
+			# Fade-in: tween the music player volume from -80 to target.
+			var fade_in: float = step.get("fade_in", 0.0) as float
+			var target_vol: float = step.get("volume", 0.0) as float
+			if fade_in > 0.0:
+				await _fade_music_in(fade_in, target_vol)
+			elif target_vol != 0.0:
+				_set_music_volume(target_vol)
+			return true
+
+		"music_stop":
+			# Stop music: <<music stop fade_out?>>
+			var fade_out: float = step.get("fade_out", 0.0) as float
+			if fade_out > 0.0:
+				await _fade_music_out(fade_out)
+			var runtime := _get_runtime()
+			if runtime != null:
+				runtime.call("stop_music")
+			_audio_channels.erase("music")
+			return true
+
+		"sound":
+			# One-shot sound: <<sound name volume? fade_in? position?>>
+			var name: String = step.get("name", "")
+			if name.is_empty():
+				push_warning("AGSSequencerCommands: sound command missing 'name'")
+				return true
+			var runtime := _get_runtime()
+			if runtime != null:
+				runtime.call("play_sound", name)
+			# Sounds are fire-and-forget — not tracked for T-CUT31 cleanup
+			# (AudioStreamPlayer pool auto-manages them).
+			return true
+
+		"ambient":
+			# Play ambient audio: <<ambient name fade_in? volume?>>
+			var name: String = step.get("name", "")
+			if name.is_empty():
+				push_warning("AGSSequencerCommands: ambient command missing 'name'")
+				return true
+			var channel_key: String = "ambient_" + name
+			var player := _get_or_create_ambient_player(channel_key)
+			# Try to load the stream.
+			var stream: AudioStream = _load_ambient_stream(name)
+			if stream == null:
+				push_warning("AGSSequencerCommands: ambient stream '%s' not found" % name)
+				# Track the channel anyway so T-CUT31 can check.
+				_audio_channels[channel_key] = {"type": "ambient", "name": name}
+				return true
+			player.stream = stream
+			var target_vol: float = step.get("volume", 0.0) as float
+			var fade_in: float = step.get("fade_in", 0.0) as float
+			if fade_in > 0.0:
+				player.volume_db = -80.0
+				player.play()
+				var tween := create_tween()
+				tween.tween_property(player, "volume_db", target_vol, fade_in)
+				await tween.finished
+			else:
+				player.volume_db = target_vol
+				player.play()
+			_audio_channels[channel_key] = {"type": "ambient", "name": name}
+			return true
+
+		"ambient_stop":
+			# Stop ambient: <<ambient stop name fade_out?>>
+			var name: String = step.get("name", "")
+			var channel_key: String = "ambient_" + name if not name.is_empty() else ""
+			# If no name, stop ALL ambient channels.
+			var keys_to_stop: Array = []
+			if channel_key.is_empty():
+				for k: String in _ambient_players:
+					keys_to_stop.append(k)
+			else:
+				keys_to_stop = [channel_key]
+			var fade_out: float = step.get("fade_out", 0.0) as float
+			for k: String in keys_to_stop:
+				if _ambient_players.has(k):
+					var player: AudioStreamPlayer = _ambient_players[k]
+					if fade_out > 0.0:
+						var tween := create_tween()
+						tween.tween_property(player, "volume_db", -80.0, fade_out)
+						await tween.finished
+					player.stop()
+				_audio_channels.erase(k)
+			return true
+
+		"ambient_volume":
+			# Change ambient volume: <<ambient volume channel:name value duration?>>
+			var channel: String = step.get("channel", "")
+			var channel_key: String = "ambient_" + channel if not channel.is_empty() else ""
+			var target_vol: float = step.get("value", 0.0) as float
+			var duration: float = step.get("duration", 0.0) as float
+			if not channel_key.is_empty() and _ambient_players.has(channel_key):
+				var player: AudioStreamPlayer = _ambient_players[channel_key]
+				if duration > 0.0:
+					var tween := create_tween()
+					tween.tween_property(player, "volume_db", target_vol, duration)
+					await tween.finished
+				else:
+					player.volume_db = target_vol
+			return true
+
+		"voice":
+			# Play a voice line: <<voice character file loc_key?>>
+			var char_name: String = step.get("character", "")
+			var file: String = step.get("file", "")
+			if file.is_empty():
+				push_warning("AGSSequencerCommands: voice command missing 'file'")
+				return true
+			# Voice files expected at: res://audio/voice/<character>/<file>.*
+			var voice_name: String = char_name + "/" + file if not char_name.is_empty() else file
+			var runtime := _get_runtime()
+			if runtime != null:
+				runtime.call("play_sound", voice_name)
+			return true
+
+		_:
+			push_warning("AGSSequencerCommands: unknown audio command '%s'" % cmd)
+			return true
+
+
+## Get or create an ambient AudioStreamPlayer keyed by channel.
+func _get_or_create_ambient_player(channel_key: String) -> AudioStreamPlayer:
+	if _ambient_players.has(channel_key):
+		return _ambient_players[channel_key]
+	var player := AudioStreamPlayer.new()
+	player.bus = "SFX"
+	add_child(player)
+	_ambient_players[channel_key] = player
+	return player
+
+
+## Load an ambient audio stream from the ambient/ or sfx/ directory.
+func _load_ambient_stream(name: String) -> AudioStream:
+	for ext in ["ogg", "mp3", "wav"]:
+		for dir in ["res://audio/ambient/", "res://audio/sfx/"]:
+			var path := "%s%s.%s" % [dir, name, ext]
+			if ResourceLoader.exists(path):
+				return ResourceLoader.load(path) as AudioStream
+	return null
+
+
+## Fade music player volume from -80 dB up to target_vol over duration.
+func _fade_music_in(duration: float, target_vol: float) -> void:
+	var audio := _get_audio()
+	if audio == null:
+		return
+	if not audio.has_method("get_music_player"):
+		await get_tree().create_timer(duration).timeout
+		return
+	var player: AudioStreamPlayer = audio.call("get_music_player") as AudioStreamPlayer
+	if player == null:
+		return
+	player.volume_db = -80.0
+	var tween := create_tween()
+	tween.tween_property(player, "volume_db", target_vol, duration)
+	await tween.finished
+
+
+## Fade music player volume down to -80 dB over duration.
+func _fade_music_out(duration: float) -> void:
+	var audio := _get_audio()
+	if audio == null:
+		return
+	if not audio.has_method("get_music_player"):
+		await get_tree().create_timer(duration).timeout
+		return
+	var player: AudioStreamPlayer = audio.call("get_music_player") as AudioStreamPlayer
+	if player == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(player, "volume_db", -80.0, duration)
+	await tween.finished
+
+
+## Set music player volume immediately.
+func _set_music_volume(volume_db: float) -> void:
+	var audio := _get_audio()
+	if audio == null:
+		return
+	if audio.has_method("get_music_player"):
+		var player: AudioStreamPlayer = audio.call("get_music_player") as AudioStreamPlayer
+		if player != null:
+			player.volume_db = volume_db
 
 
 # ---------------------------------------------------------------------------
