@@ -146,10 +146,19 @@ func run(steps: Array) -> void:
 	_bg_steps.clear()
 	_retry_tracker.clear()
 
+	# T-CUT24: track whether skip was already active at the start of the step.
+	var _skip_was_active := false
+
 	var i := 0
 	while i < steps.size():
 		var step: Dictionary = steps[i]
 		var stype: String = step.get("type", "")
+
+		# T-CUT24: when skip first becomes active, fire all remaining action/set
+		# commands as a dry-run pass to ensure state consistency on arrival.
+		if _skip_active and not _skip_was_active:
+			_skip_was_active = true
+			fire_skipped_state_changes(steps.slice(i))
 
 		if stype == "sync":
 			await _execute_sync(step)
@@ -336,6 +345,24 @@ func _dispatch_step(step: Dictionary) -> bool:
 ## Override in subclasses or connect a handler to process action/set commands.
 func _on_command(raw: String) -> void:
 	pass  # Game integrators connect to command_fired signal via emit_command.
+
+# ---------------------------------------------------------------------------
+# T-CUT24 — State consistency on skip: dry-run action/set pass
+# ---------------------------------------------------------------------------
+
+## Fire every <<action>> and <<set>> command in [param remaining_steps] without
+## executing any other step type. Call this when skip becomes active to ensure
+## all state changes between the skip origin and the destination are applied
+## before arriving at the destination.
+##
+## This is a synchronous scan — no await, no visual side-effects.
+func fire_skipped_state_changes(remaining_steps: Array) -> void:
+	for step: Dictionary in remaining_steps:
+		var stype: String = step.get("type", "")
+		if stype == "action" or stype == "set":
+			var raw: String = step.get("raw", "")
+			if raw != "":
+				_on_command(raw)
 
 # ---------------------------------------------------------------------------
 # Fallback policy
