@@ -17,15 +17,15 @@ Dependencies: T-GS02 (C++ AGSItem) unblocks T-GS14 → T-GS15; T-BL10 unblocks T
 
 - [x] **T-LOC13** — Go: `ag loc report` — condition-based report generation. `ag loc report <project> --locale fr --by-character` shows all strings for one character; `--untranslated` shows only empty translations. Tests in `tools/ag/internal/loc/`. *(depends T-LOC12; enhanced with --by-character, --by-node, --untranslated, --group-by flags; FormatLocaleReportGrouped added)*
 
-- [ ] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb`. Emit `AGSRuntime.set_status_text("...")`, `AGSRuntime.set_active_verb("...")`, `AGSRuntime.get_active_verb()`. These are non-blocking. Tests in `tools/ag/internal/emitter/`. *(depends T-GS14 — waits on T-GS02 C++ AGSItem)*
+- [x] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb`. Emit `AGSRuntime.set_status_text("...")`, `AGSRuntime.set_active_verb("...")`, `AGSRuntime.get_active_verb()`. These are non-blocking. Tests in `tools/ag/internal/emitter/`. *(done — commit 92ca49d49d)*
 
-- [ ] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`. `SetPlayerControl(false)` emits `AGSRuntime.set_player_control(false)`. `FadeIn()`/`FadeOut()` emit `AGSCutscene.fade_in()`/`fade_out()`. `Wait(seconds)` emits `await get_tree().create_timer(seconds).timeout`. Tests in `tools/ag/internal/emitter/`. *(depends T-GS18 — GDScript cutscene runtime; Editor milestone needed first)*
+- [x] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`. `SetPlayerControl(false)` emits `AGSRuntime.set_player_control(false)`. `FadeIn()`/`FadeOut()` emit `AGSCutscene.fade_in()`/`fade_out()`. `Wait(seconds)` emits `await get_tree().create_timer(seconds).timeout`. Tests in `tools/ag/internal/emitter/`. *(done — commit 8f25de5701)*
 
-- [ ] **T-BL12** — Go: `.agchar` animation clip wiring in generated `.tscn`. Parse `mesh` and `animations` fields from `.agchar`; emit `anim_idle`, `anim_walk`, `anim_talk` properties on the character root node in the `.tscn`. Tests in `tools/ag/internal/scene/`. *(depends T-BL10 — character export operator)*
+- [x] **T-BL12** — Go: `.agchar` animation clip wiring in generated `.tscn`. Parse `mesh` and `animations` fields from `.agchar`; emit `anim_idle`, `anim_walk`, `anim_talk` properties on the character root node in the `.tscn`. Tests in `tools/ag/internal/scene/`. *(done — commit 846e74ab88)*
 
-- [ ] **T-BL13** — GDScript: `ags_character.gd` drives AnimationPlayer on state transitions. When velocity > 0 play `walk` clip; when `say()` called play `talk` clip; idle when stationary. Uses `anim_walk`/`anim_idle`/`anim_talk` from `.tscn` properties. Tests in `agstests/`. *(depends T-BL12)*
+- [x] **T-BL13** — GDScript: `ags_character.gd` drives AnimationPlayer on state transitions. When velocity > 0 play `walk` clip; when `say()` called play `talk` clip; idle when stationary. Uses `anim_walk`/`anim_idle`/`anim_talk` from `.tscn` properties. Tests in `agstests/`. *(done — commit de169b4f4c)*
 
-- [ ] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine`. `InventoryBar` auto-populates from character inventory and refreshes on add/remove. `VerbBar` buttons call `AGSRuntime.set_active_verb()`. `StatusLine` displays text via `AGSRuntime.set_status_text()`. Tests in `agstests/`. *(depends T-GS02 — C++ AGSItem node)*
+- [x] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine`. `InventoryBar` auto-populates from character inventory and refreshes on add/remove. `VerbBar` buttons call `AGSRuntime.set_active_verb()`. `StatusLine` displays text via `AGSRuntime.set_status_text()`. Tests in `agstests/`. *(done — commit 959448b337)*
 
 ## Notes
 
