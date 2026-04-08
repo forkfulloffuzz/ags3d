@@ -8,6 +8,7 @@
 //  4. .agroom: each SpawnPoint.character matches a known .agchar name
 //  5. .agscript: WalkTo/FaceTo point-name args exist in the paired .agroom
 //  6. .agscript: AddInventory/LoseInventory/HasInventory item-name args resolve to a known .agitem
+//  7. .agscript: character receiver names in method calls resolve to a known .agchar
 package validate
 
 import (
@@ -200,6 +201,9 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 
 		// Check 6: AddInventory/LoseInventory/HasInventory item names.
 		issues = append(issues, checkScriptItemRefs(f.Rel, src, itemNames)...)
+
+		// Check 7: character receiver names in method calls.
+		issues = append(issues, checkScriptCharacterRefs(f.Rel, src, charNames)...)
 	}
 
 	// --- Dialogue validation (DLG-E001..E025, DLG-W001..W012) ---
@@ -659,6 +663,39 @@ var inventoryBuiltins = map[string]bool{
 	"AddInventory":  true,
 	"LoseInventory": true,
 	"HasInventory":  true,
+}
+
+// checkScriptCharacterRefs parses src as an .agscript and returns Issues for any
+// method call whose receiver (object) does not name a known character.
+// For example: player.Say(...) — "player" must be a known .agchar.
+func checkScriptCharacterRefs(rel, src string, charNames map[string]string) []Issue {
+	s := scanner.New(rel, src)
+	p := parser.New(s)
+	f, _ := p.Parse(rel)
+
+	var issues []Issue
+	for _, decl := range f.Decls {
+		walkDecl(decl, func(call *parser.CallExpr) {
+			mem, ok := call.Callee.(*parser.MemberExpr)
+			if !ok {
+				return
+			}
+			ident, ok := mem.Object.(*parser.Identifier)
+			if !ok {
+				return
+			}
+			if _, ok := charNames[ident.Name]; !ok {
+				tok := call.ExprPos()
+				issues = append(issues, Issue{
+					File:     rel,
+					Line:     tok.Line,
+					Severity: "error",
+					Message:  fmt.Sprintf("%s.%s(...): unknown character %q (no matching .agchar found)", ident.Name, mem.Field, ident.Name),
+				})
+			}
+		})
+	}
+	return issues
 }
 
 // checkScriptItemRefs parses src as an .agscript and returns Issues for any

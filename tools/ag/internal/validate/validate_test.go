@@ -296,7 +296,8 @@ func TestScriptWalkToKnownPoint(t *testing.T) {
 		"rooms/r/r.agroom": `Room "r" {
 			Point "door" { position = (1.0, 0.0, 0.0) }
 		}`,
-		"rooms/r/r.agscript": `function room_Enter() { player.WalkTo("door"); }`,
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/r/r.agscript":       `function room_Enter() { player.WalkTo("door"); }`,
 	})
 
 	issues, _ := validate.ValidateProject(root, m)
@@ -341,7 +342,8 @@ func TestScriptFaceToUnknownPoint(t *testing.T) {
 func TestScriptNoRoomNoPanic(t *testing.T) {
 	// Global script with no paired .agroom — no point checks, no crash.
 	root, m := scaffold(t, map[string]string{
-		"scripts/global.agscript": `function on_start() { player.WalkTo("anywhere"); }`,
+		"characters/player.agchar": `Character "player" {}`,
+		"scripts/global.agscript":  `function on_start() { player.WalkTo("anywhere"); }`,
 	})
 
 	issues, err := validate.ValidateProject(root, m)
@@ -349,9 +351,10 @@ func TestScriptNoRoomNoPanic(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// No room paired → no point check → no issues from check 5.
+	// But character "player" IS known, so no check 7 issue either.
 	for _, i := range issues {
-		if contains(i.String(), "WalkTo") {
-			t.Errorf("unexpected WalkTo issue for unpairedscript: %v", i)
+		if contains(i.String(), "WalkTo") || contains(i.String(), "player") {
+			t.Errorf("unexpected issue for unpairedscript: %v", i)
 		}
 	}
 }
@@ -381,7 +384,7 @@ func TestScriptLineNumberReported(t *testing.T) {
 func TestAddInventoryKnownItem(t *testing.T) {
 	root, m := scaffold(t, map[string]string{
 		"items/rusty_key.agitem": `Item "rusty_key" { display_name = "Rusty Key" }`,
-		"rooms/r/r.agscript":    `function room_Enter() { AddInventory("rusty_key"); }`,
+		"rooms/r/r.agscript":     `function room_Enter() { AddInventory("rusty_key"); }`,
 	})
 
 	issues, _ := validate.ValidateProject(root, m)
@@ -449,6 +452,106 @@ func TestBrokenAgitemReportedAsIssue(t *testing.T) {
 	issues, _ := validate.ValidateProject(root, m)
 	if !hasIssue(issues, "bad.agitem") {
 		t.Errorf("expected parse error issue for bad.agitem, got %v", issues)
+	}
+}
+
+// --------------------------------------------------------------------------
+// Check 7: .agscript character-receiver method call cross-references (T-E05)
+// --------------------------------------------------------------------------
+
+func TestScriptMethodOnKnownCharacter(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar": `Character "player" { display_name = "Player" }`,
+		"characters/guard.agchar":  `Character "guard" { display_name = "Guard" }`,
+		"rooms/r/r.agroom":         `Room "r" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/r/r.agscript": `function room_Enter() {
+			player.Say("Hello!");
+			guard.WalkTo("some_point");
+		}`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "player") || contains(i.String(), "guard") {
+			t.Errorf("unexpected character issue: %v", i)
+		}
+	}
+}
+
+func TestScriptMethodOnUnknownCharacter(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/r/r.agroom":         `Room "r" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/r/r.agscript": `function room_Enter() {
+			ghost.Say("Boo!");
+		}`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"ghost"`) {
+		t.Errorf("expected unknown character issue for ghost, got %v", issues)
+	}
+	if !hasIssue(issues, "unknown character") {
+		t.Errorf("expected 'unknown character' in message, got %v", issues)
+	}
+	if !hasIssue(issues, "error") {
+		t.Errorf("expected severity error")
+	}
+}
+
+func TestScriptMethodLineNumberForUnknownCharacter(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/r/r.agroom":         `Room "r" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/r/r.agscript": `function room_Enter() {
+			player.Say("known");
+			phantom.Say("unknown");
+		}`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"phantom"`) {
+		t.Errorf("expected phantom issue, got %v", issues)
+	}
+	if !hasIssue(issues, ":3:") {
+		t.Errorf("expected line number :3: in issue, got %v", issues)
+	}
+}
+
+func TestScriptBareFunctionNotCheckedAsCharacterReceiver(t *testing.T) {
+	// Bare function calls (not method calls) should not trigger Check 7.
+	// inventory check handles AddInventory/LoseInventory/HasInventory.
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/r/r.agroom":         `Room "r" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/r/r.agscript": `function room_Enter() {
+			AddInventory("some_item");
+			player.Say("hello");
+		}`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "player.Say") && contains(i.String(), "unknown") {
+			t.Errorf("unexpected issue for player.Say: %v", i)
+		}
+	}
+}
+
+func TestScriptUnknownCharacterInNestedBlock(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/r/r.agroom":         `Room "r" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/r/r.agscript": `function room_Enter() {
+			if (true) {
+				unknown_npc.WalkTo("point");
+			}
+		}`,
+	})
+
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"unknown_npc"`) {
+		t.Errorf("expected unknown character issue for unknown_npc, got %v", issues)
 	}
 }
 
