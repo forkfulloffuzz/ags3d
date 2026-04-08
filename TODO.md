@@ -3,35 +3,39 @@
 This file tracks the active batch of tasks. Update status as work progresses.
 When all tasks are done, ask Claude to pick the next 10.
 
-## M10 / M11 / M-LOC — Game Systems, Blender, Localisation (Phase 7)
+## M10 / M11 / M-LOC — Phase 8
 
-Dependencies: T-BL10 must complete before T-BL11; T-LOC03 → T-LOC04 → T-LOC05; T-LOC05 before T-LOC06.
+Dependencies: T-GS02 (C++ AGSItem) unblocks T-GS14 → T-GS15; T-BL10 unblocks T-BL12/T-BL13; T-LOC10 → T-LOC11 → T-LOC12 → T-LOC13.
 
-- [x] **T-BL11** — Go: `ag build` glb sub-scene embedding. When `ag build` processes a room, detect if `rooms/<name>/<name>.glb` exists; if so, emit it as an `[ext_resource]` and instance it as a `Visual` child node in the generated `.tscn`. One `.glb` per room, loaded as a packed scene. Tests in `tools/ag/internal/scene/` verifying `.tscn` output contains correct ext_resource + Visual node when `.glb` is present. *(done — implementation in main.go:306-311 + scene.GenerateRoomScene; unit tests pass)*
+- [ ] **T-E05** — Go: `ag validate` cross-reference checks. Ensure `ag validate` checks: start_room/start_character files exist, initial_camera matches Camera block in same room, SpawnPoint.character matches .agchar, WalkTo/FaceTo point names resolve, inventory item references resolve. Exit non-zero on errors. Tests in `tools/ag/internal/validate/`. *(depends T-E01, T-E03 — both done)*
 
-- [x] **T-GS04** — Go: `.agitem` parser + `ag validate` inventory checks. In `tools/ag/internal/item/`, implement the `.agitem` parser (data-only format: `Item "name" { display_name description sprite }`). Wire into `ag build` (data files don't generate scenes). Extend `ag validate` to check that every `AddInventory("x")` / `LoseInventory("x")` / `HasInventory("x")` in scripts references a defined item. Tests in `tools/ag/internal/item/` and `tools/ag/internal/validate/`. *(done — parser in item.ParseItem, build wiring in main.go:401-413, validation in checkScriptItemRefs; all tests pass)*
+- [ ] **T-LOC10** — Design: author context annotations in `.agdlg` and `.agcut`. Design `#ctx:` comment syntax to attach translator notes to individual strings. Document in `docs/localisation-milestone.md`. *(independent)*
 
-- [x] **T-LOC04** — Go: `ag validate` localisation pass. In `tools/ag/internal/loc/`, add a validation pass that checks: (1) every `loc_key:` used in `.agdlg` and `.agcut` files exists in at least one locale file; (2) keys in locale files that are never referenced are reported as warnings (orphans). Print `[ERROR] file:line: missing loc_key 'x'` and `[WARN]  file:line: orphan loc_key 'x'`. Exit non-zero on errors. Tests in `tools/ag/internal/loc/`. *(done — validateDialogueLocKeys in validate.go validates dialogue loc_keys; FindOrphanKeys in loc/export.go for orphan detection; 4 new tests in dlg/export_test.go; all tests pass)*
+- [ ] **T-LOC11** — Design: string taxonomy and source metadata in `.agstrings`. Design `type:` (spoken/choice/narration/ui/subtitle), `char:`, `scene:` metadata fields per entry. Document in `docs/localisation-milestone.md`. *(depends T-LOC10)*
 
-- [x] **T-LOC05** — Go: standalone `ag-loc` translation tool. Build a new `tools/agli` package (`ag loc` CLI) that wraps `ag validate` + locale report generation. Commands: `ag loc check <project>` (run all localisation validations), `ag loc report <project> --locale en` (print all strings for translation), `ag loc import <project> --locale fr --file strings.fr.agstrings` (merge imported strings). Tests in `tools/agui/` or new `tools/agli/`. *(done — ag loc check/report/import added to cmd/ag/main.go; uses existing validate.ValidateFiles and loc.CollectAllLocaleEntries; no separate tools/agli package needed)*
+- [ ] **T-LOC12** — Go: `ag loc` subcommand — advanced search, filter, sort, and group-by over `.agstrings` files. Commands: `ag loc find <project> --locale fr --pattern "guard_*"`, `ag loc filter <project> --locale fr --untranslated`. Tests in `tools/ag/internal/loc/`. *(depends T-LOC11)*
 
-- [x] **T-LOC03** — Go: `ag export --locale` integration with `.agstrings`. In `tools/ag/internal/loc/`, implement `ExportLocale(root, locale)` that reads all `.agdlg` and `.agcut` files, extracts `loc_key:` values, and writes a locale template file (`strings.<locale>.agstrings`). Format matches existing `.agloc`/`.agstrings` format. Tests in `tools/ag/internal/loc/`. *(done — ExportLocale and ExportLocaleFiles in loc/export.go; CollectAllLocaleEntries and FormatLocaleReport also provided; 3 new tests added; all tests pass)*
+- [ ] **T-LOC13** — Go: `ag loc report` — condition-based report generation. `ag loc report <project> --locale fr --by-character` shows all strings for one character; `--untranslated` shows only empty translations. Tests in `tools/ag/internal/loc/`. *(depends T-LOC12)*
 
-- [x] **T-LOC06** — Go: PO/CSV import bridge. In `tools/ag/internal/loc/`, implement `ImportPO(root, locale, po_path)` and `ImportCSV(root, locale, csv_path)` that read external translation files and merge translations into existing `.agstrings` files. Overwrite only translated values; preserve untranslated keys. Validate that imported keys exist in the project. Tests in `tools/ag/internal/loc/`. *(done — ImportPO and ImportCSV in loc/export.go; wired into ag loc import command; uses dlg.ParsePOTranslations and dlg.ParseCSVTranslations for parsing)*
+- [ ] **T-GS15** — Go: grammar + emitter — `SetStatusText`, `SetActiveVerb`, `GetActiveVerb`. Emit `AGSRuntime.set_status_text("...")`, `AGSRuntime.set_active_verb("...")`, `AGSRuntime.get_active_verb()`. These are non-blocking. Tests in `tools/ag/internal/emitter/`. *(depends T-GS14 — waits on T-GS02 C++ AGSItem)*
 
-- [x] **T-LOC09** — Go: voice script export grouped by voice_session + character. In `tools/ag/internal/dlg/`, extend the dialogue emitter to produce a `voice_sessions.json` alongside the dialogue JSON: for each `<<voice session:Name>>` block, list all `<<voice character:file>>` lines inside it, grouped by character. Format: `{"sessions": [{"name": "act1", "character": "guard", "lines": ["guard/intro_01", "guard/intro_02"]}]}`. Used by T-LOC16 for recording coverage tracking. Tests in `tools/ag/internal/dlg/`. *(done — ExportVoiceSessionsJSON in cut/voicescript.go; 3 new tests in voicescript_test.go; all tests pass)*
+- [ ] **T-GS19** — Go: grammar + emitter — `SetPlayerControl`, `FadeIn`, `FadeOut`, `Wait`. `SetPlayerControl(false)` emits `AGSRuntime.set_player_control(false)`. `FadeIn()`/`FadeOut()` emit `AGSCutscene.fade_in()`/`fade_out()`. `Wait(seconds)` emits `await get_tree().create_timer(seconds).timeout`. Tests in `tools/ag/internal/emitter/`. *(depends T-GS18 — GDScript cutscene runtime; Editor milestone needed first)*
 
-- [x] **T-GS07** — Go: grammar + emitter — `global.NAME` read/write and `game.agp` globals section. Add `global.VARNAME` as a variable expression to the grammar (both read and write). Parse `[globals]` section in `game.agp`. Validate at emit time that every `global.x` reference matches a declared global. Tests in `tools/ag/internal/emitter/` and `tools/ag/internal/analysis/`. *(done — global.NAME emit in emitter.go:557, global assign in emitter.go:372; all tests pass)*
+- [ ] **T-BL12** — Go: `.agchar` animation clip wiring in generated `.tscn`. Parse `mesh` and `animations` fields from `.agchar`; emit `anim_idle`, `anim_walk`, `anim_talk` properties on the character root node in the `.tscn`. Tests in `tools/ag/internal/scene/`. *(depends T-BL10 — character export operator)*
 
-- [x] **T-GS11** — Go: grammar + emitter — `PlayMusic`, `StopMusic`, `PlaySound`. Add these three built-in function calls to the grammar (non-blocking). `PlayMusic("name")` emits `AGSRuntime.play_music("name")`. `StopMusic()` emits `AGSRuntime.stop_music()`. `PlaySound("name")` emits `AGSRuntime.play_sound("name")`. Functions are non-blocking even when called consecutively. Tests in `tools/ag/internal/emitter/`. *(done — implemented in emitter.go:728-730; tests pass)*
+- [ ] **T-BL13** — GDScript: `ags_character.gd` drives AnimationPlayer on state transitions. When velocity > 0 play `walk` clip; when `say()` called play `talk` clip; idle when stationary. Uses `anim_walk`/`anim_idle`/`anim_talk` from `.tscn` properties. Tests in `agstests/`. *(depends T-BL12)*
 
-- [x] **T-GS09** — Go: grammar + emitter — `GoToRoom` room transition blocking call. Add `GoToRoom("room_name")` as a blocking call to the grammar. Emits `await AGSRuntime.load_room("room_name")`. Add `room_change_requested` to the runtime call signature. Tests in `tools/ag/internal/emitter/`. *(done — GoToRoom in blocking.go, maps to AGSRuntime.load_room in emitter.go:721; tests pass)*
+- [ ] **T-GS14** — GDScript: GUI runtime — `InventoryBar`, `VerbBar`, `StatusLine`. `InventoryBar` auto-populates from character inventory and refreshes on add/remove. `VerbBar` buttons call `AGSRuntime.set_active_verb()`. `StatusLine` displays text via `AGSRuntime.set_status_text()`. Tests in `agstests/`. *(depends T-GS02 — C++ AGSItem node)*
 
 ## Notes
 
-- T-LOC03, T-BL11, T-GS04, T-GS07, T-GS09, T-GS11 are independent.
-- T-LOC03 must complete before T-LOC04.
-- T-LOC04 must complete before T-LOC05.
-- T-LOC05 must complete before T-LOC06.
-- T-BL10 must complete before T-BL11.
-- After this batch: T-CUT33 (cutscene preview in editor), M11 remaining tasks (T-BL12, T-BL13), M-LOC editor tasks (M12).
+- T-LOC10 is independent (design only).
+- T-LOC11 depends on T-LOC10.
+- T-LOC12 depends on T-LOC11.
+- T-LOC13 depends on T-LOC12.
+- T-E05 is independent (already mostly implemented).
+- T-GS14/T-GS15 depend on T-GS02 (C++ AGSItem) — high priority for C++ implementor.
+- T-GS19 depends on T-GS18 (GDScript cutscene runtime) — Editor milestone dependency.
+- T-BL12 depends on T-BL10 (character export operator).
+- T-BL13 depends on T-BL12.
+- After this batch: M12 (AG Studio custom editor UI), remaining M11 Blender tasks.
