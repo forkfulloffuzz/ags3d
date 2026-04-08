@@ -211,7 +211,71 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 	// --- Cutscene validation (CUT-E/W, SEQ-E/W) ---
 	issues = append(issues, validateCutscenes(files, charNames, itemNames, roomData)...)
 
+	// --- Cutscene localisation validation (T-CUT30) ---
+	issues = append(issues, validateCutsceneLocKeys(files)...)
+
 	return issues, nil
+}
+
+// validateCutsceneLocKeys parses all .agcut files and validates that every
+// explicit loc_key: argument is present in at least one .agstrings locale file
+// found in the same file set. Missing keys are reported as warnings (not errors)
+// so the build is not blocked in dev; they become errors in release mode.
+func validateCutsceneLocKeys(files []project.SourceFile) []Issue {
+	var issues []Issue
+
+	// Build a merged locale map from all .agstrings files in the project.
+	localeMap := make(map[string]string)
+	for _, f := range files {
+		if f.Ext != ".agstrings" {
+			continue
+		}
+		data, err := os.ReadFile(f.Path)
+		if err != nil {
+			continue
+		}
+		sf, parseErr := loc.Parse(f.Rel, string(data))
+		if parseErr != nil {
+			continue
+		}
+		for _, e := range sf.Entries {
+			if !e.Orphan {
+				localeMap[e.Key] = e.Value
+			}
+		}
+	}
+	if len(localeMap) == 0 {
+		// No locale files in this project — nothing to validate against.
+		return nil
+	}
+
+	releaseMode := os.Getenv("AGSBUILD") == "release"
+
+	for _, f := range files {
+		if f.Ext != ".agcut" {
+			continue
+		}
+		data, err := os.ReadFile(f.Path)
+		if err != nil {
+			continue
+		}
+		cf, parseErr := cut.Parse(f.Rel, string(data))
+		if parseErr != nil {
+			continue // parse errors are reported by validateCutscenes
+		}
+		for _, msg := range cut.ValidateLocKeys(cf, localeMap) {
+			sev := "warning"
+			if releaseMode {
+				sev = "error"
+			}
+			issues = append(issues, Issue{
+				File:     f.Rel,
+				Severity: sev,
+				Message:  fmt.Sprintf("CUT-LOC-W001: %s", msg),
+			})
+		}
+	}
+	return issues
 }
 
 // validateCutscenes parses all .agcut files and runs CUT-E/W and SEQ-E/W checks.

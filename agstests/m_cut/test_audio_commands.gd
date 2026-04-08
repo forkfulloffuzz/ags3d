@@ -24,7 +24,32 @@ func _run_step(seq: Node, step: Dictionary) -> Array:
 	seq.sequence_complete.connect(func() -> void: completed[0] = true, CONNECT_ONE_SHOT)
 	seq.sequence_failed.connect(func(_r: String) -> void: failed[0] = true, CONNECT_ONE_SHOT)
 	await seq.run([step])
+	# Note: run() already awaits _cleanup_audio_channels() internally,
+	# so audio_cleanup_complete has already fired by this point.
 	return [completed[0], failed[0]]
+
+
+## Run a step and capture the audio channel state BEFORE T-CUT31 cleanup clears it.
+## Returns [completed, failed, channels_dict, ambient_players_dict]
+func _run_step_capture_channels(seq: Node, step: Dictionary) -> Array:
+	var completed := [false]
+	var failed := [false]
+	# Use meta to store captured data to avoid closure variable issues
+	seq.set_meta("_captured_channels", {})
+	seq.set_meta("_captured_ambient", {})
+	# Capture state BEFORE cleanup runs (sequence_complete fires before cleanup)
+	seq.sequence_complete.connect(func() -> void:
+		completed[0] = true
+		seq.set_meta("_captured_channels", seq._audio_channels.duplicate())
+		seq.set_meta("_captured_ambient", seq._ambient_players.duplicate())
+	, CONNECT_ONE_SHOT)
+	seq.sequence_failed.connect(func(_r: String) -> void: failed[0] = true, CONNECT_ONE_SHOT)
+	await seq.run([step])
+	# Note: run() already awaits _cleanup_audio_channels() internally,
+	# so audio_cleanup_complete has already fired by this point.
+	var captured_channels: Dictionary = seq.get_meta("_captured_channels", {})
+	var captured_ambient: Dictionary = seq.get_meta("_captured_ambient", {})
+	return [completed[0], failed[0], captured_channels, captured_ambient]
 
 func _cleanup_nodes(nodes: Array) -> void:
 	for n: Node in nodes:
@@ -41,11 +66,12 @@ func test_01_music_play_tracks_channel() -> void:
 	var seq := _make_seq()
 
 	var step := {"type": "audio", "command": "music", "name": "test_track"}
-	var result: Array = await _run_step(seq, step)
+	var result: Array = await _run_step_capture_channels(seq, step)
 
 	assert_true(result[0], "music step should complete")
-	assert_true(seq._audio_channels.has("music"), "music channel should be tracked")
-	assert_eq(seq._audio_channels["music"]["name"], "test_track", "channel name should match")
+	var captured_channels: Dictionary = result[2]
+	assert_true(captured_channels.has("music"), "music channel should be tracked")
+	assert_eq(captured_channels["music"]["name"], "test_track", "channel name should match")
 	await _cleanup_nodes([seq])
 
 
@@ -85,11 +111,13 @@ func test_04_ambient_creates_player_and_tracks_channel() -> void:
 	var seq := _make_seq()
 
 	var step := {"type": "audio", "command": "ambient", "name": "forest"}
-	var result: Array = await _run_step(seq, step)
+	var result: Array = await _run_step_capture_channels(seq, step)
 
 	assert_true(result[0], "ambient step should complete")
-	assert_true(seq._audio_channels.has("ambient_forest"), "ambient_forest channel should be tracked")
-	assert_true(seq._ambient_players.has("ambient_forest"), "ambient_forest player should exist")
+	var captured_channels: Dictionary = result[2]
+	var captured_ambient: Dictionary = result[3]
+	assert_true(captured_channels.has("ambient_forest"), "ambient_forest channel should be tracked")
+	assert_true(captured_ambient.has("ambient_forest"), "ambient_forest player should exist")
 	await _cleanup_nodes([seq])
 
 
@@ -194,13 +222,19 @@ func test_11_multiple_channels_tracked() -> void:
 		{"type": "audio", "command": "ambient", "name": "rain"},
 	]
 	var completed := [false]
-	seq.sequence_complete.connect(func() -> void: completed[0] = true, CONNECT_ONE_SHOT)
+	var captured_channels: Dictionary = {}
+	# Capture state BEFORE cleanup runs (sequence_complete fires before cleanup)
+	seq.sequence_complete.connect(func() -> void:
+		completed[0] = true
+		captured_channels = seq._audio_channels.duplicate()
+	, CONNECT_ONE_SHOT)
 	await seq.run(steps)
+	await seq.audio_cleanup_complete
 
-	assert_true(seq._audio_channels.has("music"), "music channel should be tracked")
-	assert_true(seq._audio_channels.has("ambient_wind"), "ambient_wind channel should be tracked")
-	assert_true(seq._audio_channels.has("ambient_rain"), "ambient_rain channel should be tracked")
-	assert_eq(seq._audio_channels.size(), 3, "three channels should be tracked")
+	assert_true(captured_channels.has("music"), "music channel should be tracked")
+	assert_true(captured_channels.has("ambient_wind"), "ambient_wind channel should be tracked")
+	assert_true(captured_channels.has("ambient_rain"), "ambient_rain channel should be tracked")
+	assert_eq(captured_channels.size(), 3, "three channels should be tracked")
 	await _cleanup_nodes([seq])
 
 
