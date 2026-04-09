@@ -1,14 +1,15 @@
 title: intro_cutscene
+language: en
 voice_session: vs_intro
 loc_group: act1
 sequence:
 	<<fade_in duration:1.5>>
-	<<title_card "The Market District" duration:3.0 loc_key:tc_intro_market>>
-	<<subtitle "Three years. And it still felt foreign." loc_key:sub_intro_narrator>>
-	<<line narrator "The city gates stood open, as always." loc_key:line_intro_gate>>
-	<<line guard "Halt! Who goes there?" loc_key:line_intro_guard_challenge>>
-	<<line player "It's me. Just a traveler." loc_key:line_intro_player_response>>
-	<<choice "I'm looking for the merchant." loc_key:choice_intro_merchant>>
-	<<choice "I'm just passing through." loc_key:choice_intro_passing>>
+	<<title_card "The Market District" duration:3.0 #loc_key:tc_intro_market>>
+	<<subtitle "Three years. And it still felt foreign." #loc_key:sub_intro_narrator>>
+	<<line narrator "The city gates stood open, as always." #loc_key:line_intro_gate>>
+	<<line guard "Halt! Who goes there?" #loc_key:line_intro_guard_challenge>>
+	<<line player "It's me. Just a traveler." #loc_key:line_intro_player_response>>
+	<<choice "I'm looking for the merchant." #loc_key:choice_intro_merchant>>
+	<<choice "I'm just passing through." #loc_key:choice_intro_passing>>
 	<<fade_out duration:1.0>>
 	<<end>>

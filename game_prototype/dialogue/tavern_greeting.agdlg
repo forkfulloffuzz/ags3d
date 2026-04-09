@@ -1,0 +1,18 @@
+title: tavern_greeting
+character: barkeep
+language: fr
+---
+Barkeep: Bonjour, étranger. #loc:tavern_bonjour_001
+Barkeep: Que puis-je vous servir aujourd'hui ? #loc:tavern_service_001
+-> Une bière, s'il vous plaît. #loc:tavern_opt_biere_001
+   Barkeep: Voici, frais tirée. #loc:tavern_biere_servie_001
+   <<end>>
+-> Avez-vous des nouvelles ? #loc:tavern_opt_news_001
+   Barkeep: On murmure que des marchands ont été attaqués sur la route du sud. #loc:tavern_news_content_001
+   <<end>>
+-> Je cherche quelqu'un. #loc:tavern_opt_recherche_001
+   Barkeep: Beaucoup de gens passent par ici. Décrivez-le. #loc:tavern_recherche_detail_001
+   <<end>>
+Barkeep: Revenez nous voir. #loc:tavern_come_back_001
+<<end>>
+===

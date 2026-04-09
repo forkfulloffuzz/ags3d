@@ -17,6 +17,7 @@ name = "French"
 name = "German"
 
 [localisation]
-base_locale = "en"
+default_author_locale = "en"
+supported_locales = "en fr de"
 fallback_chain = "en"
 

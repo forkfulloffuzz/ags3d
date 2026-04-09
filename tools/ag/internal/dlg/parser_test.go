@@ -56,6 +56,23 @@ func TestParse_HeaderFields(t *testing.T) {
 	}
 }
 
+func TestParse_LanguageHeader(t *testing.T) {
+	df := mustParse(t, "title: intro\nlanguage: fr\n---\n===")
+	if len(df.Nodes) != 1 {
+		t.Fatalf("expected 1 node, got %d", len(df.Nodes))
+	}
+	if df.Nodes[0].Language != "fr" {
+		t.Errorf("Language = %q, want fr", df.Nodes[0].Language)
+	}
+}
+
+func TestParse_LanguageHeader_DefaultsToEmpty(t *testing.T) {
+	df := mustParse(t, "title: intro\n---\n===")
+	if df.Nodes[0].Language != "" {
+		t.Errorf("Language = %q, want empty string", df.Nodes[0].Language)
+	}
+}
+
 // --- Body: speaker lines ---
 
 func TestParse_SpeakerLine(t *testing.T) {

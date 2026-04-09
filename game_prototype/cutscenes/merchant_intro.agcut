@@ -1,14 +1,15 @@
 title: merchant_intro
+language: en
 voice_session: vs_merchant
 sequence:
 	<<fade_in duration:1.0>>
 	<<camera set library.desk fov:55>>
 	<<character merchant spawn_at library.librarian_start>>
 	<<sync>>
-	<<title_card "The Merchant's Shop" duration:2.0 loc_key:tc_merchant_shop>>
-	<<line merchant "Welcome to my shop!" loc_key:line_merchant_welcome>>
-	<<line merchant "Fine wares from across the realm." loc_key:line_merchant_wares>>
-	<<choice "What do you have?" loc_key:choice_merchant_inventory>>
-	<<choice "I'm looking for something special." loc_key:choice_merchant_special>>
+	<<title_card "The Merchant's Shop" duration:2.0 #loc_key:tc_merchant_shop>>
+	<<line merchant "Welcome to my shop!" #loc_key:line_merchant_welcome>>
+	<<line merchant "Fine wares from across the realm." #loc_key:line_merchant_wares>>
+	<<choice "What do you have?" #loc_key:choice_merchant_inventory>>
+	<<choice "I'm looking for something special." #loc_key:choice_merchant_special>>
 	<<fade_out duration:0.5>>
 	<<end>>

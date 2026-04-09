@@ -260,8 +260,8 @@ func parseAGP(src string, m *Manifest) error {
 				// "base_locale" is accepted as an alias for backward compatibility.
 				m.Localisation.DefaultAuthorLocale = v
 			case "supported_locales":
-				// Space or comma-separated list, e.g. supported_locales = "en fr de"
-				for _, part := range strings.Split(v, " ,") {
+				// Space and/or comma-separated list, e.g. supported_locales = "en fr de" or "en, fr, de"
+				for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == ' ' || r == ',' }) {
 					if code := strings.TrimSpace(part); code != "" {
 						m.Localisation.SupportedLocales = appendIfAbsent(m.Localisation.SupportedLocales, code)
 					}

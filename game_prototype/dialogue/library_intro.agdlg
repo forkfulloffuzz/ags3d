@@ -1,5 +1,6 @@
 title: library_intro
 character: librarian
+language: en
 ---
 Librarian: Welcome to the Grand Library. #loc:library_welcome_001
 Librarian: How may I assist you today? #loc:library_assist_001

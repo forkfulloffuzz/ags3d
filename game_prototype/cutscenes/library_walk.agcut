@@ -1,4 +1,5 @@
 title: library_walk
+language: en
 voice_session: vs_library
 loc_group: act2
 sequence:
@@ -6,7 +7,7 @@ sequence:
 	<<camera set library.desk fov:50>>
 	<<character librarian spawn_at library.librarian_start>>
 	<<sync>>
-	<<line librarian "Welcome to the Grand Library." loc_key:line_library_welcome>>
-	<<line librarian "How may I assist you today?" loc_key:line_library_assist>>
+	<<line librarian "Welcome to the Grand Library." #loc_key:line_library_welcome>>
+	<<line librarian "How may I assist you today?" #loc_key:line_library_assist>>
 	<<fade_out duration:1.0>>
 	<<end>>

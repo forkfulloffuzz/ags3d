@@ -83,6 +83,20 @@ func TestParse_VoiceSessionField(t *testing.T) {
 	}
 }
 
+func TestParse_LanguageField(t *testing.T) {
+	cf := mustParse(t, "title: t\nlanguage: fr\nsequence:\n<<end>>\n")
+	if cf.Language != "fr" {
+		t.Errorf("Language = %q, want fr", cf.Language)
+	}
+}
+
+func TestParse_LanguageField_DefaultsToEmpty(t *testing.T) {
+	cf := mustParse(t, "title: t\nsequence:\n<<end>>\n")
+	if cf.Language != "" {
+		t.Errorf("Language = %q, want empty string", cf.Language)
+	}
+}
+
 func TestParse_AudioScopeField(t *testing.T) {
 	cf := mustParse(t, "title: t\naudio_scope: pause\nsequence:\n<<end>>\n")
 	if cf.AudioScope != "pause" {

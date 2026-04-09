@@ -1,5 +1,6 @@
 title: guard_greeting
 character: guard
+language: en
 ---
 Guard: Halt! Who goes there? #loc:guard_hello_001
 Player: It's me, a traveler. #loc:guard_player_intro_001

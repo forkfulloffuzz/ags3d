@@ -1,5 +1,6 @@
 title: merchant_shop
 character: merchant
+language: en
 ---
 Merchant: Welcome to my shop! #loc:merchant_welcome_001
 Merchant: Fine wares from across the realm. #loc:merchant_wares_001
