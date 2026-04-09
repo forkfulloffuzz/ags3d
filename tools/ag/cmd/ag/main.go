@@ -1272,21 +1272,23 @@ func cmdLocImport(args []string) error {
 }
 
 func cmdLocTUI(args []string) error {
-	fs := flag.NewFlagSet("ag loc tui", flag.ContinueOnError)
-	locale := fs.String("locale", "en", "locale code")
-	fs.Usage = func() {
+	locale := ""
+	remaining := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--locale" && i+1 < len(args) {
+			locale = args[i+1]
+			i++
+		} else if strings.HasPrefix(args[i], "--locale=") {
+			locale = strings.TrimPrefix(args[i], "--locale=")
+		} else {
+			remaining = append(remaining, args[i])
+		}
+	}
+	if len(remaining) < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: ag loc tui <project> [--locale LANG]")
-	}
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-	if fs.NArg() < 1 {
-		fs.Usage()
 		return fmt.Errorf("missing project argument")
 	}
-
-	root := fs.Arg(0)
-	return tui.RunTUIMain(root, *locale)
+	return tui.RunTUIMain(remaining[0], locale)
 }
 
 func cmdNew(args []string) error {

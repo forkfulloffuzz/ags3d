@@ -125,7 +125,7 @@ k2 = ""
 		{LocKey: "k2", Source: "Goodbye", Character: "", NodeTitle: "farewell", LineType: "narration"},
 		{LocKey: "k3", Source: "Bye", Character: "Guard", NodeTitle: "greet", LineType: "spoken"},
 	}
-	views := buildEntryViews(sf, localeSrc)
+	views := buildEntryViews(sf, localeSrc, false)
 
 	if len(views) != 3 {
 		t.Fatalf("len = %d, want 3", len(views))
@@ -145,5 +145,40 @@ k2 = ""
 	}
 	if views[2].Source != "Bye" {
 		t.Errorf("views[2].Source = %q, want Bye", views[2].Source)
+	}
+}
+
+func TestBuildEntryViews_SourceLocale(t *testing.T) {
+	src := `[meta]
+base_locale = en
+locale = en
+
+[strings]
+k1 = "Hello"
+k2 = ""
+`
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+
+	localeSrc := []loc.LocaleEntryFull{
+		{LocKey: "k1", Source: "Hello", Character: "Guard", NodeTitle: "greet", LineType: "spoken"},
+		{LocKey: "k2", Source: "Goodbye", Character: "", NodeTitle: "farewell", LineType: "narration"},
+	}
+	views := buildEntryViews(sf, localeSrc, true)
+
+	if len(views) != 2 {
+		t.Fatalf("len = %d, want 2", len(views))
+	}
+
+	if views[0].Translated != "" {
+		t.Errorf("views[0].Translated = %q, want empty for source locale", views[0].Translated)
+	}
+	if views[0].Source != "Hello" {
+		t.Errorf("views[0].Source = %q, want Hello", views[0].Source)
+	}
+	if views[1].Translated != "" {
+		t.Errorf("views[1].Translated = %q, want empty for source locale", views[1].Translated)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ags3d/ag/internal/loc"
+	"github.com/ags3d/ag/internal/project"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -24,9 +25,13 @@ type entryView struct {
 }
 
 type model struct {
-	localeFile    string
-	sf            *loc.StringsFile
-	sourceEntries []loc.LocaleEntryFull
+	root             string
+	localeFile       string
+	locale           string
+	isSourceLocale   bool
+	sf               *loc.StringsFile
+	sourceEntries    []loc.LocaleEntryFull
+	availableLocales []string
 
 	entries  []entryView
 	filtered []entryView
@@ -42,9 +47,29 @@ type model struct {
 
 	width  int
 	height int
+
+	showLocalePicker bool
+	pickerSelected   int
 }
 
 func RunTUIMain(root, locale string) error {
+	manifest, err := project.Load(root)
+	if err != nil {
+		return fmt.Errorf("load project manifest: %w", err)
+	}
+
+	if locale == "" {
+		locale = manifest.Localisation.DefaultAuthorLocale
+	}
+	if locale == "" {
+		locale = "en"
+	}
+
+	availableLocales := manifest.Localisation.SupportedLocales
+	if len(availableLocales) == 0 {
+		availableLocales = []string{"en"}
+	}
+
 	localePath := findLocaleFile(root, locale)
 	if localePath == "" {
 		return fmt.Errorf("no locale file found for %q (try ag export --locale %s first)", locale, locale)
@@ -55,10 +80,12 @@ func RunTUIMain(root, locale string) error {
 		return fmt.Errorf("parse locale file: %w", err)
 	}
 
-	sourceEntries, _ := loc.CollectAllLocaleEntriesWithTranslations(root, locale)
-	entries := buildEntryViews(sf, sourceEntries)
+	isSourceLocale := manifest.Localisation.DefaultAuthorLocale == locale
 
-	m := newModel(localePath, sf, sourceEntries, entries)
+	sourceEntries, _ := loc.CollectAllLocaleEntriesWithTranslations(root, locale)
+	entries := buildEntryViews(sf, sourceEntries, isSourceLocale)
+
+	m := newModel(root, localePath, locale, isSourceLocale, availableLocales, sf, sourceEntries, entries)
 	p := tea.NewProgram(&m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("run TUI: %w", err)
@@ -66,22 +93,74 @@ func RunTUIMain(root, locale string) error {
 	return nil
 }
 
-func newModel(path string, sf *loc.StringsFile, src []loc.LocaleEntryFull, entries []entryView) model {
+func newModel(root, path, locale string, isSource bool, availableLocales []string, sf *loc.StringsFile, src []loc.LocaleEntryFull, entries []entryView) model {
 	m := model{
-		localeFile:    path,
-		sf:            sf,
-		sourceEntries: src,
-		entries:       entries,
-		filtered:      entries,
-		selected:      0,
-		filterMode:    "all",
-		savePath:      path,
-		changed:       false,
+		root:             root,
+		localeFile:       path,
+		locale:           locale,
+		isSourceLocale:   isSource,
+		availableLocales: availableLocales,
+		sf:               sf,
+		sourceEntries:    src,
+		entries:          entries,
+		filtered:         entries,
+		selected:         0,
+		filterMode:       "all",
+		savePath:         path,
+		changed:          false,
+		showLocalePicker: false,
+		pickerSelected:   0,
 	}
 	if len(m.filtered) > 0 {
-		m.editBuffer = m.filtered[0].Translated
+		m.editBuffer = m.bufferFor(0)
 	}
 	return m
+}
+
+func (m *model) reloadLocale(newLocale string) {
+	manifest, _ := project.Load(m.root)
+	isSource := manifest != nil && manifest.Localisation.DefaultAuthorLocale == newLocale
+
+	localePath := findLocaleFile(m.root, newLocale)
+	if localePath == "" {
+		return
+	}
+	sf, err := loadStringsFile(localePath)
+	if err != nil {
+		return
+	}
+	sourceEntries, _ := loc.CollectAllLocaleEntriesWithTranslations(m.root, newLocale)
+	entries := buildEntryViews(sf, sourceEntries, isSource)
+
+	m.locale = newLocale
+	m.localeFile = localePath
+	m.isSourceLocale = isSource
+	m.sf = sf
+	m.sourceEntries = sourceEntries
+	m.entries = entries
+	m.filtered = entries
+	m.selected = 0
+	m.filterMode = "all"
+	m.isEditing = false
+	m.changed = false
+	m.savePath = localePath
+	if len(m.filtered) > 0 {
+		m.editBuffer = m.bufferFor(0)
+	}
+}
+
+func (m *model) bufferFor(idx int) string {
+	if m.isSourceLocale && idx < len(m.filtered) && m.filtered[idx].Source != "" {
+		return m.filtered[idx].Source
+	}
+	if idx < len(m.filtered) {
+		return m.filtered[idx].Translated
+	}
+	return ""
+}
+
+func isTranslated(e entryView) bool {
+	return strings.TrimSpace(e.Translated) != ""
 }
 
 func (m model) Init() tea.Cmd {
@@ -95,11 +174,15 @@ func (m *model) applyFilter() {
 		case "all":
 			m.filtered = append(m.filtered, e)
 		case "untranslated":
-			if e.Translated == "" && !e.Orphan {
-				m.filtered = append(m.filtered, e)
+			if !isTranslated(e) && !e.Orphan {
+				if !m.isSourceLocale {
+					m.filtered = append(m.filtered, e)
+				} else if e.Source != "" {
+					m.filtered = append(m.filtered, e)
+				}
 			}
 		case "translated":
-			if e.Translated != "" && !e.Stale && !e.Orphan {
+			if isTranslated(e) && !e.Stale && !e.Orphan && !m.isSourceLocale {
 				m.filtered = append(m.filtered, e)
 			}
 		case "stale":
@@ -147,6 +230,42 @@ func (m *model) save() {
 	m.changed = false
 }
 
+func (m model) localePickerView() string {
+	boxW := 40
+	boxH := len(m.availableLocales) + 5
+
+	var lines []string
+	lines = append(lines, bold("  Choose a locale  "))
+	lines = append(lines, "")
+	for i, loc := range m.availableLocales {
+		prefix := "    "
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+		if i == m.pickerSelected {
+			prefix = "  >"
+			style = selectedStyle
+		}
+		tag := ""
+		if m.isSourceLocale && loc == m.locale {
+			tag = dim(" (source)")
+		}
+		lines = append(lines, style.Render(fmt.Sprintf("%s %s%s", prefix, loc, tag)))
+	}
+	lines = append(lines, "")
+	lines = append(lines, dim("  ↑↓ navigate  ·  enter select  ·  esc cancel"))
+
+	boxContent := strings.Join(lines, "\n")
+	borderStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("255")).
+		Border(lipgloss.RoundedBorder()).
+		Padding(1, 2).
+		Width(boxW)
+	rendered := lipgloss.Place(boxW, boxH, lipgloss.Left, lipgloss.Top, borderStyle.Render(boxContent))
+	full := lipgloss.Place(m.width, m.height, lipgloss.Left, lipgloss.Top, rendered)
+
+	help := fmt.Sprintf("  l: switch locale  ·  esc cancel  [%s]", m.locale)
+	return full + "\n" + statusStyle.Width(m.width).Render(help)
+}
+
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -155,6 +274,28 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if m.showLocalePicker {
+			switch msg.String() {
+			case "up", "k":
+				if m.pickerSelected > 0 {
+					m.pickerSelected--
+				}
+			case "down", "j":
+				if m.pickerSelected < len(m.availableLocales)-1 {
+					m.pickerSelected++
+				}
+			case "enter":
+				chosen := m.availableLocales[m.pickerSelected]
+				m.showLocalePicker = false
+				if chosen != m.locale {
+					m.reloadLocale(chosen)
+				}
+			case "esc", "ctrl+c", "q":
+				m.showLocalePicker = false
+			}
+			return m, nil
+		}
+
 		switch msg.String() {
 		case "ctrl+c", "q":
 			if m.isEditing {
@@ -174,7 +315,22 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected = max(0, len(m.filtered)-1)
 			}
 			if len(m.filtered) > 0 {
-				m.editBuffer = m.filtered[m.selected].Translated
+				m.editBuffer = m.bufferFor(m.selected)
+			}
+			return m, nil
+
+		case "l":
+			m.showLocalePicker = true
+			curIdx := -1
+			for i, loc := range m.availableLocales {
+				if loc == m.locale {
+					curIdx = i
+					break
+				}
+			}
+			m.pickerSelected = curIdx
+			if m.pickerSelected < 0 {
+				m.pickerSelected = 0
 			}
 			return m, nil
 
@@ -185,7 +341,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.selected > 0 {
 				m.selected--
 				if m.selected < len(m.filtered) {
-					m.editBuffer = m.filtered[m.selected].Translated
+					m.editBuffer = m.bufferFor(m.selected)
 				}
 			}
 			return m, nil
@@ -197,7 +353,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.selected < len(m.filtered)-1 {
 				m.selected++
 				if m.selected < len(m.filtered) {
-					m.editBuffer = m.filtered[m.selected].Translated
+					m.editBuffer = m.bufferFor(m.selected)
 				}
 			}
 			return m, nil
@@ -205,7 +361,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if len(m.filtered) > 0 && !m.isEditing {
 				m.isEditing = true
-				m.editBuffer = m.filtered[m.selected].Translated
+				m.editBuffer = m.bufferFor(m.selected)
 			}
 			return m, nil
 
@@ -213,7 +369,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.isEditing {
 				m.isEditing = false
 				if m.selected < len(m.filtered) {
-					m.editBuffer = m.filtered[m.selected].Translated
+					m.editBuffer = m.bufferFor(m.selected)
 				}
 			}
 			return m, nil
@@ -228,14 +384,15 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "backspace":
 			if m.isEditing && len(m.editBuffer) > 0 {
-				m.editBuffer = m.editBuffer[:len(m.editBuffer)-1]
+				rs := []rune(m.editBuffer)
+				m.editBuffer = string(rs[:len(rs)-1])
 			}
 			return m, nil
 
 		default:
 			if m.isEditing {
 				s := msg.String()
-				if len(s) == 1 {
+				if len(s) > 0 {
 					m.editBuffer += s
 				}
 			}
@@ -251,6 +408,10 @@ func (m model) View() string {
 	}
 	if m.height == 0 {
 		m.height = 30
+	}
+
+	if m.showLocalePicker {
+		return m.localePickerView()
 	}
 
 	listW := min(44, m.width/3)
@@ -281,7 +442,7 @@ func (m model) View() string {
 			status = red(" X ")
 		} else if e.Stale {
 			status = yellow(" ! ")
-		} else if e.Translated != "" {
+		} else if isTranslated(e) {
 			status = green(" ✓ ")
 		} else {
 			status = dim(" · ")
@@ -358,7 +519,7 @@ func (m model) View() string {
 
 	detailContent := strings.Join(detailLines, "\n")
 
-	help := helpText(m.filterMode, m.isEditing, m.changed)
+	help := helpText(m.filterMode, m.locale, m.isEditing, m.changed)
 	statusBar := statusStyle.Width(m.width).Render(help)
 
 	left := lipgloss.Place(listW, m.height-1, lipgloss.Left, lipgloss.Top, listContent)
@@ -418,7 +579,7 @@ func findLocaleFile(root, locale string) string {
 	return ""
 }
 
-func buildEntryViews(sf *loc.StringsFile, src []loc.LocaleEntryFull) []entryView {
+func buildEntryViews(sf *loc.StringsFile, src []loc.LocaleEntryFull, isSourceLocale bool) []entryView {
 	srcMap := make(map[string]loc.LocaleEntryFull)
 	for _, e := range src {
 		srcMap[e.LocKey] = e
@@ -431,6 +592,9 @@ func buildEntryViews(sf *loc.StringsFile, src []loc.LocaleEntryFull) []entryView
 			ev.Char = se.Character
 			ev.Scene = se.NodeTitle
 			ev.LineType = se.LineType
+		}
+		if isSourceLocale {
+			ev.Translated = ""
 		}
 		views = append(views, ev)
 	}
@@ -469,14 +633,14 @@ func filterBar(mode string) string {
 	return fmt.Sprintf("%s %s %s %s %s  (tab)", all, untrans, trans, stale, orphan)
 }
 
-func helpText(filter string, editing, changed bool) string {
+func helpText(filter, locale string, editing, changed bool) string {
 	if editing {
 		return "ENTER: confirm  |  ESC: cancel  |  ctrl+s: save  |  q: discard & quit"
 	}
 	if changed {
-		return "ctrl+s: save  |  q: quit without saving  |  ↑↓: navigate  |  tab: filter  |  enter: edit"
+		return fmt.Sprintf("ctrl+s: save  |  q: quit  |  l: switch locale  |  ↑↓: navigate  |  tab: filter  |  enter: edit  [%s]", locale)
 	}
-	return "↑↓: navigate  |  tab: filter  |  enter: edit  |  q: quit"
+	return fmt.Sprintf("↑↓: navigate  |  tab: filter  |  enter: edit  |  l: switch locale  |  q: quit  [%s]", locale)
 }
 
 func wrapText(s string, width int) []string {
