@@ -742,3 +742,249 @@ func TestCutsceneBadIdentifier(t *testing.T) {
 		t.Errorf("expected CUT-E013 for invalid identifier, got %v", issues)
 	}
 }
+
+// --------------------------------------------------------------------------
+// Check 8: HideRoomItem/ShowRoomItem hotspot cross-references
+// --------------------------------------------------------------------------
+
+func TestHideRoomItemKnownHotspot(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Hotspot "chest" { position = (1,0,1) size = (0.5,0.5,0.5) }
+		}`,
+		"rooms/r/r.agscript": `function on_click() { HideRoomItem("chest"); }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "HideRoomItem") || contains(i.String(), "chest") {
+			t.Errorf("unexpected hotspot issue: %v", i)
+		}
+	}
+}
+
+func TestHideRoomItemUnknownHotspot(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Hotspot "chest" { position = (1,0,1) size = (0.5,0.5,0.5) }
+		}`,
+		"rooms/r/r.agscript": `function on_click() { HideRoomItem("door"); }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"door"`) {
+		t.Errorf("expected unknown hotspot issue for 'door', got %v", issues)
+	}
+	if !hasIssue(issues, "hotspot") {
+		t.Errorf("expected 'hotspot' in message, got %v", issues)
+	}
+	if !hasIssue(issues, "error") {
+		t.Errorf("expected severity error")
+	}
+}
+
+func TestShowRoomItemUnknownHotspot(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Hotspot "chest" { position = (1,0,1) size = (0.5,0.5,0.5) }
+		}`,
+		"rooms/r/r.agscript": `function on_click() { ShowRoomItem("bookshelf"); }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"bookshelf"`) {
+		t.Errorf("expected unknown hotspot issue for 'bookshelf', got %v", issues)
+	}
+}
+
+func TestHideRoomItemNoRoomNoPanic(t *testing.T) {
+	// Global script with no paired room — no hotspot check, no crash.
+	root, m := scaffold(t, map[string]string{
+		"scripts/global.agscript": `function on_start() { HideRoomItem("any_hotspot"); }`,
+	})
+	issues, err := validate.ValidateProject(root, m)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, i := range issues {
+		if contains(i.String(), "HideRoomItem") {
+			t.Errorf("unexpected HideRoomItem issue for unpaired script: %v", i)
+		}
+	}
+}
+
+// --------------------------------------------------------------------------
+// Check 9: GoToRoom room-name cross-references
+// --------------------------------------------------------------------------
+
+func TestGoToRoomKnownRoom(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"rooms/library/library.agroom": `Room "library" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"characters/player.agchar":     `Character "player" {}`,
+		"rooms/start/start.agroom":     `Room "start" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/start/start.agscript":   `function room_Enter() { GoToRoom("library", "start"); }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "GoToRoom") {
+			t.Errorf("unexpected GoToRoom issue: %v", i)
+		}
+	}
+}
+
+func TestGoToRoomUnknownRoom(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar":   `Character "player" {}`,
+		"rooms/start/start.agroom":   `Room "start" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/start/start.agscript": `function room_Enter() { GoToRoom("nowhere", "start"); }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"nowhere"`) {
+		t.Errorf("expected unknown room issue for 'nowhere', got %v", issues)
+	}
+	if !hasIssue(issues, "rooms/nowhere/nowhere.agroom") {
+		t.Errorf("expected room path in message, got %v", issues)
+	}
+	if !hasIssue(issues, "error") {
+		t.Errorf("expected severity error")
+	}
+}
+
+func TestGoToRoomLineNumberReported(t *testing.T) {
+	root, m := scaffold(t, map[string]string{
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/start/start.agroom": `Room "start" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/start/start.agscript": `function room_Enter() {
+	GoToRoom("ghost", "start");
+}`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, `"ghost"`) {
+		t.Errorf("expected unknown room issue, got %v", issues)
+	}
+	if !hasIssue(issues, ":2:") {
+		t.Errorf("expected line number :2: in issue, got %v", issues)
+	}
+}
+
+func TestGoToRoomNoFalsePositives(t *testing.T) {
+	// Multiple rooms all valid — no issues.
+	root, m := scaffold(t, map[string]string{
+		"rooms/a/a.agroom":         `Room "a" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"rooms/b/b.agroom":         `Room "b" { Camera "main" { position = (0,0,0) look_at = (0,0,0) } }`,
+		"characters/player.agchar": `Character "player" {}`,
+		"rooms/a/a.agscript":       `function room_Enter() { GoToRoom("b", "start"); }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "GoToRoom") {
+			t.Errorf("unexpected GoToRoom issue: %v", i)
+		}
+	}
+}
+
+// --------------------------------------------------------------------------
+// Check 10: Billboard camera warnings (W1, W3)
+// --------------------------------------------------------------------------
+
+func TestBillboardCameraNoWarningFlatAngle(t *testing.T) {
+	// Camera at 45° elevation — below 30° threshold → no W1 warning.
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Camera "main" { position = (5.0, 3.0, 5.0)  look_at = (0.0, 0.0, 0.0) }
+			SpawnPoint "sp" { character = "billboard_char"  position = (0.0, 0.0, 0.0) }
+		}`,
+		"characters/billboard_char.agchar": `Character "billboard_char" { type = "2d" sprite_angles = 8 }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "W1:") {
+			t.Errorf("unexpected W1 warning for flat angle: %v", i)
+		}
+	}
+}
+
+func TestBillboardCameraW1WarningSteepElevation(t *testing.T) {
+	// Camera at 60° elevation — above 30° threshold → W1 warning.
+	// elevation = atan2(|dy|, sqrt(dx²+dz²)) = atan2(10, sqrt(0)) = 90°... let me use more realistic values.
+	// atan2(7, 4) ≈ 60°.
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Camera "main" { position = (4.0, 7.0, 0.0)  look_at = (0.0, 0.0, 0.0) }
+			SpawnPoint "sp" { character = "billboard_char"  position = (0.0, 0.0, 0.0) }
+		}`,
+		"characters/billboard_char.agchar": `Character "billboard_char" { type = "2d" sprite_angles = 8 }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, "W1:") {
+		t.Errorf("expected W1 warning for steep elevation, got %v", issues)
+	}
+	if !hasIssue(issues, "warning") {
+		t.Errorf("expected severity warning, got %v", issues)
+	}
+}
+
+func TestBillboardCameraNoWarningFor3DCharacter(t *testing.T) {
+	// 3D character → no billboard warnings even with steep camera.
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Camera "main" { position = (4.0, 7.0, 0.0)  look_at = (0.0, 0.0, 0.0) }
+			SpawnPoint "sp" { character = "mesh_char"  position = (0.0, 0.0, 0.0) }
+		}`,
+		"characters/mesh_char.agchar": `Character "mesh_char" { type = "3d" }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "W1:") {
+			t.Errorf("unexpected W1 warning for 3D character: %v", i)
+		}
+	}
+}
+
+func TestBillboardCameraW3WarningFourAngleArc(t *testing.T) {
+	// Camera at ~50° arc from origin (atan2(6,5) ≈ 50°) with 4-angle character → W3 warning.
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Camera "main" { position = (6.0, 0.0, 5.0)  look_at = (0.0, 0.0, 0.0) }
+			SpawnPoint "sp" { character = "quad_char"  position = (0.0, 0.0, 0.0) }
+		}`,
+		"characters/quad_char.agchar": `Character "quad_char" { type = "2d" sprite_angles = 4 }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	if !hasIssue(issues, "W3:") {
+		t.Errorf("expected W3 warning for wide arc with 4-angle sprites, got %v", issues)
+	}
+	if !hasIssue(issues, "warning") {
+		t.Errorf("expected severity warning, got %v", issues)
+	}
+}
+
+func TestBillboardCameraNoW3ForEightAngle(t *testing.T) {
+	// 8-angle sprites → no W3 even with wide arc.
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Camera "main" { position = (3.5, 0.0, 5.0)  look_at = (0.0, 0.0, 0.0) }
+			SpawnPoint "sp" { character = "eight_char"  position = (0.0, 0.0, 0.0) }
+		}`,
+		"characters/eight_char.agchar": `Character "eight_char" { type = "2d" sprite_angles = 8 }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "W3:") {
+			t.Errorf("unexpected W3 warning for 8-angle sprites: %v", i)
+		}
+	}
+}
+
+func TestBillboardCameraNoWarningNoBillboardChars(t *testing.T) {
+	// Room with no billboard characters → no warnings.
+	root, m := scaffold(t, map[string]string{
+		"rooms/r/r.agroom": `Room "r" {
+			Camera "main" { position = (4.0, 7.0, 0.0)  look_at = (0.0, 0.0, 0.0) }
+		}`,
+		"characters/mesh_char.agchar": `Character "mesh_char" { type = "3d" }`,
+	})
+	issues, _ := validate.ValidateProject(root, m)
+	for _, i := range issues {
+		if contains(i.String(), "W1:") || contains(i.String(), "W3:") {
+			t.Errorf("unexpected billboard warning with no billboard chars: %v", i)
+		}
+	}
+}

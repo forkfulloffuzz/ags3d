@@ -1,12 +1,10 @@
 # AGS3D Editor Milestone (M9) — Scene Generator & Runtime Core
 
-> **Status: Essentially complete.** The tooling tasks (T-E01–T-E05, T-E18)
-> are done or nearly done. All **AG Studio UI tasks** (EditorPlugin, docks,
-> gizmos, editors, wizard) have been extracted to
-> **[M12 — Custom Editor](custom-editor-milestone.md)** and deferred until
-> all engine features are working through the normal Godot editor.
->
-> Remaining open task: **T-E05** (`ag validate` cross-reference checks).
+> **Status: Complete.** All tooling tasks (T-E01–T-E05, T-E18) are done.
+> All **AG Studio UI tasks** (EditorPlugin, docks, gizmos, editors, wizard)
+> have been extracted to **[M12 — Custom Editor](custom-editor-milestone.md)**
+> and deferred until all engine features are working through the normal Godot
+> editor.
 
 ## Goal (original)
 
@@ -462,7 +460,7 @@ Legend: ✅ done · 🔜 remaining · ➡️ moved to M12 Custom Editor
 | T-E02 | ✅ | Go: `RoomData` → `.tscn` serialiser | T-E01 |
 | T-E03 | ✅ | Go: `.agchar` parser + `CharData` → `.tscn` | — |
 | T-E04 | ✅ | Go: wire scene gen into `ag build` pipeline | T-E01, T-E02, T-E03 |
-| T-E05 | 🔜 | Go: `ag validate` cross-reference checks | T-E01, T-E03 |
+| T-E05 | ✅ | Go: `ag validate` cross-reference checks | T-E01, T-E03 |
 | T-E06 | ➡️ M12 T-CE01 | C++/GDScript: `--godot-editor` flag | — |
 | T-E07 | ➡️ M12 T-CE02 | GDScript: `EditorPlugin` skeleton | T-E06 |
 | T-E08 | ➡️ M12 T-CE03 | GDScript: Project panel dock | T-E07 |
@@ -476,7 +474,7 @@ Legend: ✅ done · 🔜 remaining · ➡️ moved to M12 Custom Editor
 | T-E16 | ➡️ M12 T-CE17 | GDScript: Play button | T-E04, T-E15 |
 | T-E17 | ➡️ M12 T-CE18 | GDScript: Project wizard | T-E08 |
 | T-E18 | ✅ | Integration: prototype migration | T-E04 |
-| T-E19 | ➡️ M12 T-CE09 (UI) | GDScript: billboard camera warnings — `ag validate` part stays in M10; gizmo overlays in M12 | T-E10, T-GS24 |
+| T-E19 | ✅ (`ag validate`); ➡️ M12 T-CE09 (gizmo UI) | `ag validate` billboard warnings (W1 elevation >30°, W3 arc >45° for 4-angle) in Go; gizmo overlays deferred to M12 | T-E10, T-GS24 |
 | T-E20 | ➡️ M12 T-CE11 | GDScript: Character editor type selector | T-E13, T-GS27 |
 | T-E21 | ➡️ M12 T-CE12 | GDScript: 3D Animation viewer | T-E20, T-GS28 |
 | T-E22 | ➡️ M12 T-CE13 | GDScript: 2D Animation viewer | T-E20, T-GS29 |

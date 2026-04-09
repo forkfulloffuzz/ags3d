@@ -9,10 +9,15 @@
 //  5. .agscript: WalkTo/FaceTo point-name args exist in the paired .agroom
 //  6. .agscript: AddInventory/LoseInventory/HasInventory item-name args resolve to a known .agitem
 //  7. .agscript: character receiver names in method calls resolve to a known .agchar
+//  8. .agscript: HideRoomItem/ShowRoomItem item-name args exist as Hotspot blocks in the paired .agroom
+//  9. .agscript: GoToRoom room-name args resolve to an existing rooms/<name>/<name.agroom>
+//
+// 10. .agroom + .agchar: billboard camera angle warnings (W1 elevation >30°, W3 arc >45° for 4-angle sprites)
 package validate
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,6 +116,7 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 	// Build a set of known character names from all .agchar files.
 	// Map: character name → relative file path.
 	charNames := make(map[string]string)
+	charData := make(map[string]*char.CharData) // name → CharData for billboard checks
 	for _, f := range files {
 		if f.Ext != ".agchar" {
 			continue
@@ -129,6 +135,19 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 			continue
 		}
 		charNames[cd.Name] = f.Rel
+		charData[cd.Name] = cd
+	}
+
+	// Build a set of known room directory stems from all .agroom files.
+	// "rooms/start/start.agroom" → stem "start".
+	roomNames := make(map[string]bool)
+	for _, f := range files {
+		if f.Ext != ".agroom" {
+			continue
+		}
+		// Stem is the directory name: rooms/start/ → "start".
+		stem := filepath.Base(filepath.Dir(f.Rel))
+		roomNames[stem] = true
 	}
 
 	// Build a map from .agroom relative path → parsed RoomData so scripts
@@ -204,7 +223,18 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 
 		// Check 7: character receiver names in method calls.
 		issues = append(issues, checkScriptCharacterRefs(f.Rel, src, charNames)...)
+
+		// Check 8: HideRoomItem/ShowRoomItem item names — only for scripts with a paired room.
+		if rd, ok := roomData[pairedRoom]; ok {
+			issues = append(issues, checkScriptRoomItemRefs(f.Rel, src, rd)...)
+		}
+
+		// Check 9: GoToRoom room names — validated against the known room set.
+		issues = append(issues, checkScriptGoToRoomRefs(f.Rel, src, roomNames)...)
 	}
+
+	// --- Billboard camera warnings (W1, W3) ---
+	issues = append(issues, validateBillboardCameraWarnings(roomData, charData)...)
 
 	// --- Dialogue validation (DLG-E001..E025, DLG-W001..W012) ---
 	issues = append(issues, validateDialogue(files, charNames, itemNames, roomData)...)
@@ -735,6 +765,178 @@ func checkScriptItemRefs(rel, src string, itemNames map[string]bool) []Issue {
 				})
 			}
 		})
+	}
+	return issues
+}
+
+// roomItemBuiltins are the global calls whose first string arg names a room Hotspot.
+var roomItemBuiltins = map[string]bool{
+	"HideRoomItem": true,
+	"ShowRoomItem": true,
+}
+
+// checkScriptRoomItemRefs parses src as an .agscript and returns Issues for any
+// HideRoomItem/ShowRoomItem call whose first string argument does not name a
+// Hotspot block in rd.
+func checkScriptRoomItemRefs(rel, src string, rd *room.RoomData) []Issue {
+	s := scanner.New(rel, src)
+	p := parser.New(s)
+	f, _ := p.Parse(rel)
+
+	hotspotNames := make(map[string]bool, len(rd.Hotspots))
+	for _, hs := range rd.Hotspots {
+		hotspotNames[strings.ToLower(hs.Name)] = true
+	}
+
+	var issues []Issue
+	for _, decl := range f.Decls {
+		walkDecl(decl, func(call *parser.CallExpr) {
+			ident, ok := call.Callee.(*parser.Identifier)
+			if !ok {
+				return
+			}
+			if !roomItemBuiltins[ident.Name] {
+				return
+			}
+			if len(call.Args) == 0 {
+				return
+			}
+			lit, ok := call.Args[0].(*parser.Literal)
+			if !ok || lit.Kind != "string" {
+				return
+			}
+			name := lit.Value
+			if !hotspotNames[strings.ToLower(name)] {
+				tok := call.ExprPos()
+				issues = append(issues, Issue{
+					File:     rel,
+					Line:     tok.Line,
+					Severity: "error",
+					Message:  fmt.Sprintf("%s(%q): hotspot %q is not defined in this room", ident.Name, name, name),
+				})
+			}
+		})
+	}
+	return issues
+}
+
+// checkScriptGoToRoomRefs parses src as an .agscript and returns Issues for any
+// GoToRoom call whose first string argument does not name a known room directory
+// (rooms/<name>/<name.agroom>).
+func checkScriptGoToRoomRefs(rel, src string, roomNames map[string]bool) []Issue {
+	s := scanner.New(rel, src)
+	p := parser.New(s)
+	f, _ := p.Parse(rel)
+
+	var issues []Issue
+	for _, decl := range f.Decls {
+		walkDecl(decl, func(call *parser.CallExpr) {
+			ident, ok := call.Callee.(*parser.Identifier)
+			if !ok {
+				return
+			}
+			if ident.Name != "GoToRoom" {
+				return
+			}
+			if len(call.Args) == 0 {
+				return
+			}
+			lit, ok := call.Args[0].(*parser.Literal)
+			if !ok || lit.Kind != "string" {
+				return
+			}
+			roomName := lit.Value
+			if !roomNames[roomName] {
+				tok := call.ExprPos()
+				issues = append(issues, Issue{
+					File:     rel,
+					Line:     tok.Line,
+					Severity: "error",
+					Message:  fmt.Sprintf("GoToRoom(%q): room %q has no .agroom file (rooms/%s/%s.agroom)", roomName, roomName, roomName, roomName),
+				})
+			}
+		})
+	}
+	return issues
+}
+
+// validateBillboardCameraWarnings checks each room for billboard camera configuration
+// issues and returns warnings for W1 (elevation > 30°) and W3 (arc > 45° for 4-angle sprites).
+func validateBillboardCameraWarnings(roomData map[string]*room.RoomData, charData map[string]*char.CharData) []Issue {
+	var issues []Issue
+
+	// Build a set of billboard character names per room by scanning SpawnPoints.
+	// A SpawnPoint names a character; if that character is billboard (Type=="2d"),
+	// the room is considered a billboard room.
+	type roomBillboards struct {
+		hasBillboard bool
+		maxAngles    int // max SpriteAngles across all billboard chars in room
+	}
+	roomBB := make(map[string]*roomBillboards)
+
+	for roomRel, rd := range roomData {
+		bb := &roomBillboards{}
+		for _, sp := range rd.SpawnPoints {
+			if sp.Character == "" {
+				continue
+			}
+			cd, ok := charData[sp.Character]
+			if !ok {
+				continue
+			}
+			if cd.Type == "2d" {
+				bb.hasBillboard = true
+				if cd.SpriteAngles > bb.maxAngles {
+					bb.maxAngles = cd.SpriteAngles
+				}
+			}
+		}
+		if bb.hasBillboard || bb.maxAngles > 0 {
+			roomBB[roomRel] = bb
+		}
+	}
+
+	for roomRel, rd := range roomData {
+		bb, ok := roomBB[roomRel]
+		if !ok {
+			continue // no billboard characters in this room
+		}
+		for _, cam := range rd.Cameras {
+			if !cam.HasPosition || !cam.HasLookAt {
+				continue
+			}
+			// W1: Camera elevation angle > 30°.
+			// Elevation = angle between XZ plane and the vector to look_at.
+			dx := cam.Position.X - cam.LookAt.X
+			dy := cam.Position.Y - cam.LookAt.Y
+			dz := cam.Position.Z - cam.LookAt.Z
+			horizontal := math.Sqrt(dx*dx + dz*dz)
+			if horizontal > 0 {
+				elevDeg := math.Atan2(math.Abs(dy), horizontal) * 180 / math.Pi
+				if elevDeg > 30 {
+					issues = append(issues, Issue{
+						File:     roomRel,
+						Severity: "warning",
+						Message:  fmt.Sprintf("W1: Camera %q elevation (%.0f°) may clip billboard character sprites. Recommended: keep below 30°.", cam.Name, elevDeg),
+					})
+				}
+			}
+			// W3: Camera horizontal arc > 45° relative to room origin AND room has 4-angle sprites.
+			if bb.maxAngles == 4 {
+				// Camera arc: horizontal displacement from origin (look_at is treated as floor centre ~0,0,0).
+				// Use the XZ displacement as the arc metric.
+				arcDeg := math.Atan2(math.Abs(dx), math.Abs(dz)) * 180 / math.Pi
+				// Total arc span is roughly 2 * arcDeg for a camera at (x, 0, z) looking at origin.
+				// We warn when the camera is positioned more than 45° from a cardinal axis.
+				if arcDeg > 45 {
+					issues = append(issues, Issue{
+						File:     roomRel,
+						Severity: "warning",
+						Message:  fmt.Sprintf("W3: Camera %q horizontal arc (%.0f°) may cause visible direction snapping for 4-angle billboard sprites. Recommended: keep arc below 45° from cardinal axes.", cam.Name, arcDeg),
+					})
+				}
+			}
+		}
 	}
 	return issues
 }

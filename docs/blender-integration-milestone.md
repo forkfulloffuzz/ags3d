@@ -351,9 +351,9 @@ game_prototype/
 | T-BL04 | Python: Export operator — extract gameplay objects → write `.agroom`; call GLTF exporter → write `.glb` | T-BL02 |
 | T-BL05 | Python: Export — coordinate system conversion (Blender Y-up → Godot Z-up) + size extraction from bounding box | T-BL04 |
 | T-BL06 | ✅ Python: Camera look_at eyedropper — `AGS3D_OT_EyedropLookAt` modal operator picks any object in viewport; `prop_search` fallback preserved | T-BL04 |
-| T-BL07 | Python: Export — merge mode: read existing `.agroom`, overwrite geometry fields only, preserve non-geometry fields | T-BL04 |
-| T-BL08 | Python: Import operator — read `.agroom` → create Blender empties/meshes in `AGS_Gameplay` collection | T-BL02 |
-| T-BL09 | Python: NavMesh baking — auto-bake from WalkableSurface objects; include `AGS_NavMesh` mesh in GLTF export | T-BL04 |
+| T-BL07 | ✅ | Python: Export — merge mode: `merge_mode` property on export operator; `_append_existing_blocks()` reads existing `.agroom`, overwrites geometry fields, preserves non-geometry fields | T-BL04 |
+| T-BL08 | ✅ | Python: Import operator — `AGS3D_OT_ImportRoom` reads `.agroom` → creates Blender empties/meshes in `AGS_Gameplay` collection; full coordinate conversion | T-BL02 |
+| T-BL09 | ✅ | Python: NavMesh baking — `_bake_navmesh()` auto-bakes from WalkableSurface objects; `AGS3D_OT_BakeNavMesh` operator; `AGS_NavMesh` mesh auto-included in GLTF export | T-BL04 |
 | T-BL10 | ✅ | Python: Character export operator — armature + mesh + NLA actions → `.glb` | T-BL01 |
 | T-BL11 | ✅ | Go: `ag build` — detect `.glb` in room directory; embed as sub-scene in generated `.tscn` | T-BL04 |
 | T-BL12 | ✅ | Go: `.agchar` — parse `mesh` and `animations` fields; embed `.glb` in character `.tscn`; wire `AnimationPlayer` | T-BL10 |
