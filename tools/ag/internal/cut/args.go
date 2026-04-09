@@ -89,7 +89,7 @@ func isIdentChar(ch rune) bool {
 	return (ch >= 'a' && ch <= 'z') ||
 		(ch >= 'A' && ch <= 'Z') ||
 		(ch >= '0' && ch <= '9') ||
-		ch == '_' || ch == '-'
+		ch == '_' || ch == '-' || ch == '#'
 }
 
 // NamedParamValue extracts the value from a "key:value" ArgToken.

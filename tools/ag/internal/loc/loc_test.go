@@ -338,7 +338,7 @@ start_character = "player"
 
 	cutSrc := `title: intro
 sequence:
-<<line narrator "Once upon a time." loc_key:narrator_intro>>
+<<line narrator "Once upon a time." #loc_key:narrator_intro>>
 <<end>>
 `
 	if err := os.WriteFile(cutDir+"/intro.agcut", []byte(cutSrc), 0644); err != nil {
@@ -398,7 +398,7 @@ Guard: Hello. #loc:shared_key
 
 	cutSrc := `title: intro
 sequence:
-<<line narrator "Hello." loc_key:shared_key>>
+<<line narrator "Hello." #loc_key:shared_key>>
 <<end>>
 `
 	if err := os.WriteFile(cutDir+"/intro.agcut", []byte(cutSrc), 0644); err != nil {

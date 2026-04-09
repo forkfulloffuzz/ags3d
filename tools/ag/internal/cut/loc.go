@@ -103,13 +103,13 @@ func ValidateLocKeys(cf *CutsceneFile, localeMap map[string]string) []string {
 
 // extractLocArgs returns the (text, loc_key) pair from a command Args string.
 // text is the content of the first double-quoted string literal found.
-// loc_key is the value of the "loc_key:" named parameter, or "" if absent.
+// loc_key is the value of the "#loc_key:" named parameter, or "" if absent.
 func extractLocArgs(args string) (text, locKey string) {
 	// Extract quoted string — first "..." in args.
 	text = extractFirstQuotedString(args)
 
-	// Extract loc_key: value.
-	const needle = "loc_key:"
+	// Extract #loc_key: value.
+	const needle = "#loc_key:"
 	if idx := strings.Index(args, needle); idx >= 0 {
 		rest := strings.TrimSpace(args[idx+len(needle):])
 		// Value is either a quoted string or an unquoted identifier.

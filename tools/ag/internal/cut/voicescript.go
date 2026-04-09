@@ -48,7 +48,7 @@ func collectFromFile(cf *CutsceneFile) []VoiceLine {
 
 		// Optional params.
 		emotion := cmd.Params["emotion"]
-		locKey := cmd.Params["loc_key"]
+		locKey := cmd.Params["#loc_key"]
 		if locKey == "" {
 			locKey = fmt.Sprintf("%s:line%d", cf.Title, lineIdx)
 		}

@@ -255,7 +255,7 @@ Each invalid file has a header comment:
 
 | File | What it exercises |
 |------|------------------|
-| `22_all_loc_commands.agcut` | All localizable commands: `<<line loc_key:>>`, `<<title_card loc_key:>>`, `<<subtitle loc_key:>>`, `<<choice loc_key:>>`; also `voice_session:` and `loc_group:` headers |
+| `22_all_loc_commands.agcut` | All localizable commands: `<<line #loc_key:>>`, `<<title_card #loc_key:>>`, `<<subtitle #loc_key:>>`, `<<choice #loc_key:>>`; also `voice_session:` and `loc_group:` headers |
 | `23_voice_session_lines.agcut` | `voice_session:` header with multiple `<<line>>` commands for `CollectVoiceLines` / voice coverage |
 
 ---
