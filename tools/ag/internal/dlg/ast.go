@@ -14,6 +14,7 @@ type DialogueNode struct {
 	// Header fields.
 	Title     string   // required — unique across the project
 	Character string   // character name (may be empty for narrator-only nodes)
+	Language  string   // locale code this node is authored in (e.g. "en", "fr"); empty = inherit from project
 	Tags      []string // e.g. ["chapter:1", "cinematic"]
 	Inherits  []string // list of node titles whose global options this node inherits
 	Suppress  []string // list of global option titles suppressed in this node

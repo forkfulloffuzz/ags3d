@@ -13,11 +13,11 @@ import (
 
 // Manifest is the parsed content of game.agp.
 type Manifest struct {
-	Project       ProjectSection      `toml:"project"`
-	Settings      SettingsSection     `toml:"settings"`
-	Localisation  LocalisationSection `toml:"localisation"`
-	Cutscenes     CutsceneSection     `toml:"cutscenes"`
-	Input         InputSection        `toml:"input"`
+	Project      ProjectSection      `toml:"project"`
+	Settings     SettingsSection     `toml:"settings"`
+	Localisation LocalisationSection `toml:"localisation"`
+	Cutscenes    CutsceneSection     `toml:"cutscenes"`
+	Input        InputSection        `toml:"input"`
 	// Locales maps BCP 47 locale codes to their declarations.
 	// Populated from [locale.xx] subsections in game.agp.
 	Locales map[string]*LocaleEntry `toml:"locales"`
@@ -60,30 +60,52 @@ type LocaleEntry struct {
 
 // LocalisationSection holds project-wide localisation settings from [localisation].
 type LocalisationSection struct {
-	BaseLocale    string   // Locale code used for authoring (source strings)
-	FallbackChain []string // Ordered list of locale codes tried when a string is missing
+	// DefaultAuthorLocale is the locale code authors write in by default.
+	// This is the source language — extracted strings go here first.
+	// Acts as the base locale when authoring_locale is not set per-file.
+	DefaultAuthorLocale string
+	// SupportedLocales lists all locale codes this project supports (including DefaultAuthorLocale).
+	// The export pipeline uses this to know which .agstrings files to generate.
+	SupportedLocales []string
+	// FallbackChain is an ordered list of locale codes tried when a string is missing.
+	FallbackChain []string
 }
 
 // localeCodeRE matches valid BCP 47 locale codes: "en", "fr", "zh-TW", "sr-Latn-RS".
 var localeCodeRE = regexp.MustCompile(`^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$`)
 
-// ValidateLocales checks that all locale codes are valid BCP 47, that base_locale
-// exists in the declared locales, and that every entry in fallback_chain is declared.
+func appendIfAbsent(slice []string, item string) []string {
+	for _, s := range slice {
+		if s == item {
+			return slice
+		}
+	}
+	return append(slice, item)
+}
+
+// ValidateLocales checks that all locale codes are valid BCP 47, that
+// DefaultAuthorLocale exists in SupportedLocales, that every entry in
+// fallback_chain is declared, and that SupportedLocales entries are declared.
 // Returns a slice of human-readable error strings (empty if valid).
 func (m *Manifest) ValidateLocales() []string {
 	var errs []string
+	supportedSet := make(map[string]bool)
 	for code := range m.Locales {
 		if !localeCodeRE.MatchString(code) {
 			errs = append(errs, fmt.Sprintf("invalid locale code %q (expected BCP 47, e.g. \"en\", \"zh-TW\")", code))
 		}
+		supportedSet[code] = true
 	}
-	if bl := m.Localisation.BaseLocale; bl != "" {
-		if _, ok := m.Locales[bl]; !ok {
-			errs = append(errs, fmt.Sprintf("base_locale %q is not declared in any [locale.*] section", bl))
+	for _, code := range m.Localisation.SupportedLocales {
+		supportedSet[code] = true
+	}
+	if bl := m.Localisation.DefaultAuthorLocale; bl != "" {
+		if !supportedSet[bl] {
+			errs = append(errs, fmt.Sprintf("default_author_locale %q is not in supported_locales or any [locale.*] section", bl))
 		}
 	}
 	for _, code := range m.Localisation.FallbackChain {
-		if _, ok := m.Locales[code]; !ok {
+		if !supportedSet[code] {
 			errs = append(errs, fmt.Sprintf("fallback_chain entry %q is not declared in any [locale.*] section", code))
 		}
 	}
@@ -230,10 +252,20 @@ func parseAGP(src string, m *Manifest) error {
 			case "rtl":
 				entry.RTL = v == "true"
 			}
+			// Auto-register into SupportedLocales so [locale.xx] sections count.
+			m.Localisation.SupportedLocales = appendIfAbsent(m.Localisation.SupportedLocales, code)
 		case section == "localisation":
 			switch k {
-			case "base_locale":
-				m.Localisation.BaseLocale = v
+			case "default_author_locale", "base_locale":
+				// "base_locale" is accepted as an alias for backward compatibility.
+				m.Localisation.DefaultAuthorLocale = v
+			case "supported_locales":
+				// Space or comma-separated list, e.g. supported_locales = "en fr de"
+				for _, part := range strings.Split(v, " ,") {
+					if code := strings.TrimSpace(part); code != "" {
+						m.Localisation.SupportedLocales = appendIfAbsent(m.Localisation.SupportedLocales, code)
+					}
+				}
 			case "fallback_chain":
 				// Comma-separated list, e.g. fallback_chain = "en, fr"
 				for _, part := range strings.Split(v, ",") {
@@ -352,6 +384,14 @@ start_character = "characters/player.agchar"
 [settings]
 rendering_mode = "full_3d"
 autosave = true
+
+[locale.en]
+name = "English"
+
+[localisation]
+default_author_locale = "en"
+supported_locales = "en"
+fallback_chain = "en"
 `, name)
 	if err := os.WriteFile(filepath.Join(dest, "game.agp"), []byte(agp), 0644); err != nil {
 		return err

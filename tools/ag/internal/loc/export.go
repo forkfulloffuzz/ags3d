@@ -132,14 +132,86 @@ func ExportLocaleFiles(root, locale string) ([]string, error) {
 	return []string{rel}, nil
 }
 
+func ExportLocaleForProject(root string) ([]string, error) {
+	manifest, err := project.Load(root)
+	if err != nil {
+		return nil, fmt.Errorf("export locale for project: load manifest: %w", err)
+	}
+
+	defaultAuthorLocale := manifest.Localisation.DefaultAuthorLocale
+	if defaultAuthorLocale == "" {
+		defaultAuthorLocale = "en"
+	}
+	supportedLocales := manifest.Localisation.SupportedLocales
+	if len(supportedLocales) == 0 {
+		supportedLocales = []string{defaultAuthorLocale}
+	}
+
+	entries, err := CollectAllLocaleEntries(root)
+	if err != nil {
+		return nil, fmt.Errorf("export locale for project: collect entries: %w", err)
+	}
+
+	localeDir := filepath.Join(root, "locale")
+	if err := os.MkdirAll(localeDir, 0755); err != nil {
+		return nil, fmt.Errorf("export locale for project: create locale dir: %w", err)
+	}
+
+	for _, loc := range supportedLocales {
+		sf := &StringsFile{
+			Meta: Meta{
+				BaseLocale: defaultAuthorLocale,
+				Locale:     loc,
+			},
+			index: make(map[string]int),
+		}
+
+		for _, e := range entries {
+			if e.LocKey == "" {
+				continue
+			}
+			sourceLang := e.SourceLanguage
+			if sourceLang == "" {
+				sourceLang = defaultAuthorLocale
+			}
+
+			value := ""
+			if sourceLang == loc {
+				value = e.Source
+			}
+			if _, exists := sf.index[e.LocKey]; !exists {
+				sf.index[e.LocKey] = len(sf.Entries)
+				sf.Entries = append(sf.Entries, Entry{
+					Key:   e.LocKey,
+					Value: value,
+				})
+			}
+		}
+
+		outPath := filepath.Join(localeDir, "strings."+loc+".agstrings")
+		content := Write(sf)
+		if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
+			return nil, fmt.Errorf("export locale for project: write %s: %w", outPath, err)
+		}
+	}
+
+	var written []string
+	for _, loc := range supportedLocales {
+		rel, _ := filepath.Rel(root, filepath.Join(localeDir, "strings."+loc+".agstrings"))
+		written = append(written, rel)
+	}
+	return written, nil
+}
+
 type LocaleEntryFull struct {
-	LocKey     string
-	Source     string
-	Translated string // empty if untranslated
-	NodeTitle  string
-	Character  string
-	LineType   string
-	File       string
+	LocKey         string
+	Source         string
+	Translated     string // empty if untranslated
+	NodeTitle      string
+	Character      string
+	LineType       string
+	File           string
+	SourceLanguage string // locale code this entry originates from (e.g. "en", "fr")
 }
 
 func CollectAllLocaleEntriesWithTranslations(root, locale string) ([]LocaleEntryFull, error) {
@@ -216,11 +288,12 @@ func CollectAllLocaleEntries(root string) ([]LocaleEntryFull, error) {
 					continue
 				}
 				entries = append(entries, LocaleEntryFull{
-					LocKey:    e.LocKey,
-					Source:    e.Source,
-					NodeTitle: e.NodeTitle,
-					Character: e.Character,
-					LineType:  e.LineType,
+					LocKey:         e.LocKey,
+					Source:         e.Source,
+					NodeTitle:      e.NodeTitle,
+					Character:      e.Character,
+					LineType:       e.LineType,
+					SourceLanguage: e.Language,
 				})
 			}
 		}
@@ -232,11 +305,12 @@ func CollectAllLocaleEntries(root string) ([]LocaleEntryFull, error) {
 				continue
 			}
 			entries = append(entries, LocaleEntryFull{
-				LocKey:    e.LocKey,
-				Source:    e.Source,
-				NodeTitle: cf.Title,
-				Character: "",
-				LineType:  e.CmdName,
+				LocKey:         e.LocKey,
+				Source:         e.Source,
+				NodeTitle:      cf.Title,
+				Character:      "",
+				LineType:       e.CmdName,
+				SourceLanguage: e.Language,
 			})
 		}
 	}

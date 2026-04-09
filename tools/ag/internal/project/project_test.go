@@ -70,8 +70,8 @@ func TestScan_FindsSourceFiles(t *testing.T) {
 		"characters/player.agchar",
 		"dialogue/intro.agdlg",
 		"inventory/key.agitem",
-		"audio/music.ogg",  // should be excluded
-		"assets/bg.png",    // should be excluded
+		"audio/music.ogg", // should be excluded
+		"assets/bg.png",   // should be excluded
 	}
 	for _, f := range files {
 		p := filepath.Join(dir, f)
@@ -274,8 +274,8 @@ fallback_chain = "en, fr"
 	if err != nil {
 		t.Fatalf("Load error: %v", err)
 	}
-	if m.Localisation.BaseLocale != "en" {
-		t.Errorf("BaseLocale = %q, want en", m.Localisation.BaseLocale)
+	if m.Localisation.DefaultAuthorLocale != "en" {
+		t.Errorf("DefaultAuthorLocale = %q, want en", m.Localisation.DefaultAuthorLocale)
 	}
 	if len(m.Localisation.FallbackChain) != 2 {
 		t.Fatalf("FallbackChain len = %d, want 2", len(m.Localisation.FallbackChain))

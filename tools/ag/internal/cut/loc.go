@@ -16,10 +16,11 @@ type LocEntry struct {
 	// LocKey is the stable identifier: "<cutscene_title>:<seq_idx>:<hash8>".
 	// If the source command supplies an explicit loc_key: argument that value
 	// is used instead.
-	LocKey  string
-	Source  string // original source text (content of the string literal)
-	CmdName string // "line" | "title_card" | "subtitle" | "choice"
-	Pos     Pos
+	LocKey   string
+	Source   string // original source text (content of the string literal)
+	CmdName  string // "line" | "title_card" | "subtitle" | "choice"
+	Language string // locale code this entry originates from (e.g. "en", "fr"); empty = inherit from project
+	Pos      Pos
 }
 
 // CollectLocEntries walks a CutsceneFile's Sequence and returns all
@@ -42,10 +43,11 @@ func CollectLocEntries(cf *CutsceneFile) []LocEntry {
 				locKey = cutLocKey(cf.Title, seqIdx, text)
 			}
 			entries = append(entries, LocEntry{
-				LocKey:  locKey,
-				Source:  text,
-				CmdName: cmd.Name,
-				Pos:     cmd.Pos,
+				LocKey:   locKey,
+				Source:   text,
+				CmdName:  cmd.Name,
+				Language: cf.Language,
+				Pos:      cmd.Pos,
 			})
 			seqIdx++
 		}

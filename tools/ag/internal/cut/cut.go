@@ -38,12 +38,12 @@ const (
 	TokSequenceStart           // "sequence:" line — body begin marker
 
 	// Command-body token kinds.
-	TokCommandName  // first word after << (e.g. "fade_in", "camera", "character")
-	TokNamedParam   // word:value pair inside << >> (e.g. "duration:2.0", "bg:cam_move")
-	TokStringValue  // "quoted string" inside << >>
-	TokIdentifier   // unquoted word or dotted path inside << >> (e.g. "narrator", "point.street_level")
-	TokBlockOpen    // <<parallel>>, <<if condition>>, <<on event:…>> (opening block command)
-	TokBlockClose   // <<end_parallel>>, <<end_if>>, <<end_on>>    (closing block command)
+	TokCommandName // first word after << (e.g. "fade_in", "camera", "character")
+	TokNamedParam  // word:value pair inside << >> (e.g. "duration:2.0", "bg:cam_move")
+	TokStringValue // "quoted string" inside << >>
+	TokIdentifier  // unquoted word or dotted path inside << >> (e.g. "narrator", "point.street_level")
+	TokBlockOpen   // <<parallel>>, <<if condition>>, <<on event:…>> (opening block command)
+	TokBlockClose  // <<end_parallel>>, <<end_if>>, <<end_on>>    (closing block command)
 )
 
 func (k TokenKind) String() string {
@@ -108,10 +108,11 @@ func (e *ParseError) Error() string {
 type CutsceneFile struct {
 	Path         string
 	Title        string
-	Skip         string   // "always" | "never" | "after_first_view" | "author_controlled"
-	SaveBlock    bool     // default true
+	Language     string // locale code this file is authored in (e.g. "en", "fr"); empty = inherit from project
+	Skip         string // "always" | "never" | "after_first_view" | "author_controlled"
+	SaveBlock    bool   // default true
 	Tags         []string
-	Fallback     string   // "halt" | "skip_and_continue" | "log_and_continue" | "retry_once"
+	Fallback     string // "halt" | "skip_and_continue" | "log_and_continue" | "retry_once"
 	LocGroup     string
 	VoiceSession string
 
@@ -131,20 +132,20 @@ type CutsceneFile struct {
 // RawCommand is a single <<command args>> step from the sequence body.
 // The command name is parsed; the argument string is left raw for T-CUT02.
 type RawCommand struct {
-	Name        string // command verb, e.g. "fade_in", "camera", "line"
-	Args        string // raw argument content (everything after Name inside << >>)
-	IsBlockOpen bool   // true for <<parallel>>, <<if>>, <<on>>
-	IsBlockClose bool  // true for <<end_parallel>>, <<end_if>>, <<end_on>>
-	Pos         Pos
+	Name         string // command verb, e.g. "fade_in", "camera", "line"
+	Args         string // raw argument content (everything after Name inside << >>)
+	IsBlockOpen  bool   // true for <<parallel>>, <<if>>, <<on>>
+	IsBlockClose bool   // true for <<end_parallel>>, <<end_if>>, <<end_on>>
+	Pos          Pos
 }
 
 // ---- Valid header values -------------------------------------------------------
 
 // ValidSkipPolicies is the set of recognised skip: values.
 var ValidSkipPolicies = map[string]bool{
-	"always":           true,
-	"never":            true,
-	"after_first_view": true,
+	"always":            true,
+	"never":             true,
+	"after_first_view":  true,
 	"author_controlled": true,
 }
 
@@ -264,6 +265,8 @@ func parseHeaderLine(cf *CutsceneFile, pos Pos, line string) error {
 	switch key {
 	case "title":
 		cf.Title = rawVal
+	case "language":
+		cf.Language = rawVal
 	case "skip":
 		cf.Skip = rawVal
 	case "save_block":
@@ -302,7 +305,7 @@ func parseHeaderLine(cf *CutsceneFile, pos Pos, line string) error {
 		}
 	case "auto_duck":
 		cf.AutoDuck = rawVal == "true"
-	// Unknown header keys silently ignored (forward compatibility).
+		// Unknown header keys silently ignored (forward compatibility).
 	}
 	return nil
 }

@@ -130,6 +130,8 @@ func (p *parser) parseHeader(node *DialogueNode) error {
 				node.Pos = t.Pos
 			case "character":
 				node.Character = val
+			case "language":
+				node.Language = val
 			case "tags":
 				// Consume any TokTag tokens that follow (already emitted by lexer).
 				for p.peek().Kind == TokTag {

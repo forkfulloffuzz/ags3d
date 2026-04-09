@@ -710,7 +710,16 @@ func cmdExport(args []string) error {
 	}
 
 	if *platform == "" {
-		return fmt.Errorf("--platform, --locale, or --voicescript is required")
+		root, _ := requireProject()
+		written, err := loc.ExportLocaleForProject(root)
+		if err != nil {
+			return err
+		}
+		for _, rel := range written {
+			fmt.Printf("ag export: %s\n", rel)
+		}
+		fmt.Printf("ag export: %d locale(s) written\n", len(written))
+		return nil
 	}
 	// TODO(T18): build then invoke Godot's export pipeline.
 	fmt.Printf("ag export: export pipeline for %q not yet implemented (T18)\n", *platform)

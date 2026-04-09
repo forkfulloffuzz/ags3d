@@ -14,6 +14,7 @@ type LocEntry struct {
 	Character string // empty for narration
 	LineType  string // "spoken" | "choice" | "narration"
 	Source    string // original source text
+	Language  string // locale code this entry originates from (e.g. "en", "fr"); empty = inherit from project
 }
 
 // CollectLocEntries walks a LinkedProject and returns all localizable strings
@@ -30,10 +31,10 @@ func CollectLocEntries(lp *LinkedProject) []LocEntry {
 }
 
 func collectNodeEntries(n *DialogueNode, lineIdx *int, entries *[]LocEntry) {
-	collectStmtEntries(n.Title, n.Character, n.Body, lineIdx, entries)
+	collectStmtEntries(n.Title, n.Language, n.Character, n.Body, lineIdx, entries)
 }
 
-func collectStmtEntries(nodeTitle, character string, stmts []Statement, lineIdx *int, entries *[]LocEntry) {
+func collectStmtEntries(nodeTitle, language, character string, stmts []Statement, lineIdx *int, entries *[]LocEntry) {
 	for _, s := range stmts {
 		switch st := s.(type) {
 		case *SpeakerLine:
@@ -48,6 +49,7 @@ func collectStmtEntries(nodeTitle, character string, stmts []Statement, lineIdx 
 				Character: st.Speaker,
 				LineType:  "spoken",
 				Source:    st.Text,
+				Language:  language,
 			})
 
 		case *NarrationLine:
@@ -62,6 +64,7 @@ func collectStmtEntries(nodeTitle, character string, stmts []Statement, lineIdx 
 				Character: character,
 				LineType:  "narration",
 				Source:    st.Text,
+				Language:  language,
 			})
 
 		case *OptionBranch:
@@ -76,8 +79,9 @@ func collectStmtEntries(nodeTitle, character string, stmts []Statement, lineIdx 
 				Character: character,
 				LineType:  "choice",
 				Source:    st.Text,
+				Language:  language,
 			})
-			collectStmtEntries(nodeTitle, character, st.Body, lineIdx, entries)
+			collectStmtEntries(nodeTitle, language, character, st.Body, lineIdx, entries)
 		}
 	}
 }
