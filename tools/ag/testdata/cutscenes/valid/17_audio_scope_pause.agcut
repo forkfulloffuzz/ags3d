@@ -5,7 +5,7 @@ skip:        always
 save_block:  false
 audio_scope: pause
 sequence:
-	<<flash color:#ffffff duration:0.3>>
-	<<sound thunder volume:1.0>>
-	<<camera shake intensity:0.2 duration:0.5>>
+	<<flash color:#ffffff #duration:0.3>>
+	<<sound thunder #volume:1.0>>
+	<<camera shake #intensity:0.2 #duration:0.5>>
 	<<end>>

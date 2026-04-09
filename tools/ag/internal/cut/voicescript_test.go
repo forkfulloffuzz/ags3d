@@ -53,7 +53,7 @@ func TestCollect_EmotionParam(t *testing.T) {
 }
 
 func TestCollect_LocKeyParam(t *testing.T) {
-	cf := mustParseVS(t, "title: t\nsequence:\n<<line player \"Hello.\" #loc_key:player_hello>>\n<<end>>\n")
+	cf := mustParseVS(t, "title: t\nsequence:\n<<line player \"Hello.\" #loc:player_hello>>\n<<end>>\n")
 	lines := cut.CollectVoiceLines([]*cut.CutsceneFile{cf})
 	if lines[0].LocKey != "player_hello" {
 		t.Errorf("LocKey = %q, want player_hello", lines[0].LocKey)
@@ -64,7 +64,7 @@ func TestCollect_AutoLocKeyGenerated(t *testing.T) {
 	cf := mustParseVS(t, "title: intro\nsequence:\n<<line narrator \"Hello.\">>\n<<end>>\n")
 	lines := cut.CollectVoiceLines([]*cut.CutsceneFile{cf})
 	if lines[0].LocKey == "" {
-		t.Error("LocKey should not be empty when no loc_key: param")
+		t.Error("LocKey should not be empty when no #loc: param")
 	}
 	if !strings.HasPrefix(lines[0].LocKey, "intro:line") {
 		t.Errorf("LocKey = %q, want prefix intro:line", lines[0].LocKey)
@@ -143,7 +143,7 @@ func TestRender_ContentContainsText(t *testing.T) {
 }
 
 func TestRender_TranslationIncluded(t *testing.T) {
-	cf := mustParseVS(t, "title: t\nsequence:\n<<line narrator \"Hello.\" #loc_key:nar_hello>>\n<<end>>\n")
+	cf := mustParseVS(t, "title: t\nsequence:\n<<line narrator \"Hello.\" #loc:nar_hello>>\n<<end>>\n")
 	lines := cut.CollectVoiceLines([]*cut.CutsceneFile{cf})
 	tr := map[string]string{"nar_hello": "Bonjour."}
 	groups := cut.RenderVoicescripts(lines, tr, "")

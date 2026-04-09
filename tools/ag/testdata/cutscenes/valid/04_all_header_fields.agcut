@@ -7,5 +7,5 @@ fallback: skip_and_continue
 loc_group: chapter2
 voice_session: vs_chapter2
 sequence:
-	<<fade_in duration:1.0>>
+	<<fade_in #duration:1.0>>
 	<<end>>

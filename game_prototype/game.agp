@@ -10,14 +10,17 @@ autosave = "true"
 [locale.en]
 name = "English"
 
-[locale.fr]
-name = "French"
+[locale.es]
+name = "Spanish"
 
-[locale.de]
-name = "German"
+[locale.he]
+name = "Hebrew"
+rtl = true
+
+[locale.ru]
+name = "Russian"
 
 [localisation]
 default_author_locale = "en"
-supported_locales = "en fr de"
+supported_locales = "en es he ru"
 fallback_chain = "en"
-

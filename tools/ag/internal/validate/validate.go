@@ -225,7 +225,7 @@ func ValidateFiles(files []project.SourceFile) ([]Issue, error) {
 }
 
 // validateCutsceneLocKeys parses all .agcut files and validates that every
-// explicit loc_key: argument is present in at least one .agstrings locale file
+// explicit #loc: argument is present in at least one .agstrings locale file
 // found in the same file set. Missing keys are reported as warnings (not errors)
 // so the build is not blocked in dev; they become errors in release mode.
 func validateCutsceneLocKeys(files []project.SourceFile) []Issue {
@@ -286,7 +286,7 @@ func validateCutsceneLocKeys(files []project.SourceFile) []Issue {
 }
 
 // validateDialogueLocKeys parses all .agdlg files and validates that every
-// explicit loc_key: annotation is present in at least one .agstrings locale file.
+// explicit #loc: annotation is present in at least one .agstrings locale file.
 // Missing keys are reported as warnings (not errors) in dev mode and errors in
 // release mode.
 func validateDialogueLocKeys(files []project.SourceFile) []Issue {

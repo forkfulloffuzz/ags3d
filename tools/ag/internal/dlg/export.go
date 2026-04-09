@@ -255,11 +255,11 @@ func sourceHash(text string) string {
 	return fmt.Sprintf("%08x", h.Sum32())
 }
 
-// ValidateLocKeys checks that every explicit loc_key: used in the linked
+// ValidateLocKeys checks that every explicit #loc: used in the linked
 // dialogue project is present in the provided locale map (key → translated value).
 // Returns one ValidationIssue per missing key.
 //
-// Only lines with an explicit loc_key: annotation are validated; auto-generated
+// Only lines with an explicit #loc: annotation are validated; auto-generated
 // keys (empty LocKey) are always considered valid.
 func ValidateLocKeys(lp *LinkedProject, localeMap map[string]string) []ValidationIssue {
 	var issues []ValidationIssue

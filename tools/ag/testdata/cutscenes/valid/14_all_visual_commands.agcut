@@ -2,11 +2,11 @@
 title: visual_showcase
 skip: always
 sequence:
-	<<fade_in duration:1.0 color:#000000>>
-	<<letterbox enable duration:0.5>>
-	<<vignette intensity:0.4 duration:1.0>>
-	<<flash color:#ffffff duration:0.2>>
-	<<overlay image:splash fade_in:0.5 fade_out:0.5 duration:3.0>>
-	<<video file:opening_credits skip:end_video>>
-	<<fade_out duration:1.0 color:#000000>>
+	<<fade_in #duration:1.0 color:#000000>>
+	<<letterbox enable #duration:0.5>>
+	<<vignette #intensity:0.4 #duration:1.0>>
+	<<flash color:#ffffff #duration:0.2>>
+	<<overlay #image:splash #fade_in:0.5 #fade_out:0.5 #duration:3.0>>
+	<<video #file:opening_credits #skip:end_video>>
+	<<fade_out #duration:1.0 color:#000000>>
 	<<end>>

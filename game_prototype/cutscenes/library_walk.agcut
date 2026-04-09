@@ -3,11 +3,11 @@ language: en
 voice_session: vs_library
 loc_group: act2
 sequence:
-	<<fade_in duration:2.0>>
-	<<camera set library.desk fov:50>>
+	<<fade_in #duration:2.0>>
+	<<camera set library.desk #fov:50>>
 	<<character librarian spawn_at library.librarian_start>>
 	<<sync>>
-	<<line librarian "Welcome to the Grand Library." #loc_key:line_library_welcome>>
-	<<line librarian "How may I assist you today?" #loc_key:line_library_assist>>
-	<<fade_out duration:1.0>>
+	<<line librarian "Welcome to the Grand Library." #loc:line_library_welcome>>
+	<<line librarian "How may I assist you today?" #loc:line_library_assist>>
+	<<fade_out #duration:1.0>>
 	<<end>>

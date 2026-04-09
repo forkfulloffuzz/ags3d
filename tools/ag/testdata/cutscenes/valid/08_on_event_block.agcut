@@ -2,15 +2,15 @@
 title: event_reactive
 skip: after_first_view
 sequence:
-	<<fade_in duration:1.0>>
+	<<fade_in #duration:1.0>>
 	<<character char_b walk_to point.stage_left>>
 	<<on event:char_b:char_b_arrive>>
-		<<camera look_at char_b duration:0.5>>
+		<<camera look_at char_b #duration:0.5>>
 		<<line narrator "He arrived.">>
 	<<end_on>>
 	<<on event:player:found_clue>>
 		<<action flag.clue_found = true>>
 	<<end_on>>
-	<<wait seconds:5.0>>
-	<<fade_out duration:1.0>>
+	<<wait #seconds:5.0>>
+	<<fade_out #duration:1.0>>
 	<<end>>

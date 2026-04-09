@@ -1,7 +1,7 @@
 // T-CUT30 — Cutscene localisation pass.
 //
 // Extracts localizable strings from .agcut files and writes .agstrings
-// template files. Also validates that every loc_key: used in a cutscene
+// template files. Also validates that every #loc: used in a cutscene
 // sequence is present in the project's active locale file.
 package cut
 
@@ -14,7 +14,7 @@ import (
 // LocEntry is one localizable string extracted from a cutscene sequence.
 type LocEntry struct {
 	// LocKey is the stable identifier: "<cutscene_title>:<seq_idx>:<hash8>".
-	// If the source command supplies an explicit loc_key: argument that value
+	// If the source command supplies an explicit #loc: argument that value
 	// is used instead.
 	LocKey   string
 	Source   string // original source text (content of the string literal)
@@ -27,7 +27,7 @@ type LocEntry struct {
 // localizable strings, in source order.
 //
 // Localizable commands: <<line>>, <<title_card>>, <<subtitle>>, <<choice>>.
-// Each command's quoted string argument is extracted; an explicit loc_key:
+// Each command's quoted string argument is extracted; an explicit #loc:
 // parameter overrides the auto-generated key.
 func CollectLocEntries(cf *CutsceneFile) []LocEntry {
 	var entries []LocEntry
@@ -73,11 +73,11 @@ func WriteAgstringsTemplate(title string, entries []LocEntry) string {
 	return sb.String()
 }
 
-// ValidateLocKeys checks that every explicit loc_key: used in cf's sequence
+// ValidateLocKeys checks that every explicit #loc: used in cf's sequence
 // is present in the provided locale map (key → translated value).
 // Returns one error string per missing key.
 //
-// Only commands with an explicit loc_key: argument are validated; auto-generated
+// Only commands with an explicit #loc: argument are validated; auto-generated
 // keys are always considered valid (they are generated deterministically).
 func ValidateLocKeys(cf *CutsceneFile, localeMap map[string]string) []string {
 	var errs []string
@@ -103,13 +103,13 @@ func ValidateLocKeys(cf *CutsceneFile, localeMap map[string]string) []string {
 
 // extractLocArgs returns the (text, loc_key) pair from a command Args string.
 // text is the content of the first double-quoted string literal found.
-// loc_key is the value of the "#loc_key:" named parameter, or "" if absent.
+// loc_key is the value of the "#loc:" named parameter, or "" if absent.
 func extractLocArgs(args string) (text, locKey string) {
 	// Extract quoted string — first "..." in args.
 	text = extractFirstQuotedString(args)
 
-	// Extract #loc_key: value.
-	const needle = "#loc_key:"
+	// Extract #loc: value.
+	const needle = "#loc:"
 	if idx := strings.Index(args, needle); idx >= 0 {
 		rest := strings.TrimSpace(args[idx+len(needle):])
 		// Value is either a quoted string or an unquoted identifier.

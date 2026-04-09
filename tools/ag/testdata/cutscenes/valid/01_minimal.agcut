@@ -1,4 +1,4 @@
 title: intro
 sequence:
-	<<fade_in duration:1.0>>
+	<<fade_in #duration:1.0>>
 	<<end>>

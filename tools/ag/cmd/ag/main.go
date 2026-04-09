@@ -692,7 +692,7 @@ func readFilesFromStdin() ([]project.SourceFile, error) {
 func cmdExport(args []string) error {
 	fs := flag.NewFlagSet("export", flag.ContinueOnError)
 	platform := fs.String("platform", "", "export target (windows|mac|linux|web|ios|android)")
-	locale := fs.String("locale", "", "export dialogue strings for locale (e.g. en, fr, de)")
+	locale := fs.String("locale", "", "export dialogue strings for locale (e.g. en, es, he)")
 	format := fs.String("format", "po", "output format for --locale: po or csv")
 	diff := fs.Bool("diff", false, "only emit strings missing or changed since last export")
 	voicescript := fs.Bool("voicescript", false, "export per-character voice actor scripts from .agcut files")

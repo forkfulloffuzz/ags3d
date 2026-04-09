@@ -11,7 +11,7 @@ import (
 
 // VoiceLine is one <<line character "text">> entry collected for a voicescript.
 type VoiceLine struct {
-	LocKey    string // loc_key: param or auto-generated from title+index
+	LocKey    string // #loc: param or auto-generated from title+index
 	Session   string // voice_session from the cutscene header (may be empty)
 	Cutscene  string // cf.Title
 	Char      string // first positional of <<line>>
@@ -48,7 +48,7 @@ func collectFromFile(cf *CutsceneFile) []VoiceLine {
 
 		// Optional params.
 		emotion := cmd.Params["emotion"]
-		locKey := cmd.Params["#loc_key"]
+		locKey := cmd.Params["loc"]
 		if locKey == "" {
 			locKey = fmt.Sprintf("%s:line%d", cf.Title, lineIdx)
 		}

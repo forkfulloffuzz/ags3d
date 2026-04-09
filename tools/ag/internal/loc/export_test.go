@@ -27,7 +27,7 @@ name = "German"
 
 [localisation]
 default_author_locale = "en"
-supported_locales = "en fr de"
+	supported_locales = "en fr de"
 fallback_chain = "en"
 `
 	if err := os.WriteFile(filepath.Join(dir, "game.agp"), []byte(gameAGP), 0644); err != nil {
@@ -57,7 +57,7 @@ Guard: Hello.
 	cutSrc := `title: intro
 language: en
 sequence:
-<<line narrator "Once upon a time." #loc_key:intro_narration>>
+<<line narrator "Once upon a time." #loc:intro_narration>>
 <<end>>
 `
 	if err := os.WriteFile(filepath.Join(cutDir, "intro.agcut"), []byte(cutSrc), 0644); err != nil {
@@ -225,7 +225,7 @@ Guard: Bonjour.
 	cutSrc := `title: intro
 language: en
 sequence:
-<<line narrator "Once upon a time." #loc_key:intro_narration>>
+<<line narrator "Once upon a time." #loc:intro_narration>>
 <<end>>
 `
 	if err := os.WriteFile(filepath.Join(cutDir, "intro.agcut"), []byte(cutSrc), 0644); err != nil {

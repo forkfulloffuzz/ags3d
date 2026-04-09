@@ -8,9 +8,9 @@ duck_fade:     0.3
 duck_restore:  0.6
 auto_duck:     true
 sequence:
-	<<fade_in duration:1.0>>
+	<<fade_in #duration:1.0>>
 	<<line narrator "The door had been open all along.">>
 	<<line narrator "Someone had been here recently.">>
-	<<line player "Who would do this?" duck_level:0.1>>
-	<<fade_out duration:1.0>>
+	<<line player "Who would do this?" #duck_level:0.1>>
+	<<fade_out #duration:1.0>>
 	<<end>>

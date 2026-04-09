@@ -158,6 +158,9 @@ func ParseCommand(rc *RawCommand) *Command {
 			}
 		case TokNamedParam:
 			k, v := NamedParamValue(tok)
+			if strings.HasPrefix(k, "#") {
+				k = k[1:]
+			}
 			cmd.Params[k] = v
 		case TokIdentifier:
 			cmd.Positional = append(cmd.Positional, tok.Value)

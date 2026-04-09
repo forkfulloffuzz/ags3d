@@ -3,14 +3,14 @@ title: author_controlled_demo
 skip: author_controlled
 save_block: true
 sequence:
-	<<fade_in duration:1.0>>
+	<<fade_in #duration:1.0>>
 	<<label act1_start>>
 	<<line narrator "Part one begins.">>
-	<<wait seconds:2.0>>
+	<<wait #seconds:2.0>>
 	<<label act2_start>>
 	<<line narrator "Part two begins.">>
 	<<skip_to act2_start>>
 	<<label act3_start>>
 	<<line narrator "Part three begins.">>
-	<<fade_out duration:1.0>>
+	<<fade_out #duration:1.0>>
 	<<end>>
