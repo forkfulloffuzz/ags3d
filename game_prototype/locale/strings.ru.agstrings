@@ -1,8 +1,6 @@
 [meta]
 base_locale    = en
 locale         = ru
-locale_name    = Russian
-fallback_chain = en
 
 [strings]
 guard_hello_001 = ""
@@ -43,17 +41,17 @@ tavern_news_content_001 = ""
 tavern_opt_recherche_001 = ""
 tavern_recherche_detail_001 = ""
 tavern_come_back_001 = ""
-// [orphan] tc_intro_market = ""
-// [orphan] sub_intro_narrator = ""
-// [orphan] line_intro_gate = ""
-// [orphan] line_intro_guard_challenge = ""
-// [orphan] line_intro_player_response = ""
-// [orphan] choice_intro_merchant = ""
-// [orphan] choice_intro_passing = ""
-// [orphan] tc_merchant_shop = ""
-// [orphan] line_merchant_welcome = ""
-// [orphan] line_merchant_wares = ""
-// [orphan] choice_merchant_inventory = ""
-// [orphan] choice_merchant_special = ""
-// [orphan] line_library_welcome = ""
-// [orphan] line_library_assist = ""
+tc_intro_market = ""
+sub_intro_narrator = ""
+line_intro_gate = ""
+line_intro_guard_challenge = ""
+line_intro_player_response = ""
+choice_intro_merchant = ""
+choice_intro_passing = ""
+line_library_welcome = ""
+line_library_assist = ""
+tc_merchant_shop = ""
+line_merchant_welcome = ""
+line_merchant_wares = ""
+choice_merchant_inventory = ""
+choice_merchant_special = ""

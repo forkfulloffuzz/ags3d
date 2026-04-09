@@ -34,10 +34,47 @@ func play_clip(clip_name: String, loop: bool) -> bool:
 		await _anim_player.animation_finished
 	return true
 
+## T-BL16: Called by the frame tag polling loop when a tagged frame is reached.
+## Label prefixes: "sound:<name>", "signal:<name>".
+func on_anim_event(label: String) -> void:
+	if label.begins_with("sound:"):
+		AGSRuntime.play_sound(label.substr(6))
+	elif label.begins_with("signal:"):
+		var signal_name := label.substr(7)
+		if has_signal(signal_name):
+			emit_signal(signal_name)
+
+## T-BL16: Look up a frame tag at the given frame in the named animation.
+## Reads from node metadata injected by ag build from the .aganim sidecar.
+func get_frame_tag(anim_name: String, frame: int) -> String:
+	var tags: Variant = null
+	if has_meta("anim_frame_tags"):
+		tags = get_meta("anim_frame_tags")
+	else:
+		var parent: Node = get_parent()
+		if parent != null and parent.has_meta("anim_frame_tags"):
+			tags = parent.get_meta("anim_frame_tags")
+	if tags == null:
+		return ""
+	var tags_dict: Dictionary = tags as Dictionary
+	if not tags_dict.has(anim_name):
+		return ""
+	var clip: Variant = tags_dict.get(anim_name)
+	if not clip is Array:
+		return ""
+	for entry: Variant in (clip as Array):
+		if entry is Dictionary:
+			var e: Dictionary = entry as Dictionary
+			if e.get("frame", -1) == frame:
+				return String(e.get("name", ""))
+	return ""
+
 var _nav_agent: NavigationAgent3D
 var _navigating: bool = false
 var _anim_player: AnimationPlayer = null
 var _anim_state: String = ""
+var _last_fired_tag: String = ""
+var _last_fired_frame: int = -1
 
 func _ready() -> void:
 	_nav_agent = NavigationAgent3D.new()
@@ -52,6 +89,7 @@ func _physics_process(_delta: float) -> void:
 	var next_pos: Vector3 = _nav_agent.get_next_path_position()
 	velocity = (next_pos - global_position).normalized() * move_speed
 	move_and_slide()
+	_poll_anim_frame_tag()
 
 func navigate_to(target: Vector3) -> void:
 	_navigating = true
@@ -109,6 +147,26 @@ func think(text: String, duration: float = 2.0) -> void:
 	print("[AGS/AGSCharacter::think] char=", character_name, " text=", text, " start")
 	await say(text, duration)
 	print("[AGS/AGSCharacter::think] char=", character_name, " done")
+
+func _poll_anim_frame_tag() -> void:
+	if _anim_player == null:
+		_anim_player = _find_anim_player(self)
+	if _anim_player == null:
+		return
+	var anim_name: String = _anim_player.get_current_animation()
+	if anim_name.is_empty() or anim_name == "<stood>":
+		return
+	var pos: float = _anim_player.get_current_animation_position()
+	var total: float = _anim_player.get_animation(anim_name).length
+	if total <= 0.0:
+		return
+	var frame: int = int(pos / total * _anim_player.get_animation(anim_name).length)
+	if anim_name != _last_fired_tag or frame != _last_fired_frame:
+		var tag: String = get_frame_tag(anim_name, frame)
+		if not tag.is_empty():
+			_last_fired_tag = anim_name
+			_last_fired_frame = frame
+			on_anim_event(tag)
 
 func _on_navigation_finished() -> void:
 	_navigating = false

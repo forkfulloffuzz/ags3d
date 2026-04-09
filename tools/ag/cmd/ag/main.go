@@ -62,6 +62,8 @@ func main() {
 		err = cmdNew(os.Args[2:])
 	case "viz":
 		err = cmdViz(os.Args[2:])
+	case "ls":
+		err = cmdLs(os.Args[2:])
 	case "loc":
 		err = cmdLoc(os.Args[2:])
 	case "voice":
@@ -84,6 +86,7 @@ Commands:
   build                    parse changed source files, emit GDScript
   run                      build then launch Godot editor
   validate                 static analysis on the project
+  ls                       list all discovered source files
   export --platform NAME   build and export (windows|mac|linux|web|ios|android)
   export --locale LANG     export dialogue strings as PO/CSV for translation
                            flags: --format po|csv  --diff (changed/untranslated only)
@@ -546,6 +549,72 @@ func build(root string, force bool, trace bool) error {
 	}
 	fmt.Println("ag build: done")
 	return nil
+}
+
+// -------------------------------------------------------------------
+// ag ls
+// -------------------------------------------------------------------
+
+func cmdLs(args []string) error {
+	fs := flag.NewFlagSet("ls", flag.ContinueOnError)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag ls [project]")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	root := "."
+	if fs.NArg() >= 1 {
+		root = fs.Arg(0)
+	}
+
+	all, err := project.Scan(root)
+	if err != nil {
+		return err
+	}
+
+	var scripts, rooms, chars, items, guis, dialogues, cutscenes []string
+	for _, f := range all {
+		switch f.Ext {
+		case ".agscript":
+			scripts = append(scripts, f.Rel)
+		case ".agroom":
+			rooms = append(rooms, f.Rel)
+		case ".agchar":
+			chars = append(chars, f.Rel)
+		case ".agitem":
+			items = append(items, f.Rel)
+		case ".agui":
+			guis = append(guis, f.Rel)
+		case ".agdlg":
+			dialogues = append(dialogues, f.Rel)
+		case ".agcut":
+			cutscenes = append(cutscenes, f.Rel)
+		}
+	}
+
+	printSection("rooms", rooms)
+	printSection("characters", chars)
+	printSection("items", items)
+	printSection("dialogues", dialogues)
+	printSection("cutscenes", cutscenes)
+	printSection("guis", guis)
+	printSection("scripts", scripts)
+
+	total := len(scripts) + len(rooms) + len(chars) + len(items) + len(guis) + len(dialogues) + len(cutscenes)
+	fmt.Fprintf(os.Stderr, "\n%d source file(s) in %q\n", total, root)
+	return nil
+}
+
+func printSection(name string, files []string) {
+	if len(files) == 0 {
+		return
+	}
+	fmt.Printf("\n[%s]\n", name)
+	for _, f := range files {
+		fmt.Printf("  %s\n", f)
+	}
 }
 
 // -------------------------------------------------------------------

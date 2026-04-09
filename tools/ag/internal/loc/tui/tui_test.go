@@ -148,6 +148,54 @@ k2 = ""
 	}
 }
 
+func TestBufferForEntry(t *testing.T) {
+	tests := []struct {
+		name     string
+		e        entryView
+		isSource bool
+		want     string
+	}{
+		{
+			name:     "non-source locale returns translated",
+			e:        entryView{Source: "Hello", Translated: "Bonjour"},
+			isSource: false,
+			want:     "Bonjour",
+		},
+		{
+			name:     "source locale returns source",
+			e:        entryView{Source: "Hello", Translated: "Bonjour"},
+			isSource: true,
+			want:     "Hello",
+		},
+		{
+			name:     "source locale empty source falls back to translated",
+			e:        entryView{Source: "", Translated: "Bonjour"},
+			isSource: true,
+			want:     "Bonjour",
+		},
+		{
+			name:     "Hebrew text preserved",
+			e:        entryView{Source: "Hello", Translated: "שלום"},
+			isSource: false,
+			want:     "שלום",
+		},
+		{
+			name:     "CJK text preserved",
+			e:        entryView{Source: "Hello", Translated: "こんにちは"},
+			isSource: false,
+			want:     "こんにちは",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := bufferForEntry(tt.e, tt.isSource)
+			if got != tt.want {
+				t.Errorf("bufferForEntry() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBuildEntryViews_SourceLocale(t *testing.T) {
 	src := `[meta]
 base_locale = en

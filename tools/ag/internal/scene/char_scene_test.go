@@ -251,3 +251,49 @@ func TestFrameTagInjection_2DCharacter(t *testing.T) {
 		t.Errorf("expected clip name Run in 2D metadata:\n%s", out)
 	}
 }
+
+// --------------------------------------------------------------------------
+// T-GS25 — 2D character scene: AGSBillboardController + AGSAnimationPlayer2D
+// --------------------------------------------------------------------------
+
+func Test2DChar_BillboardControllerChild(t *testing.T) {
+	out := genChar(t, `Character "guard" { type = "2d" }`)
+	assertContains(t, out, `[ext_resource type="Script" path="res://.engine/runtime/ags_billboard_controller.gd" id="BillboardController"]`)
+	assertContains(t, out, `[node name="AGSBillboardController" type="Node" parent="Guard"`)
+	assertContains(t, out, `script = ExtResource("BillboardController")`)
+	assertContains(t, out, `sprite_path = NodePath("../Sprite3D")`)
+}
+
+func Test2DChar_AnimPlayer2DChild(t *testing.T) {
+	out := genChar(t, `Character "guard" { type = "2d" }`)
+	assertContains(t, out, `[ext_resource type="Script" path="res://.engine/runtime/ags_animation_player_2d.gd" id="AnimPlayer2D"]`)
+	assertContains(t, out, `[node name="AGSAnimationPlayer2D" type="Node" parent="Guard"`)
+	assertContains(t, out, `script = ExtResource("AnimPlayer2D")`)
+	assertContains(t, out, `controller_path = NodePath("../AGSBillboardController")`)
+}
+
+func Test2DChar_BillboardPropertiesFromAgchar(t *testing.T) {
+	out := genChar(t, `Character "guard" { type = "2d" sprite_angles = 4 frames_per_angle = 6 }`)
+	assertContains(t, out, `sprite_angles = 4`)
+	assertContains(t, out, `frames_per_angle = 6`)
+	assertContains(t, out, `frames_per_state = 6`)
+	// Sprite3D hframes/vframes
+	assertContains(t, out, `hframes = 6`)
+	assertContains(t, out, `vframes = 4`)
+}
+
+func Test2DChar_SpriteLockedFalse(t *testing.T) {
+	out := genChar(t, `Character "guard" { type = "2d" }`)
+	assertContains(t, out, `sprite_locked = false`)
+}
+
+func Test2DChar_VisualModeBillboard(t *testing.T) {
+	out := genChar(t, `Character "guard" { type = "2d" }`)
+	assertContains(t, out, `visual_mode = "billboard"`)
+}
+
+func Test2DChar_VisualModeBillboard_ViaVisualMode(t *testing.T) {
+	out := genChar(t, `Character "guard" { visual_mode = "billboard" }`)
+	assertContains(t, out, `type="AGSCharacter2D"`)
+	assertContains(t, out, `visual_mode = "billboard"`)
+}

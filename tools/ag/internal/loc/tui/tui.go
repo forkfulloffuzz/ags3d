@@ -8,6 +8,7 @@ import (
 
 	"github.com/ags3d/ag/internal/loc"
 	"github.com/ags3d/ag/internal/project"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -39,8 +40,9 @@ type model struct {
 
 	filterMode string
 
-	editBuffer string
-	isEditing  bool
+	ti        textinput.Model
+	tiBlink   tea.Cmd
+	isEditing bool
 
 	savePath string
 	changed  bool
@@ -94,6 +96,13 @@ func RunTUIMain(root, locale string) error {
 }
 
 func newModel(root, path, locale string, isSource bool, availableLocales []string, sf *loc.StringsFile, src []loc.LocaleEntryFull, entries []entryView) model {
+	ti := textinput.NewModel()
+	ti.Prompt = ""
+	ti.Placeholder = ""
+	ti.CharLimit = 0
+	if len(entries) > 0 {
+		ti.SetValue(bufferForEntry(entries[0], isSource))
+	}
 	m := model{
 		root:             root,
 		localeFile:       path,
@@ -106,15 +115,20 @@ func newModel(root, path, locale string, isSource bool, availableLocales []strin
 		filtered:         entries,
 		selected:         0,
 		filterMode:       "all",
+		ti:               ti,
 		savePath:         path,
 		changed:          false,
 		showLocalePicker: false,
 		pickerSelected:   0,
 	}
-	if len(m.filtered) > 0 {
-		m.editBuffer = m.bufferFor(0)
-	}
 	return m
+}
+
+func bufferForEntry(e entryView, isSource bool) string {
+	if isSource && e.Source != "" {
+		return e.Source
+	}
+	return e.Translated
 }
 
 func (m *model) reloadLocale(newLocale string) {
@@ -144,8 +158,10 @@ func (m *model) reloadLocale(newLocale string) {
 	m.isEditing = false
 	m.changed = false
 	m.savePath = localePath
+	m.ti.SetValue("")
+	m.ti.Blur()
 	if len(m.filtered) > 0 {
-		m.editBuffer = m.bufferFor(0)
+		m.ti.SetValue(bufferForEntry(m.filtered[0], isSource))
 	}
 }
 
@@ -205,18 +221,18 @@ func (m *model) commitEdit() {
 		return
 	}
 	ev := &m.filtered[m.selected]
-	ev.Translated = m.editBuffer
+	ev.Translated = m.ti.Value()
 
 	for i := range m.entries {
 		if m.entries[i].LocKey == ev.LocKey {
-			m.entries[i].Translated = m.editBuffer
+			m.entries[i].Translated = m.ti.Value()
 			break
 		}
 	}
 
 	sfKey := ev.LocKey
 	if idx, ok := m.sf.Index()[sfKey]; ok {
-		m.sf.Entries[idx].Value = m.editBuffer
+		m.sf.Entries[idx].Value = m.ti.Value()
 		m.sf.Entries[idx].Stale = false
 	}
 	m.changed = true
@@ -296,12 +312,27 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		if m.isEditing {
+			if msg.String() == "ctrl+s" {
+				m.commitEdit()
+				m.isEditing = false
+				m.ti.Blur()
+				m.save()
+				return m, nil
+			}
+			if msg.String() == "esc" {
+				m.isEditing = false
+				m.ti.Blur()
+				return m, nil
+			}
+			updated, cmd := m.ti.Update(msg)
+			m.ti = updated
+			return m, cmd
+		}
+
 		switch msg.String() {
 		case "ctrl+c", "q":
-			if m.isEditing {
-				m.isEditing = false
-				m.editBuffer = ""
-			} else if m.changed {
+			if m.changed {
 				m.changed = false
 			} else {
 				return m, tea.Quit
@@ -315,7 +346,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected = max(0, len(m.filtered)-1)
 			}
 			if len(m.filtered) > 0 {
-				m.editBuffer = m.bufferFor(m.selected)
+				m.ti.SetValue(bufferForEntry(m.filtered[m.selected], m.isSourceLocale))
 			}
 			return m, nil
 
@@ -335,66 +366,28 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "up", "k":
-			if m.isEditing {
-				return m, nil
-			}
 			if m.selected > 0 {
 				m.selected--
 				if m.selected < len(m.filtered) {
-					m.editBuffer = m.bufferFor(m.selected)
+					m.ti.SetValue(bufferForEntry(m.filtered[m.selected], m.isSourceLocale))
 				}
 			}
 			return m, nil
 
 		case "down", "j":
-			if m.isEditing {
-				return m, nil
-			}
 			if m.selected < len(m.filtered)-1 {
 				m.selected++
 				if m.selected < len(m.filtered) {
-					m.editBuffer = m.bufferFor(m.selected)
+					m.ti.SetValue(bufferForEntry(m.filtered[m.selected], m.isSourceLocale))
 				}
 			}
 			return m, nil
 
 		case "enter":
-			if len(m.filtered) > 0 && !m.isEditing {
+			if len(m.filtered) > 0 {
 				m.isEditing = true
-				m.editBuffer = m.bufferFor(m.selected)
-			}
-			return m, nil
-
-		case "esc":
-			if m.isEditing {
-				m.isEditing = false
-				if m.selected < len(m.filtered) {
-					m.editBuffer = m.bufferFor(m.selected)
-				}
-			}
-			return m, nil
-
-		case "ctrl+s":
-			if m.isEditing {
-				m.commitEdit()
-				m.isEditing = false
-				m.save()
-			}
-			return m, nil
-
-		case "backspace":
-			if m.isEditing && len(m.editBuffer) > 0 {
-				rs := []rune(m.editBuffer)
-				m.editBuffer = string(rs[:len(rs)-1])
-			}
-			return m, nil
-
-		default:
-			if m.isEditing {
-				s := msg.String()
-				if len(s) > 0 {
-					m.editBuffer += s
-				}
+				m.ti.SetValue(bufferForEntry(m.filtered[m.selected], m.isSourceLocale))
+				return m, m.ti.Focus()
 			}
 			return m, nil
 		}
@@ -495,8 +488,10 @@ func (m model) View() string {
 		}
 		detailLines = append(detailLines, "\n  Translation:\n")
 		if m.isEditing {
-			for _, l := range wrapText(m.editBuffer, detailW-6) {
-				detailLines = append(detailLines, "  "+editFieldStyle.Render(l+cursorBlink()))
+			tiView := m.ti.View()
+			tiView = strings.TrimPrefix(tiView, m.ti.Prompt)
+			for _, l := range wrapText(tiView, detailW-6) {
+				detailLines = append(detailLines, "  "+editFieldStyle.Render(l))
 				break
 			}
 		} else {

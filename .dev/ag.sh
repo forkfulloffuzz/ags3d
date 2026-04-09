@@ -9,6 +9,7 @@
 #   .dev/ag.sh build --force --trace    # force rebuild with trace output
 #   .dev/ag.sh run                      # build + launch Godot editor
 #   .dev/ag.sh validate                 # static analysis
+#   .dev/ag.sh ls        [project]     # list all discovered source files
 #   .dev/ag.sh export --platform linux  # export for platform
 #   .dev/ag.sh new mygame               # scaffold new project
 #   .dev/ag.sh viz tokens      <file>   # print token stream
@@ -43,7 +44,7 @@ AG_BIN="$REPO_ROOT/bin/ag"
 
 if [[ $# -eq 0 ]]; then
   echo "Usage: .dev/ag.sh COMMAND [args]" >&2
-  echo "  build | run | validate | export --platform NAME | new NAME" >&2
+  echo "  build | run | validate | ls [project] | export --platform NAME | new NAME" >&2
   echo "  viz tokens FILE | viz ast FILE | viz ast-dot FILE | viz symbols FILE | viz symbols-dot FILE" >&2
   echo "  viz blocking FILE | viz emit FILE | viz FILE" >&2
   echo "  viz-svg FILE [out] | viz-png FILE [out] | viz-pdf FILE [out] | viz-open FILE" >&2

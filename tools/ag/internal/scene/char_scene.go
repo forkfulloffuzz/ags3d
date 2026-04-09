@@ -124,6 +124,8 @@ func generate2DCharScene(cd *char.CharData, anim *aganim.AnimFile) string {
 	fmt.Fprintln(&out, "[gd_scene format=3]")
 	fmt.Fprintln(&out)
 	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_character.gd" id="CharScript"]`)
+	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_billboard_controller.gd" id="BillboardController"]`)
+	fmt.Fprintln(&out, `[ext_resource type="Script" path="res://.engine/runtime/ags_animation_player_2d.gd" id="AnimPlayer2D"]`)
 
 	if cd.SpriteSheet != "" {
 		fmt.Fprintf(&out, "[ext_resource type=\"Texture2D\" path=%q id=\"SpriteSheet\"]\n", "res://"+cd.SpriteSheet)
@@ -149,11 +151,12 @@ func generate2DCharScene(cd *char.CharData, anim *aganim.AnimFile) string {
 
 	// Sprite3D billboard
 	spriteUID := nodeUID("/" + rootName + "/Sprite3D")
-	fmt.Fprintf(&out, "[node name=\"Sprite3D\" type=\"Sprite3D\" parent=%q unique_id=%d]\n", rootName, spriteUID)
+	fmt.Fprintf(&out, "[node name=%q type=\"Sprite3D\" parent=%q unique_id=%d]\n", "Sprite3D", rootName, spriteUID)
 	fmt.Fprintln(&out, `billboard = 1`)
 	if cd.SpriteSheet != "" {
 		fmt.Fprintln(&out, `texture = ExtResource("SpriteSheet")`)
 	}
+	// hframes = frames_per_angle (columns per direction row); vframes = sprite_angles (direction rows).
 	if cd.FramesPerAngle > 0 {
 		fmt.Fprintf(&out, "hframes = %d\n", cd.FramesPerAngle)
 	}
@@ -162,9 +165,34 @@ func generate2DCharScene(cd *char.CharData, anim *aganim.AnimFile) string {
 	}
 	fmt.Fprintln(&out)
 
+	// AGSBillboardController — handles direction quantization + frame cycling.
+	// NodePath to Sprite3D sibling is relative to parent (this node's parent is the root).
+	billboardUID := nodeUID("/" + rootName + "/AGSBillboardController")
+	fmt.Fprintf(&out, "[node name=%q type=\"Node\" parent=%q unique_id=%d]\n", "AGSBillboardController", rootName, billboardUID)
+	fmt.Fprintf(&out, "script = ExtResource(\"BillboardController\")\n")
+	fmt.Fprintf(&out, "sprite_angles = %d\n", cd.SpriteAngles)
+	fmt.Fprintf(&out, "frames_per_angle = %d\n", cd.FramesPerAngle)
+	fmt.Fprintf(&out, "sprite_locked = false\n")
+	// sprite_path is relative to AGSBillboardController's parent (the root),
+	// so "../Sprite3D" resolves to the sibling Sprite3D node.
+	fmt.Fprintln(&out, `sprite_path = NodePath("../Sprite3D")`)
+	fmt.Fprintln(&out)
+
+	// AGSAnimationPlayer2D — handles state transitions (idle/walk/talk).
+	// Depends on AGSBillboardController for per-frame row selection.
+	animPlayerUID := nodeUID("/" + rootName + "/AGSAnimationPlayer2D")
+	fmt.Fprintf(&out, "[node name=%q type=\"Node\" parent=%q unique_id=%d]\n", "AGSAnimationPlayer2D", rootName, animPlayerUID)
+	fmt.Fprintf(&out, "script = ExtResource(\"AnimPlayer2D\")\n")
+	fmt.Fprintf(&out, "frames_per_state = %d\n", cd.FramesPerAngle)
+	// fps is not emitted — GDScript default (8.0) is used when absent.
+	// controller_path is relative to AGSAnimationPlayer2D's parent (the root),
+	// so "../AGSBillboardController" resolves to the sibling AGSBillboardController.
+	fmt.Fprintln(&out, `controller_path = NodePath("../AGSBillboardController")`)
+	fmt.Fprintln(&out)
+
 	// CollisionShape3D
 	colUID := nodeUID("/" + rootName + "/CollisionShape3D")
-	fmt.Fprintf(&out, "[node name=\"CollisionShape3D\" type=\"CollisionShape3D\" parent=%q unique_id=%d]\n", rootName, colUID)
+	fmt.Fprintf(&out, "[node name=%q type=\"CollisionShape3D\" parent=%q unique_id=%d]\n", "CollisionShape3D", rootName, colUID)
 	fmt.Fprintln(&out, `transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)`)
 	fmt.Fprintln(&out, `shape = SubResource("BodyShape")`)
 	fmt.Fprintln(&out)
