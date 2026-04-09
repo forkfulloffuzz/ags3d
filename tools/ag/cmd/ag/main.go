@@ -33,6 +33,7 @@ import (
 	"github.com/ags3d/ag/internal/gui"
 	"github.com/ags3d/ag/internal/item"
 	"github.com/ags3d/ag/internal/loc"
+	"github.com/ags3d/ag/internal/loc/tui"
 	"github.com/ags3d/ag/internal/parser"
 	"github.com/ags3d/ag/internal/project"
 	"github.com/ags3d/ag/internal/room"
@@ -924,7 +925,7 @@ func cmdExportVoicescript(localeFilter, charFilter string) error {
 
 func cmdLoc(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("usage: ag loc check|find|filter|report|import [args]")
+		return fmt.Errorf("usage: ag loc check|find|filter|report|import|tui [args]")
 	}
 	switch args[0] {
 	case "check":
@@ -937,8 +938,10 @@ func cmdLoc(args []string) error {
 		return cmdLocReport(args[1:])
 	case "import":
 		return cmdLocImport(args[1:])
+	case "tui":
+		return cmdLocTUI(args[1:])
 	default:
-		return fmt.Errorf("ag loc: unknown subcommand %q (check|find|filter|report|import)", args[0])
+		return fmt.Errorf("ag loc: unknown subcommand %q (check|find|filter|report|import|tui)", args[0])
 	}
 }
 
@@ -1257,6 +1260,24 @@ func cmdLocImport(args []string) error {
 
 	fmt.Println("ag loc import: merge complete")
 	return nil
+}
+
+func cmdLocTUI(args []string) error {
+	fs := flag.NewFlagSet("ag loc tui", flag.ContinueOnError)
+	locale := fs.String("locale", "en", "locale code")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: ag loc tui <project> [--locale LANG]")
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		fs.Usage()
+		return fmt.Errorf("missing project argument")
+	}
+
+	root := fs.Arg(0)
+	return tui.RunTUIMain(root, *locale)
 }
 
 func cmdNew(args []string) error {

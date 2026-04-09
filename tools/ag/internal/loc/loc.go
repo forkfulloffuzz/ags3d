@@ -38,10 +38,10 @@ type Meta struct {
 
 // Entry is one line in the [strings] block.
 type Entry struct {
-	Key         string
-	Value       string // empty string = untranslated
-	Stale       bool   // source text changed since last export
-	Orphan      bool   // key no longer present in source
+	Key    string
+	Value  string // empty string = untranslated
+	Stale  bool   // source text changed since last export
+	Orphan bool   // key no longer present in source
 }
 
 // StringsFile is the fully parsed representation of one .agstrings file.
@@ -63,6 +63,11 @@ func (sf *StringsFile) Get(key string) string {
 	return ""
 }
 
+// Index returns the internal key→index map for O(1) lookup.
+func (sf *StringsFile) Index() map[string]int {
+	return sf.index
+}
+
 // --------------------------------------------------------------------------
 // DiffEntry
 // --------------------------------------------------------------------------
@@ -71,10 +76,10 @@ func (sf *StringsFile) Get(key string) string {
 type DiffKind int
 
 const (
-	DiffAdded    DiffKind = iota // key exists in updated but not in base
-	DiffChanged                  // key exists in both but source text hash differs
-	DiffRemoved                  // key exists in base but not in updated
-	DiffUnchanged                // key unchanged
+	DiffAdded     DiffKind = iota // key exists in updated but not in base
+	DiffChanged                   // key exists in both but source text hash differs
+	DiffRemoved                   // key exists in base but not in updated
+	DiffUnchanged                 // key unchanged
 )
 
 // DiffEntry describes one key's diff status.

@@ -9,11 +9,11 @@ Dependencies: TEST-INFRA-02 unblocks CI; T-CUT30 unblocks T-LOC16; T40/T-FINAL a
 
 - [x] **TEST-INFRA-02** — CI: GitHub Actions workflow that builds AGS3D and runs the full test suite on every push and PR. Create `.github/workflows/test.yml`. Run `scons platform=linuxbsd`, then `agstests/run_tests.gd` headlessly. Cache SCons build objects. *(independent; done — commit 67ac49d150)*
 
-- [ ] **T-CUT30** — Go: cutscene localisation pipeline. `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands in `.agcut` files participate in the loc_key pipeline using cutscene title as namespace. Lines appear in `ag export --locale` output. `voice_session` header groups lines in `ag export --voicescript`. Tests in `tools/ag/internal/cut/`. *(depends T-CUT09, T-DLG08)*
+ - [x] **T-CUT30** — Go: cutscene localisation pipeline. `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands in `.agcut` files participate in the loc_key pipeline using cutscene title as namespace. Lines appear in `ag export --locale` output. `voice_session` header groups lines in `ag export --voicescript`. Tests in `tools/ag/internal/cut/`. *(done — verified already implemented in commit 9aefb928f7)*
 
 - [x] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage tracking. Connect recorded voice audio files to their loc_keys so the pipeline knows which lines have been recorded, which are missing, and which are stale (recorded against old source text). Machine-readable `voice_coverage.json` listing `(loc_key, file_path, duration_ms, hash)` for each recorded line. Tests in `tools/ag/internal/cut/`. *(depends T-CUT30; VoiceCoverageEntry/BuildVoiceCoverageReport/ScanVoiceDirectory added; ag voice coverage CLI command)*
 
-- [ ] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool. A terminal/TUI tool for authoring translations directly in `.agstrings` files with live validation feedback. Shows source text, character, scene context; marks entries complete on save. Partial implementation exists (check/report/import done). Full interactive TUI still needed. Tests in `tools/ag/`. *(depends T-LOC04)*
+ - [x] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool. A terminal/TUI tool for authoring translations directly in `.agstrings` files with live validation feedback. Shows source text, character, scene context; marks entries complete on save. Partial implementation exists (check/report/import done). Full interactive TUI still needed. Tests in `tools/ag/`. *(done — Bubble Tea TUI in tools/ag/internal/loc/tui/; ag loc tui command)*
 
 - [ ] **T40** — C++/GDScript: disable AGSRuntime trace in production builds. Add `#if DEBUG` guards around `trace()` calls so they are compiled out in release. *(independent)*
 
@@ -30,8 +30,9 @@ Dependencies: TEST-INFRA-02 unblocks CI; T-CUT30 unblocks T-LOC16; T40/T-FINAL a
 ## Notes
 
 - TEST-INFRA-02 is independent (CI infrastructure).
-- T-CUT30 is the critical path for T-LOC16.
-- T40 and T-FINAL are runtime build tasks.
+- T40 and T-FINAL are runtime build tasks — require C++ Godot fork changes (deferred until fork access).
 - T-E19, T-BL14, T-GS21 depend on AG Studio (M12) editor features.
 - T-BL16 is a STUB — assess feasibility first.
 - After Phase 9: M12 AG Studio remaining tasks, then M13 (audio system).
+
+## Phase 9 complete: TEST-INFRA-02, T-CUT30, T-LOC16, T-LOC05

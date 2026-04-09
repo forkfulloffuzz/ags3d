@@ -19,6 +19,12 @@
 #   .dev/ag.sh viz blocking    <file>   # print blocking call annotations
 #   .dev/ag.sh viz emit        <file>   # print side-by-side AGS-spirit ↔ GDScript
 #   .dev/ag.sh viz             <file>   # run all viz stages
+#   .dev/ag.sh loc tui         <project> [--locale LANG]  # interactive translation editor
+#   .dev/ag.sh loc check       <project>                  # validate locale files
+#   .dev/ag.sh loc find        <project> [--locale LANG]  # search entries
+#   .dev/ag.sh loc filter      <project> [--locale LANG]  # filter entries
+#   .dev/ag.sh loc report      <project> [--locale LANG]  # locale report
+#   .dev/ag.sh loc import      <project> --locale LANG --file FILE  # import PO/CSV
 #
 # Graphic visualisation shortcuts (require graphviz):
 #   .dev/ag.sh viz-svg     FILE [out]   # render AST as SVG       (default: <file>.svg)
@@ -41,6 +47,7 @@ if [[ $# -eq 0 ]]; then
   echo "  viz tokens FILE | viz ast FILE | viz ast-dot FILE | viz symbols FILE | viz symbols-dot FILE" >&2
   echo "  viz blocking FILE | viz emit FILE | viz FILE" >&2
   echo "  viz-svg FILE [out] | viz-png FILE [out] | viz-pdf FILE [out] | viz-open FILE" >&2
+  echo "  loc check|find|filter|report|import|tui <project>" >&2
   exit 1
 fi
 
