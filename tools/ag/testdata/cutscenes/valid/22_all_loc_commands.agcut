@@ -1,0 +1,14 @@
+// All localizable cutscene commands: line, title_card, subtitle, choice.
+// Exercises T-CUT30 (cutscene localisation pipeline).
+title: scene_loc_keys
+voice_session: vs_loc_test
+loc_group: loc_group_test
+sequence:
+	<<title_card "Chapter One: The Beginning" duration:3.0 loc_key:tc_ch1_start>>
+	<<subtitle "The sun rose over the city." loc_key:sub_sun_rise>>
+	<<line narrator "It was a cold morning." loc_key:line_cold_morning>>
+	<<line player "I can't believe it's already here." loc_key:line_player_arrival>>
+	<<choice "Ask about the city." loc_key:choice_ask_city>>
+	<<choice "Ignore and move on." loc_key:choice_ignore>>
+	<<fade_out duration:1.0>>
+	<<end>>

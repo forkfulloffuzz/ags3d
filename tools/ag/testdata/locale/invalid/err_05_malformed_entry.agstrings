@@ -1,0 +1,7 @@
+// EXPECT_ERROR: malformed strings entry line
+[meta]
+base_locale = en
+locale = fr
+
+[strings]
+this is not a valid entry line

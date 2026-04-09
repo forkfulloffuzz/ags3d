@@ -1,0 +1,19 @@
+title: library_intro
+character: librarian
+---
+Librarian: Welcome to the Grand Library. #loc:library_welcome_001
+Librarian: How may I assist you today? #loc:library_assist_001
+-> I'm looking for a specific book. #loc:library_opt_book_001
+   Librarian: What title are you seeking? #loc:library_book_inquiry_001
+   Player: It's called "The Last Voyage". #loc:library_book_title_001
+   Librarian: Ah, that would be in the maritime section. #loc:library_book_location_001
+   <<end>>
+-> Just browsing. #loc:library_opt_browse_001
+   Librarian: Take all the time you need. #loc:library_browse_001
+   <<end>>
+-> Where is the exit? #loc:library_opt_exit_001
+   Librarian: Behind you, through the main doors. #loc:library_exit_001
+   <<end>>
+Librarian: Return anytime. #loc:library_come_back_001
+<<end>>
+===

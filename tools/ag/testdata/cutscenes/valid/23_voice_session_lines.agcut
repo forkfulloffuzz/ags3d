@@ -1,0 +1,10 @@
+// Exercises CollectVoiceLines: voice_session header groups all <<line>> commands.
+title: voice_session_test
+voice_session: vs_actor_guard
+sequence:
+	<<fade_in duration:1.0>>
+	<<line guard "Stop right there!" loc_key:guard_stop>>
+	<<line guard "Who goes there?" loc_key:guard_challenge>>
+	<<line guard "Nobody? Then you don't pass." loc_key:guard_reject>>
+	<<fade_out duration:0.5>>
+	<<end>>

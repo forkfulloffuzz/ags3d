@@ -21,6 +21,9 @@ testdata/
   cutscenes/   — .agcut fixtures (cutscene parser / validator)
     valid/
     invalid/
+  locale/      — .agstrings fixtures (T-LOC02: parser / Diff / Apply)
+    valid/
+    invalid/
 ```
 
 ---
@@ -247,6 +250,42 @@ Each invalid file has a header comment:
 | `err_27_invalid_label_name.agcut` | `<<label>>` name contains a hyphen |
 | `err_28_invalid_bg_id.agcut` | `bg:` step id contains uppercase and dot |
 | `err_29_title_starts_with_digit.agcut` | `title:` starts with a digit |
+
+#### T-CUT30 loc_key fixtures
+
+| File | What it exercises |
+|------|------------------|
+| `22_all_loc_commands.agcut` | All localizable commands: `<<line loc_key:>>`, `<<title_card loc_key:>>`, `<<subtitle loc_key:>>`, `<<choice loc_key:>>`; also `voice_session:` and `loc_group:` headers |
+| `23_voice_session_lines.agcut` | `voice_session:` header with multiple `<<line>>` commands for `CollectVoiceLines` / voice coverage |
+
+---
+
+## locale/ — `.agstrings` format fixtures (T-LOC02)
+
+### Valid
+
+| File | What it exercises |
+|------|------------------|
+| `01_minimal.agstrings` | Required `[meta]` fields only (`base_locale`, `locale`), minimal `[strings]` block |
+| `02_full_meta.agstrings` | All meta fields: `locale_name`, `rtl: true`, `fallback_chain` |
+| `03_with_metadata.agstrings` | Per-entry metadata comments: `// type:`, `// char:`, `// scene:`, `// ctx:` (T-LOC11 format) |
+| `04_with_stale.agstrings` | `// [stale]` orphan marker on a stale entry |
+| `05_with_orphan.agstrings` | `// [orphan]` orphan marker on a removed key |
+
+### Invalid
+
+Each invalid file has a header comment:
+```
+// EXPECT_ERROR: <description>
+```
+
+| File | Error |
+|------|-------|
+| `err_01_missing_locale.agstrings` | `[meta]` block missing required `locale` field |
+| `err_02_missing_base_locale.agstrings` | `[meta]` block missing required `base_locale` field |
+| `err_03_duplicate_key.agstrings` | Duplicate key in `[strings]` block |
+| `err_04_unknown_meta_field.agstrings` | Unknown field in `[meta]` block |
+| `err_05_malformed_entry.agstrings` | Malformed key=value line in `[strings]` block |
 
 ---
 

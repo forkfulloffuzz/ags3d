@@ -1,0 +1,16 @@
+title: merchant_shop
+character: merchant
+---
+Merchant: Welcome to my shop! #loc:merchant_welcome_001
+Merchant: Fine wares from across the realm. #loc:merchant_wares_001
+-> What do you have? #loc:merchant_opt_inventory_001
+   Merchant: Potions, maps, and rare curios. #loc:merchant_inventory_001
+   <<end>>
+-> I'm looking for something special. #loc:merchant_opt_special_001
+   Merchant: I might have just the thing. #loc:merchant_special_001
+   <<end>>
+-> Just passing through. #loc:merchant_opt_passing_001
+   Merchant: Safe travels, friend. #loc:merchant_safe_travels_001
+   <<end>>
+<<end>>
+===

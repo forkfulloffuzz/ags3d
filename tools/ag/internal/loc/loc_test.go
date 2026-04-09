@@ -2,6 +2,7 @@ package loc_test
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -664,5 +665,51 @@ func TestFormatLocaleReportGrouped_ByNode(t *testing.T) {
 	}
 	if !strings.Contains(out, "## farewell") {
 		t.Errorf("expected group header ## farewell, got: %s", out[:200])
+	}
+}
+
+// ── testdata/locale/ fixture tests (T-LOC02) ─────────────────────────────────
+
+func TestParse_ValidFixtures(t *testing.T) {
+	paths, err := filepath.Glob(filepath.Join("..", "..", "testdata", "locale", "valid", "*.agstrings"))
+	if err != nil {
+		t.Fatalf("Glob: %v", err)
+	}
+	if len(paths) == 0 {
+		t.Fatal("no locale/valid fixtures found")
+	}
+	for _, path := range paths {
+		t.Run(filepath.Base(path), func(t *testing.T) {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("ReadFile: %v", err)
+			}
+			_, err = loc.Parse(path, string(data))
+			if err != nil {
+				t.Errorf("unexpected parse error: %v", err)
+			}
+		})
+	}
+}
+
+func TestParse_InvalidFixtures(t *testing.T) {
+	paths, err := filepath.Glob(filepath.Join("..", "..", "testdata", "locale", "invalid", "*.agstrings"))
+	if err != nil {
+		t.Fatalf("Glob: %v", err)
+	}
+	if len(paths) == 0 {
+		t.Fatal("no locale/invalid fixtures found")
+	}
+	for _, path := range paths {
+		t.Run(filepath.Base(path), func(t *testing.T) {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("ReadFile: %v", err)
+			}
+			_, err = loc.Parse(path, string(data))
+			if err == nil {
+				t.Errorf("expected parse error for %q, got none", filepath.Base(path))
+			}
+		})
 	}
 }

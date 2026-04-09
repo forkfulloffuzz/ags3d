@@ -1,0 +1,8 @@
+// EXPECT_ERROR: duplicate key
+[meta]
+base_locale = en
+locale = fr
+
+[strings]
+key:a = "first"
+key:a = "second"

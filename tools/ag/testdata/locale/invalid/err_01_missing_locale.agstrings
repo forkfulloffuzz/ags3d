@@ -1,0 +1,6 @@
+// EXPECT_ERROR: missing locale field
+[meta]
+base_locale = en
+
+[strings]
+key:a = "value"

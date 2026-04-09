@@ -1,0 +1,8 @@
+// EXPECT_ERROR: unknown meta field
+[meta]
+base_locale = en
+locale = fr
+unknown_field = x
+
+[strings]
+key:a = "value"

@@ -831,7 +831,7 @@ func cmdExportLocaleAgstrings(entries []dlg.LocEntry, lang, outPath string, diff
 		}
 	}
 	if base == nil {
-		base = &loc.StringsFile{Meta: loc.Meta{Locale: lang}}
+		base = &loc.StringsFile{Meta: loc.Meta{BaseLocale: "en", Locale: lang}}
 	}
 
 	// Diff: detect new / removed / unchanged keys.

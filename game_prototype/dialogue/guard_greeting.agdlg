@@ -1,0 +1,18 @@
+title: guard_greeting
+character: guard
+---
+Guard: Halt! Who goes there? #loc:guard_hello_001
+Player: It's me, a traveler. #loc:guard_player_intro_001
+Guard: State your business. #loc:guard_purpose_001
+-> I'm looking for the merchant. #loc:guard_opt_merchant_001
+   Guard: He's in the eastern market. #loc:guard_merchant_directions_001
+   <<end>>
+-> I'm just passing through. #loc:guard_opt_passing_001
+   Guard: Then move along. #loc:guard_dismissal_001
+   <<end>>
+-> None of your business. #loc:guard_opt_hostile_001
+   Guard: *draws sword* Then you leave me no choice. #loc:guard_hostile_001
+   <<end>>
+Guard: Good day to you. #loc:guard_farewell_001
+<<end>>
+===

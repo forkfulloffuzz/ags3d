@@ -1,0 +1,10 @@
+[meta]
+base_locale    = en
+locale         = fr
+locale_name    = French
+rtl            = false
+fallback_chain = en fr
+
+[strings]
+guard_greeting:0:a1b2c3d4 = "Bonjour."
+guard_greeting:1:e5f6a7b8 = "Au revoir."

@@ -1,0 +1,53 @@
+[meta]
+base_locale    = en
+locale         = de
+locale_name    = German
+rtl            = false
+fallback_chain = en
+
+[strings]
+
+guard_hello_001 = "Halt! Wer da?"
+guard_player_intro_001 = "Ich bin's. Ein Reisender."
+guard_purpose_001 = "Was ist Ihr Anliegen?"
+guard_opt_merchant_001 = "Ich suche den Händler."
+guard_merchant_directions_001 = "Er ist auf dem östlichen Markt."
+guard_opt_passing_001 = "Ich bin nur auf der Durchreise."
+guard_dismissal_001 = "Dann gehen Sie weiter."
+guard_opt_hostile_001 = "Das geht Sie nichts an."
+guard_hostile_001 = "*zieht das Schwert* Dann haben Sie keine Wahl."
+guard_farewell_001 = "Guten Tag."
+library_welcome_001 = "Willkommen in der Großen Bibliothek."
+library_assist_001 = "Wie kann ich Ihnen heute helfen?"
+library_opt_book_001 = "Ich suche ein bestimmtes Buch."
+library_book_inquiry_001 = "Welchen Titel suchen Sie?"
+library_book_title_001 = "Es heißt „Die letzte Reise"."
+library_book_location_001 = "Es wäre im maritimen Bereich."
+library_opt_browse_001 = "Ich schmökere nur."
+library_browse_001 = "Nehmen Sie sich so viel Zeit wie nötig."
+library_opt_exit_001 = "Wo ist der Ausgang?"
+library_exit_001 = "Hinter Ihnen, durch die Haupttüren."
+library_come_back_001 = "Kommen Sie jederzeit zurück."
+merchant_welcome_001 = "Willkommen in meinem Laden!"
+merchant_wares_001 = "Feine Waren aus dem ganzen Reich."
+merchant_opt_inventory_001 = "Was haben Sie?"
+merchant_inventory_001 = "Tränke, Karten und seltene Kuriositäten."
+merchant_opt_special_001 = "Ich suche etwas Besonderes."
+merchant_special_001 = "Ich habe vielleicht genau das Richtige."
+merchant_opt_passing_001 = "Ich bin nur auf der Durchreise."
+merchant_safe_travels_001 = "Gute Reise, Freund."
+
+// ── Cutscene entries ──────────────────────────────────────────────────────────
+
+tc_intro_market = "Der Marktbezirk"
+sub_intro_narrator = "Drei Jahre. Und es fühlte sich immer noch fremd an."
+line_intro_gate = "Die Stadttore standen offen, wie immer."
+line_intro_guard_challenge = "Halt! Wer da?"
+line_intro_player_response = "Ich bin's. Nur ein Reisender."
+choice_intro_merchant = "Ich suche den Händler."
+choice_intro_passing = "Ich bin nur auf der Durchreise."
+tc_merchant_shop = "Das Kaufmannshaus"
+line_merchant_welcome = "Willkommen in meinem Laden!"
+line_merchant_wares = "Feine Waren aus dem ganzen Reich."
+choice_merchant_inventory = "Was haben Sie?"
+choice_merchant_special = "Ich suche etwas Besonderes."

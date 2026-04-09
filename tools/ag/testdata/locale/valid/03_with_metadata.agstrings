@@ -1,0 +1,17 @@
+[meta]
+base_locale = en
+locale = ar
+rtl = true
+
+[strings]
+
+// type: spoken
+// char: Guard
+// scene: guard_greeting
+// ctx: guard is suspicious, not yet hostile
+guard_greeting:0:a1b2c3d4 = "Arrêtez-vous ! Qui va là ?"
+
+// type: choice
+// char:
+// scene: guard_greeting
+guard_greeting:1:e5f6a7b8 = "Je cherche le marchand."

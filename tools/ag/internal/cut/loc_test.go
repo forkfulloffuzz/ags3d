@@ -1,6 +1,8 @@
 package cut_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -194,5 +196,68 @@ func TestValidate_EmptyLocale_ExplicitKey_Error(t *testing.T) {
 	errs := cut.ValidateLocKeys(cf, map[string]string{})
 	if len(errs) == 0 {
 		t.Error("expected error when locale is empty and explicit loc_key used")
+	}
+}
+
+// ── testdata/cutscenes/ fixture tests (T-CUT30) ──────────────────────────────
+
+func TestCollect_ValidCutsceneFixtures(t *testing.T) {
+	paths, err := filepath.Glob(filepath.Join("..", "..", "testdata", "cutscenes", "valid", "*.agcut"))
+	if err != nil {
+		t.Fatalf("Glob: %v", err)
+	}
+	if len(paths) == 0 {
+		t.Fatal("no cutscenes/valid fixtures found")
+	}
+	var lastErr error
+	for _, path := range paths {
+		t.Run(filepath.Base(path), func(t *testing.T) {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("ReadFile: %v", err)
+			}
+			cf, err := cut.Parse(path, string(data))
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			_ = cut.CollectLocEntries(cf)
+		})
+	}
+	if lastErr != nil {
+		t.Fatalf("one or more fixtures failed to parse: %v", lastErr)
+	}
+}
+
+func TestCollect_AllLocCommands_FromFixtures(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "cutscenes", "valid", "22_all_loc_commands.agcut"))
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	cf, err := cut.Parse("22_all_loc_commands.agcut", string(data))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	entries := cut.CollectLocEntries(cf)
+
+	found := make(map[string]bool)
+	for _, e := range entries {
+		found[e.LocKey] = true
+	}
+
+	want := []string{
+		"tc_ch1_start",
+		"sub_sun_rise",
+		"line_cold_morning",
+		"line_player_arrival",
+		"choice_ask_city",
+		"choice_ignore",
+	}
+	for _, k := range want {
+		if !found[k] {
+			t.Errorf("expected loc_key %q in entries, not found", k)
+		}
+	}
+	if len(entries) != len(want) {
+		t.Errorf("CollectLocEntries returned %d entries, want %d", len(entries), len(want))
 	}
 }

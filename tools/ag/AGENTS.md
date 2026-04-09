@@ -50,6 +50,62 @@ cd tools/ag && go test ./...
 .dev/test-ag.sh
 ```
 
+## Testdata fixtures
+
+**Every new parser, validator, or pipeline feature must add fixture files to `testdata/`.**
+
+### When to add fixtures
+
+| When you add... | Add these fixtures... |
+|---|---|
+| A new `.agroom` block type | `testdata/rooms/valid/NN_name.agroom` + `testdata/rooms/invalid/err_NN_desc.agroom` |
+| A new `.agdlg` feature | `testdata/dialogues/valid/NN_name.agdlg` + `testdata/dialogues/invalid/err_NN_desc.agdlg` |
+| A new `.agcut` command or header field | `testdata/cutscenes/valid/NN_name.agcut` |
+| A new `.agitem` field | `testdata/items/valid/NN_name.agitem` |
+| A new `.agscript` expression type | `testdata/scripts/valid/NN_name.agscript` |
+| A new `.agstrings` feature | `testdata/locale/valid/NN_name.agstrings` + `testdata/locale/invalid/err_NN_desc.agstrings` |
+
+### Naming convention
+
+```
+testdata/<type>/valid/NN_descriptive_name.ext
+testdata/<type>/invalid/err_NN_error_description.ext
+```
+
+- `NN` = two-digit sequential number starting at `01`
+- `name` = short lowercase identifier for the feature
+- `desc` = what makes the file invalid
+- Invalid files must start with `// EXPECT_ERROR: <description>` comment
+
+### Rules
+
+- **Never delete** existing fixtures — other tests may depend on them.
+- **Never renumber** existing fixtures — adds noise to git history.
+- Add new fixtures at the end of the sequence.
+- For a new file type, create the `testdata/<type>/valid/` and `testdata/<type>/invalid/` directories.
+- After adding fixtures, update `testdata/README.md` with a table entry.
+- File-based fixture tests use `filepath.Glob` and live in the package's `_test.go`.
+
+### Example: adding a locale fixture
+
+```go
+// testdata/locale/valid/06_new_feature.agstrings
+[meta]
+base_locale = en
+locale = fr
+
+[strings]
+new_key = "value"
+```
+
+```go
+// internal/loc/loc_test.go — already wired via TestParse_ValidFixtures
+```
+
+### game_prototype as integration target
+
+`game_prototype/` is the integration test project. When adding a new feature that affects dialogue, cutscenes, rooms, or characters, add realistic fixture files there too so the feature can be exercised end-to-end via `ag validate game_prototype`.
+
 ## Adding a validator
 
 1. Add the validator function to the relevant `internal/<pkg>/` package.
