@@ -9,11 +9,15 @@ Dependencies: TEST-INFRA-02 unblocks CI; T-CUT30 unblocks T-LOC16; T40/T-FINAL a
 
 - [x] **TEST-INFRA-02** — CI: GitHub Actions workflow that builds AGS3D and runs the full test suite on every push and PR. Create `.github/workflows/test.yml`. Run `scons platform=linuxbsd`, then `agstests/run_tests.gd` headlessly. Cache SCons build objects. *(independent; done — commit 67ac49d150)*
 
- - [x] **T-CUT30** — Go: cutscene localisation pipeline. `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands in `.agcut` files participate in the loc_key pipeline using cutscene title as namespace. Lines appear in `ag export --locale` output. `voice_session` header groups lines in `ag export --voicescript`. Tests in `tools/ag/internal/cut/`. *(done — verified already implemented in commit 9aefb928f7)*
+- [x] **T-CUT30** — Go: cutscene localisation pipeline. `<<line>>`, `<<title_card>>`, `<<subtitle>>`, `<<choice>>` commands in `.agcut` files participate in the loc_key pipeline using cutscene title as namespace. Lines appear in `ag export --locale` output. `voice_session` header groups lines in `ag export --voicescript`. Tests in `tools/ag/internal/cut/`. *(done — commit 9aefb928f7)*
 
-- [x] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage tracking. Connect recorded voice audio files to their loc_keys so the pipeline knows which lines have been recorded, which are missing, and which are stale (recorded against old source text). Machine-readable `voice_coverage.json` listing `(loc_key, file_path, duration_ms, hash)` for each recorded line. Tests in `tools/ag/internal/cut/`. *(depends T-CUT30; VoiceCoverageEntry/BuildVoiceCoverageReport/ScanVoiceDirectory added; ag voice coverage CLI command)*
+- [x] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage tracking. Connect recorded voice audio files to their loc_keys so the pipeline knows which lines have been recorded, which are missing, and which are stale (recorded against old source text). Machine-readable `voice_coverage.json` listing `(loc_key, file_path, duration_ms, hash)` for each recorded line. Tests in `tools/ag/internal/cut/`. *(done — commit d63c73185d)*
 
- - [x] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool. A terminal/TUI tool for authoring translations directly in `.agstrings` files with live validation feedback. Shows source text, character, scene context; marks entries complete on save. Partial implementation exists (check/report/import done). Full interactive TUI still needed. Tests in `tools/ag/`. *(done — Bubble Tea TUI in tools/ag/internal/loc/tui/; ag loc tui command)*
+- [x] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool. A terminal/TUI tool for authoring translations directly in `.agstrings` files with live validation feedback. Shows source text, character, scene context; marks entries complete on save. Partial implementation exists (check/report/import done). Full interactive TUI still needed. Tests in `tools/ag/`. *(done — Bubble Tea TUI in tools/ag/internal/loc/tui/; ag loc tui command; commit 021a30455e)*
+
+- [x] **T-LOC18** — Go: multi-source-language authoring + `ag export` stub generation. Per-file `language:` header overrides project default. `ag export` without `--locale` writes source strings to author's locale file and creates empty stubs for all other supported locales. `game.agp` gains `supported_locales`, `default_author_locale`, `[locale.*]` rtl flags. Tests in `tools/ag/internal/{dlg,cut,loc,project}/`. *(done — commit dabf8ce3a3)*
+
+- [x] **T-LOC-NORM** — Normalise all `.agcut` command arguments with `#` prefix. `#duration:`, `#fade_in:`, `#loc:`, `#skip:`, etc. inside `<< >>` inline context; header fields remain unprefixed. `#loc_key:` renamed to `#loc:`. Parser strips leading `#` before storing named params — zero downstream impact. Tests in `tools/ag/internal/cut/`. *(done — commit 2ab3eb6aef)*
 
 - [ ] **T40** — C++/GDScript: disable AGSRuntime trace in production builds. Add `#if DEBUG` guards around `trace()` calls so they are compiled out in release. *(independent)*
 
@@ -35,4 +39,4 @@ Dependencies: TEST-INFRA-02 unblocks CI; T-CUT30 unblocks T-LOC16; T40/T-FINAL a
 - T-BL16 is a STUB — assess feasibility first.
 - After Phase 9: M12 AG Studio remaining tasks, then M13 (audio system).
 
-## Phase 9 complete: TEST-INFRA-02, T-CUT30, T-LOC16, T-LOC05
+## Phase 9 complete: TEST-INFRA-02, T-CUT30, T-LOC16, T-LOC05, T-LOC18, T-LOC-NORM

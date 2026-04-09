@@ -65,6 +65,39 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-LOC18 — Multi-source-language authoring + stub generation
+
+**Setup:** Have `ag` CLI built (`go build ./cmd/ag`). `game_prototype/` as test project with `supported_locales = "en es he ru"` in `game.agp`.
+
+- [ ] `ag export` (no `--locale`) — all four locale stubs (`en`, `es`, `he`, `ru`) are written simultaneously.
+- [ ] The source locale (`en`) contains full source strings; `es`, `he`, `ru` are empty (stub) stubs.
+- [ ] `ag export --locale es` writes only `es.agstrings` (single locale, backward-compatible).
+- [ ] A `.agdlg` with `language: fr` header exports its strings to the `fr` locale key in `fr.agstrings` (per-file override works).
+- [ ] A `.agcut` with `language: en` header exports its `#loc:` keys to the `en` section.
+- [ ] `game.agp` with `supported_locales = "en es he"` and `[locale.he] rtl = true` — `he.agstrings` has `rtl = true` in its `[meta]`.
+- [ ] `game.agp` with no `[locale.he]` block — `he.agstrings` has no `rtl` flag (defaults to false).
+- [ ] `ag export` on a project with no `supported_locales` defined — falls back to single-locale behaviour (backward compat).
+- [ ] `game.agp` `default_author_locale = "es"` — source strings go to `es.agstrings` when no per-file `language:` header is set.
+
+---
+
+### T-LOC-NORM — `#` prefix normalisation + `#loc_key:` → `#loc:`
+
+**Setup:** Have `ag` CLI built. A project with `.agcut` files containing command arguments.
+
+- [ ] `.agcut` files with `#duration:`, `#fade_in:`, `#fade_out:`, `#volume:`, `#loop:`, `#skip:`, `#channel:` — `ag build` parses without error and emits correct JSON.
+- [ ] Header fields (`title:`, `skip:`, `save_block:`, `language:`, `voice_session:`, `audio_scope:`, `duck_channels:`) remain **unprefixed** — no leading `#`.
+- [ ] `auto_duck:` header field is NOT rewritten to `#auto_duck:`.
+- [ ] `#loc:` (not `#loc_key:`) inside `<<subtitle>>`, `<<choice>>`, `<<line>>` — `ag build` exports loc keys correctly.
+- [ ] `ag validate` on fixtures with `#` prefix args — no warnings, no errors.
+- [ ] `ag export --locale es` on a project with `#loc:` keys — exports correctly to locale file.
+- [ ] `ag voice coverage` on a project with `#loc:` keys — generates coverage report correctly.
+- [ ] All `tools/ag/internal/cut/loc_test.go` tests pass (`go test ./internal/cut/...`).
+- [ ] All `tools/ag/internal/cut/voicescript_test.go` tests pass.
+- [ ] All `tools/ag/internal/loc/export_test.go` tests pass.
+
+---
+
 ---
 
 ## M10 — Game Systems (Batch 2)
