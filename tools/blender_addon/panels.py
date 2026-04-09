@@ -88,6 +88,50 @@ class AGS3D_OT_SetType(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class AGS3D_OT_EyedropLookAt(bpy.types.Operator):
+    """Pick an object in the viewport to set as the camera look-at target"""
+
+    bl_idname = "ags3d.eyedrop_look_at"
+    bl_label = "Pick Look-at Target"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set:
+        if context.active_object is None:
+            self.report({"WARNING"}, "No active object")
+            return {"CANCELLED"}
+        context.window_manager.modal_handler_add(self)
+        return {"PASS_THROUGH"}
+
+    def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set:
+        if event.type == "LEFTMOUSE" and event.value == "PRESS":
+            camera_obj = context.active_object
+            picked_obj = None
+
+            try:
+                bpy.ops.view3d.select(
+                    location=(event.mouse_region_x, event.mouse_region_y),
+                    extend=False,
+                    deselect_all=False,
+                )
+                picked_obj = context.selected_objects[-1] if context.selected_objects else None
+            except Exception:  # noqa: BLE001
+                pass
+
+            if picked_obj is not None:
+                camera_obj["AGS_look_at"] = picked_obj.name
+                self.report({"INFO"}, f"Look-at: {picked_obj.name}")
+            else:
+                camera_obj["AGS_look_at"] = ""
+                self.report({"INFO"}, "Look-at cleared")
+
+            return {"FINISHED"}
+
+        if event.type in {"RIGHTMOUSE", "ESC"}:
+            return {"FINISHED"}
+
+        return {"PASS_THROUGH"}
+
+
 # ------------------------------------------------------------------ #
 # Shared panel draw function                                           #
 # ------------------------------------------------------------------ #
@@ -155,13 +199,8 @@ def _draw_ags3d_panel(layout: bpy.types.UILayout, obj: bpy.types.Object) -> None
         layout.separator()
         row = layout.row()
         row.label(text="Look-at:")
-        layout.prop_search(
-            obj,
-            '["AGS_look_at"]',
-            bpy.context.scene,
-            "objects",
-            text="",
-        )
+        row.prop_search(obj, '["AGS_look_at"]', bpy.context.scene, "objects", text="")
+        row.operator("ags3d.eyedrop_look_at", text="", icon="EYEDROPPER")
 
 
 def _type_label(ags_type: str) -> str:
@@ -215,6 +254,7 @@ class VIEW3D_PT_ags3d(bpy.types.Panel):
 
 _classes = [
     AGS3D_OT_SetType,
+    AGS3D_OT_EyedropLookAt,
     OBJECT_PT_ags3d,
     VIEW3D_PT_ags3d,
 ]

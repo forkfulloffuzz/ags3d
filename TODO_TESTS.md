@@ -259,13 +259,15 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 **Setup:** Blender 4.2+ with AGS3D add-on. Create a scene with a Camera object tagged as `CAMERA` and a separate Empty object.
 
-- [ ] Select the Camera object; in the AGS3D panel (Object Properties or N-panel), the **Look-at** field appears for CAMERA type objects.
-- [ ] Click the eyedropper / type the Empty's name in the Look-at field → `AGS_look_at` custom property is set to the Empty's name.
-- [ ] Export → AGS3D Room. In the `.agroom`, the Camera `look_at` vector should match the Empty's world position (converted to Godot coords), NOT the auto-computed forward vector.
+- [ ] Select the Camera object; in the AGS3D panel (Object Properties or N-panel), the **Look-at** field appears for CAMERA type objects, with an eyedropper button (`EYEDROPPER` icon) to its right.
+- [ ] Click the eyedropper button → operator enters modal mode (cursor unchanged).
+- [ ] Left-click on the Empty in the 3D viewport → `AGS_look_at` custom property is set to the Empty's name; operator finishes; info bar shows "Look-at: EmptyName".
+- [ ] Right-click or Esc without clicking → operator cancels; `AGS_look_at` unchanged.
+- [ ] The `prop_search` field still works as a fallback: type or select an object name directly.
+- [ ] Export → AGS3D Room. In the `.agroom`, the Camera `look_at` vector matches the Empty's world position (converted to Godot coords).
 - [ ] Move the Empty to a different location, re-export → look_at updates to the new Empty position.
 - [ ] Clear the Look-at field (empty string) → `look_at` line is **absent** from the Camera block; `ag build` falls back to auto-look-at (floor centre).
 - [ ] Delete the referenced Empty from the scene, then export → `look_at` line is absent (no crash).
-- [ ] A Camera with no `AGS_look_at` property → no `look_at` in the exported block; `ag build` auto-computes orientation from the floor centre.
 - [ ] Camera position is always written; orientation in Blender (rotation, FOV) is the author's concern and is NOT re-derived by the exporter.
 
 ---
@@ -304,6 +306,23 @@ One test section per TODO task. Update this file immediately after marking a tas
       animations = { idle = "Idle"  walk = "Walk"  talk = "Talk" }
   }
   ```
+
+---
+
+### T-BL16 — Animation frame tags
+
+**Setup:** Blender 4.2+ with AGS3D addon. A character armature with NLA tracks `Idle` and `Walk`, each with pose markers (e.g. `sound:footstep_left` at frame 5, `sound:footstep_right` at frame 12).
+
+- [ ] Run **File → Export → AGS3D Character (.glb)**. A `characters/<name>/<name>.aganim` JSON sidecar is created alongside the `.glb`.
+- [ ] Open the `.aganim` file — it contains `{"character": "…", "clips": [{"name": "Walk", "frame_tags": [{"name": "sound:footstep_left", "frame": 5}, …]}]}`.
+- [ ] Pose markers with empty names are excluded from the export.
+- [ ] Pose markers are sorted by frame number ascending in the JSON.
+- [ ] `ag build` on the project reads the `.aganim` sidecar and injects `metadata/anim_frame_tags` into the character `.tscn`.
+- [ ] Open the generated character `.tscn` — `metadata/anim_frame_tags` is a GDScript dictionary literal.
+- [ ] In-game: start a character walking; when the walk animation reaches frame 5, `AGSRuntime.play_sound()` is called with `"footstep_left"`.
+- [ ] A frame tag `signal:my_signal` on a character that has a user-defined signal `my_signal` — the signal is emitted when the frame is reached.
+- [ ] Billboard sprites (2D characters) — frame tags do NOT fire errors; the polling loop is only active for 3D characters with AnimationPlayer.
+- [ ] `python3 tests/test_frame_tags.py -v` — all 14 tests pass (headless, no Blender required).
 
 ---
 

@@ -350,95 +350,56 @@ game_prototype/
 | T-BL03 | Python: Viewport overlay — colored wireframes per AGS type in Blender 3D viewport | T-BL02 |
 | T-BL04 | Python: Export operator — extract gameplay objects → write `.agroom`; call GLTF exporter → write `.glb` | T-BL02 |
 | T-BL05 | Python: Export — coordinate system conversion (Blender Y-up → Godot Z-up) + size extraction from bounding box | T-BL04 |
-| T-BL06 | Python: Export — Camera look_at: auto-compute from forward vector OR use eyedropper-picked Empty | T-BL04 |
+| T-BL06 | ✅ Python: Camera look_at eyedropper — `AGS3D_OT_EyedropLookAt` modal operator picks any object in viewport; `prop_search` fallback preserved | T-BL04 |
 | T-BL07 | Python: Export — merge mode: read existing `.agroom`, overwrite geometry fields only, preserve non-geometry fields | T-BL04 |
 | T-BL08 | Python: Import operator — read `.agroom` → create Blender empties/meshes in `AGS_Gameplay` collection | T-BL02 |
 | T-BL09 | Python: NavMesh baking — auto-bake from WalkableSurface objects; include `AGS_NavMesh` mesh in GLTF export | T-BL04 |
-| T-BL10 | Python: Character export operator — armature + mesh + NLA actions → `.glb` | T-BL01 |
-| T-BL11 | Go: `ag build` — detect `.glb` in room directory; embed as sub-scene in generated `.tscn` | T-BL04 |
-| T-BL12 | Go: `.agchar` — parse `mesh` and `animations` fields; embed `.glb` in character `.tscn`; wire `AnimationPlayer` | T-BL10 |
-| T-BL13 | GDScript: `ags_character.gd` — drive `AnimationPlayer` clips: idle/walk/talk based on state | T-BL12 |
+| T-BL10 | ✅ | Python: Character export operator — armature + mesh + NLA actions → `.glb` | T-BL01 |
+| T-BL11 | ✅ | Go: `ag build` — detect `.glb` in room directory; embed as sub-scene in generated `.tscn` | T-BL04 |
+| T-BL12 | ✅ | Go: `.agchar` — parse `mesh` and `animations` fields; embed `.glb` in character `.tscn`; wire `AnimationPlayer` | T-BL10 |
+| T-BL13 | ✅ | GDScript: `ags_character.gd` — drive `AnimationPlayer` clips: idle/walk/talk based on state | T-BL12 |
 | ~~T-BL14~~ | ➡️ M12 T-CE08 | ~~GDScript: AG Studio — Room editor "Re-import from Blender" button~~ | moved to Custom Editor milestone |
 | ~~T-BL15~~ | ➡️ M12 T-CE14 | ~~GDScript: AG Studio — Character editor Animations section~~ | moved to Custom Editor milestone |
-| T-BL16 | **STUB** — Animation frame tags: trigger events (sounds, signals) on specific keyframes | T-BL12, T-BL13 |
+| T-BL16 | ✅ | Blender + Go: animation frame tags — Blender exports pose markers → `.aganim` sidecar; `ag build` injects `anim_frame_tags` metadata; `ags_character.gd` `_poll_anim_frame_tag()` fires `on_anim_event()` | T-BL12, T-BL13 |
 
 ---
 
-## Stub: Animation Frame Tags
+## Animation Frame Tags — Implemented (T-BL16)
 
-> **Status: feasibility not yet assessed.** Do not implement until the stub is
-> promoted to a full spec.
+> **Status: implemented via sidecar approach (option 2).** Sidecar avoids
+> modifying the Godot GLTF importer; full method-call track injection is done
+> via `.tscn` metadata + runtime polling rather than native `AnimationPlayer`
+> method tracks (simpler, avoids per-frame method track editing).
 
-### What it would do
+### Implementation
 
-Let an artist tag specific keyframes in a Blender animation clip with named
-events. The runtime fires those events as the animation plays — useful for:
+**Blender:** `ags_frame_tags.py` reads `action.pose_markers` from each NLA
+track strip and writes a `characters/<name>/<name>.aganim` JSON sidecar.
+`char_operators.py` calls `export_aganim()` after GLTF export.
 
-- **Footstep sounds** — trigger `PlaySound("step_left")` on the exact frame
-  the foot contacts the floor in the walk cycle.
-- **Action sounds** — sword swing, door knock, item pickup sounds synced to
-  their visual moment.
-- **Script callbacks** — emit a named signal at a specific frame so an
-  `.agscript` function can react (e.g. start a dialogue exactly when a
-  character reaches a table).
-- **UI / button events** — trigger a button press response on the frame an
-  interaction animation reaches its apex (feasibility uncertain — see risks).
+**Go:** `aganim` package parses the sidecar; `char_scene.go` injects
+`metadata/anim_frame_tags` as a GDScript dictionary literal into the
+generated character `.tscn`.
 
-### Proposed approach
-
-**In Blender:** use Blender's per-action **pose markers**
-(`action.pose_markers`) to tag frames with a string label.
-Example: frame 12 → `"sound:step_left"`, frame 24 → `"signal:picked_up"`.
-
-**Export problem:** glTF 2.0 has no native animation event/marker track.
-Two options:
-
-1. **GLTF custom extension** (`AGS_animation_events`) — embed the marker list
-   in the GLTF extras JSON. Godot's GLTF importer would need to read and
-   preserve this data (requires a Godot `GLTFDocumentExtension` plugin).
-
-2. **Sidecar file** — export a `characters/<name>/<name>.aganim` JSON file
-   alongside the `.glb` listing clip names → frame → event label. `ag build`
-   reads it and injects Godot `AnimationPlayer` **method call tracks** into
-   the character `.tscn` at the correct frames.
-
-Option 2 (sidecar) is simpler and avoids modifying the GLTF importer, but
-adds another file to the pipeline. Option 1 is cleaner but requires more
-engine work.
-
-**In Godot:** `AnimationPlayer` natively supports **method call tracks** —
-they call a named method on a target node at a specific frame. The runtime
-script (`ags_character.gd`) would expose an `_on_anim_event(label: String)`
-method that parses the label prefix and dispatches:
+**Godot runtime:** `ags_character.gd`:
+- `_poll_anim_frame_tag()` — called every `_physics_process`; reads current
+  animation + frame position; looks up tag via `get_frame_tag()`
+- `get_frame_tag(anim_name, frame)` — reads `metadata/anim_frame_tags`
+- `on_anim_event(label)` — parses prefix (`sound:` / `signal:`) and dispatches
 
 | Label prefix | Action |
 |---|---|
 | `sound:<name>` | `AGSRuntime.play_sound(name)` |
-| `signal:<name>` | emit `animation_event(name)` signal on AGSCharacter |
-| `script:<fn>` | call `fn()` on the room script (feasibility uncertain) |
+| `signal:<name>` | `emit_signal(signal_name)` on the character |
 
-### Risks and open questions
+### Deferred
 
-- **GLTF round-trip**: pose markers are Blender-internal and not part of the
-  glTF spec. Either approach (extension or sidecar) adds pipeline complexity.
-- **UI/button events**: calling into room scripts from inside an animation
-  track requires the character to hold a reference to its parent room script,
-  which may create coupling issues. Needs design review before implementing.
-- **Billboard sprites**: frame tags on sprite animations would need a different
-  mechanism (no `AnimationPlayer` for billboards — frame selection is driven
-  by code). The dispatch approach may need to be generalised.
-- **Timing precision**: Godot's method call tracks fire on the nearest
-  physics frame, not at sub-frame precision. For audio sync this is acceptable
-  (~16 ms at 60 Hz); for visual-critical events it may not be.
-
-### Promotion criteria
-
-Promote to a full implementation task when:
-
-1. A concrete use case in the game requires frame-tagged sounds or signals
-   (not just "nice to have").
-2. The sidecar vs GLTF-extension question is decided.
-3. The billboard sprite case is addressed or explicitly deferred.
+- **Billboard sprites**: frame tags on sprite-sheet animations use a different
+  mechanism (no `AnimationPlayer`; frame selection is code-driven). The
+  `on_anim_event()` dispatch is general but the polling loop only runs on
+  `AGSCharacter3D`/`AGSCharacter2D` nodes with an `AnimationPlayer` child.
+- **Script callbacks** (`script:<fn>`): requires design review for character →
+  room script coupling before implementing.
 
 ---
 
