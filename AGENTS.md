@@ -13,6 +13,7 @@ Development tasks are tracked in `TODO.md` at the project root.
 - After marking a task complete, add a manual-test checklist for that task to `TODO_TESTS.md` (next to `TODO.md`). Each checklist must be concrete and runnable by a human — specific UI actions, expected outputs, error cases.
 - Work **one task at a time**: finish and mark complete before starting the next.
 - Do exactly what the task asks — no scope creep, no pre-emptive refactoring.
+- **Immediately after completing a task: commit it before moving to the next task.**
 
 ## Custom Editor UI tracking
 
@@ -39,10 +40,15 @@ When **all tasks in `TODO.md` are completed**:
 
 ## Commits
 
-- Commit after **every completed task** so each task has its own reviewable commit.
+- **Commit immediately after completing each task — before starting the next one.**
+  Each task gets its own commit with a descriptive message. This creates a
+  reviewable history where each commit = one discrete unit of work.
 - Commit only the files changed by that task — no bundling unrelated changes.
 - Follow the standard git commit protocol (status → diff → log → commit).
 - Do not commit docs or unrelated files alongside task work.
+- If multiple files are modified by a single task, commit them all together in
+  that task's commit. Only split into separate commits when files belong to
+  genuinely different tasks.
 
 ## File references
 
