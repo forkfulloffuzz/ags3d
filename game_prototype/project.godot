@@ -16,7 +16,11 @@ config/features=PackedStringArray("4.7")
 
 [autoload]
 
+AGSRuntime="*res://.engine/runtime/ags_runtime.gd"
+AGSSaveLoad="*res://.engine/runtime/ags_save_load.gd"
+AGSAudio="*res://.engine/runtime/ags_audio.gd"
 player="*res://characters/player.tscn"
+AGSRoomManager="*res://.engine/runtime/ags_room_manager.gd"
 
 [editor_plugins]
 

@@ -39,6 +39,14 @@ When all tasks are done, ask Claude to pick the next 10.
 - [x] **T-GS18 (GDScript part)** — `fade_in`/`fade_out` runtime. Already implemented in
   `ags_cutscene.gd` (Tween-based ColorRect fade in CanvasLayer). *(done)*
 
+## Phase 13 — AGSRuntime AutoLoad + Room Transitions (complete)
+
+- [x] **T-GS10** — GDScript: `AGSRuntime` AutoLoad with `load_room()` + `room_change_requested`
+  signal. Created `ags_runtime.gd` with the full AGSRuntime API surface (room transitions,
+  player control, audio signals, HUD, inventory, save/load). Wired `AGSRuntime`, `AGSSaveLoad`,
+  `AGSAudio`, `AGSRoomManager` as AutoLoads in `project.godot`. `ags_room_manager.gd` updated
+  to use `get_node("/root/AGSRuntime")` instead of `Engine.get_singleton`. *(done)*
+
 ## Phase 9 — Infrastructure, Localisation & Runtime (complete)
 
 - [x] **TEST-INFRA-02** — CI: GitHub Actions workflow (done — commit 67ac49d150)
@@ -56,7 +64,7 @@ When all tasks are done, ask Claude to pick the next 10.
 - **T-GS30** — Go: generate `AGSCharacter3D` vs `AGSCharacter2D` `.tscn` (mostly done; C++ split pending)
 - **T40** — C++/GDScript: disable AGSRuntime trace in production builds
 - **T-FINAL** — C++: embed `.engine/runtime/` GDScripts into the C++ module at build time
-- M10 C++ node tasks: T-GS01, T-GS02, T-GS08, T-GS10, T-GS12, T-GS14, T-GS16, T-GS18
+- M10 C++ node tasks: T-GS01, T-GS02, T-GS08, T-GS12, T-GS14, T-GS16, T-GS18
 
 ### M12 AG Studio required
 - **T-E19 (editor part)** — GDScript: billboard camera gizmo overlays in Room editor

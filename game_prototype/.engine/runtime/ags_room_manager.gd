@@ -20,7 +20,7 @@ var _current_room: Node = null
 
 
 func _ready() -> void:
-	var runtime := Engine.get_singleton("AGSRuntime")
+	var runtime := get_node("/root/AGSRuntime")
 	print("[AGS/RoomManager] _ready: runtime found=", runtime != null)
 	if runtime:
 		runtime.connect("room_change_requested", _on_room_change_requested)

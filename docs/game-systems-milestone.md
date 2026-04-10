@@ -488,7 +488,7 @@ Camera "main" {
 | T-GS07 | Go: grammar + emitter — `global.NAME` read/write, `game.agp` globals section | Editor milestone |
 | T-GS08 | C++: `AGSRuntime` — global variable store | T-GS07 |
 | T-GS09 | Go: grammar + emitter — `GoToRoom`, room transition blocking call | Editor milestone |
-| T-GS10 | GDScript: `AGSRuntime` — `load_room()`, `room_change_requested` signal | T-GS09 |
+| T-GS10 | ✅ GDScript: `AGSRuntime` AutoLoad with `load_room()` + `room_change_requested` signal; `ags_runtime.gd` + AutoLoad wiring in `project.godot` | T-GS09 |
 | T-GS11 | Go: grammar + emitter — `PlayMusic`, `StopMusic`, `PlaySound` | Editor milestone |
 | T-GS12 | GDScript: `AGSRuntime` — audio manager (music player + sfx pool) | T-GS11 |
 | T-GS13 | Go: `.agui` parser + `ag build` GUI scene generator | Editor milestone |
