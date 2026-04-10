@@ -6,16 +6,23 @@
 #include "ags_room.h"
 #include "ags_room_item.h"
 #include "ags_trace.h"
+#include "core/config/engine.h"
 #include "core/io/file_access.h"
 #include "core/io/json.h"
 #include "core/object/class_db.h"
 
 AGSRuntime *AGSRuntime::singleton = nullptr;
-bool AGSRuntime::_trace_enabled = true;
+bool AGSRuntime::_trace_enabled = false;
 
 AGSRuntime::AGSRuntime() {
 	ERR_FAIL_COND(singleton != nullptr);
 	singleton = this;
+	// T40: trace is disabled by default in production builds.
+	// Auto-enable when running inside the Godot editor so developers can see
+	// AGSRuntime call traces in the console while working on a project.
+	if (Engine::get_singleton()->is_editor_hint()) {
+		_trace_enabled = true;
+	}
 }
 
 AGSRuntime::~AGSRuntime() {

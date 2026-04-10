@@ -26,8 +26,10 @@ class AGSRuntime : public Object {
 
 	static AGSRuntime *singleton;
 
-	// Trace flag — true by default so every runtime function logs its calls.
-	// Set false in production builds (see GitHub issue for build-flag task).
+	// Trace flag — disabled by default (T40). Auto-enabled in the constructor
+	// when running inside the Godot editor (is_editor_hint()), so developers see
+	// AGSRuntime call traces in the console. Production/exported builds have
+	// tracing disabled unless explicitly enabled via set_trace_enabled(true).
 	static bool _trace_enabled;
 
 	HashMap<StringName, AGSCamera *> cameras;
