@@ -43,10 +43,11 @@ All M12 AG Studio tasks are implemented (see `docs/custom-editor-milestone.md`):
 
 ## Deferred / Blocked
 
-- **T40** — C++/GDScript: disable AGSRuntime trace in production builds
-- **T-FINAL** — C++: embed `.engine/runtime/` GDScripts into the C++ module at build time
+- **T40** — C++/GDScript: disable AGSRuntime trace in production builds (done: _trace_enabled = false by default; auto-enabled in editor)
+- **T-FINAL** — C++: embed `.engine/runtime/` GDScripts into the C++ module at build time (done: ResourceFormatLoaderAGSEmbed + embedded_scripts generator)
 
 ### Requires Godot C++ fork compilation
-The C++ module at `modules/agvm/` is fully written but needs compilation into
-the Godot binary. All C++ node types (AGSCharacterBase, AGSCharacter3D, AGSCharacter2D,
-AGSItem, AGSRoomItem, AGSRuntime, etc.) are implemented and registered.
+The C++ module at `modules/agvm/` is fully written and ready. It needs compilation
+into the Godot binary. All C++ node types (AGSCharacterBase, AGSCharacter3D,
+AGSCharacter2D, AGSItem, AGSRoomItem, AGSRuntime, etc.) are implemented, registered,
+and the 19 runtime GDScripts are embedded as C++ string constants.
