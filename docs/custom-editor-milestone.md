@@ -149,7 +149,7 @@ here whenever an engine/runtime/tooling task is completed.
 | T-CE-UI32 | Dialogue build log (T-DLG07) | Build log panel showing .agdlg → .json output, DLG-E/W error codes inline |
 | T-CE-UI33 | Cutscene format validator output (T-CUT05) | Build log shows CUT-E/W error codes with source file and line |
 | T-CE-UI34 | Cutscene input bindings panel (T-CUT04) | Project settings panel for [input] bindings: dialogue_advance, cutscene_skip, dialogue_hold_advance |
-| T-CE-UI35 | Interactive locale editor (T-LOC05) | Locale Editor panel: spreadsheet-like table of source text and translations; filter tabs (all/untranslated/stale/orphan); inline editing of translations with live validation; save writes directly to `.agstrings` file; status column shows coverage % |
+| T-CE-UI35 | Interactive locale editor (T-LOC05) ✅ | **Complete** — `ag-loc` standalone binary + `ag loc tui` command: spreadsheet-like table of source text and translations; filter tabs (all/untranslated/stale/orphan); inline editing; save writes directly to `.agstrings`; status column shows coverage %. Pending M12: embed into AG Studio as a dockable panel. |
 
 ---
 
