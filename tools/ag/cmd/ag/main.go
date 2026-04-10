@@ -540,6 +540,33 @@ func build(root string, force bool, trace bool) error {
 		}
 	}
 
+	// --- locale .agstrings → .engine/generated/locale/<code>.json (T-LOC07) ---
+	compiledLocales, locErr := loc.CompileAllLocales(root)
+	if locErr != nil {
+		fmt.Fprintf(os.Stderr, "ag build: compile locales: %v\n", locErr)
+		errs = append(errs, locErr)
+	} else if len(compiledLocales) > 0 {
+		localeOutDir := filepath.Join(root, ".engine", "generated", "locale")
+		if mkErr := os.MkdirAll(localeOutDir, 0755); mkErr != nil {
+			errs = append(errs, mkErr)
+		} else {
+			for code, cl := range compiledLocales {
+				jsonBytes, writeErr := loc.WriteCompiledLocale(cl)
+				if writeErr != nil {
+					errs = append(errs, writeErr)
+					continue
+				}
+				outPath := filepath.Join(localeOutDir, code+".json")
+				if wErr := os.WriteFile(outPath, jsonBytes, 0644); wErr != nil {
+					errs = append(errs, wErr)
+					continue
+				}
+				rel, _ := filepath.Rel(root, outPath)
+				fmt.Printf("  %s → %s\n", filepath.Join("locale", code+".agstrings"), rel)
+			}
+		}
+	}
+
 	if saveErr := project.SaveManifest(root, manifest); saveErr != nil {
 		errs = append(errs, saveErr)
 	}

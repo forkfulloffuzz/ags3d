@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/ags3d/ag/internal/cut"
@@ -695,4 +696,75 @@ func formatEntriesList(entries []LocaleEntryFull) string {
 			e.LocKey, e.NodeTitle, e.Character, e.LineType, e.Source, translation)
 	}
 	return sb.String()
+}
+
+type CompiledLocale struct {
+	Locale  string
+	RTL     bool
+	Strings map[string]string
+}
+
+func CompileAllLocales(root string) (map[string]CompiledLocale, error) {
+	localeDir := filepath.Join(root, "locale")
+	info, err := os.Stat(localeDir)
+	if err != nil || !info.IsDir() {
+		return nil, nil
+	}
+
+	entries, err := os.ReadDir(localeDir)
+	if err != nil {
+		return nil, fmt.Errorf("read locale dir: %w", err)
+	}
+
+	result := make(map[string]CompiledLocale)
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".agstrings" {
+			continue
+		}
+		path := filepath.Join(localeDir, entry.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		sf, err := Parse(path, string(data))
+		if err != nil {
+			continue
+		}
+		compiled := CompiledLocale{
+			Locale:  sf.Meta.Locale,
+			RTL:     sf.Meta.RTL,
+			Strings: make(map[string]string),
+		}
+		for _, e := range sf.Entries {
+			if e.Orphan {
+				continue
+			}
+			compiled.Strings[e.Key] = e.Value
+		}
+		result[compiled.Locale] = compiled
+	}
+	return result, nil
+}
+
+func WriteCompiledLocale(cl CompiledLocale) ([]byte, error) {
+	var sb strings.Builder
+	sb.WriteString("{\n")
+	fmt.Fprintf(&sb, "  \"locale\": %q,\n", cl.Locale)
+	fmt.Fprintf(&sb, "  \"rtl\": %v,\n", cl.RTL)
+	sb.WriteString("  \"strings\": {\n")
+	keys := make([]string, 0, len(cl.Strings))
+	for k := range cl.Strings {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for i, k := range keys {
+		fmt.Fprintf(&sb, "    %q: %q", k, cl.Strings[k])
+		if i < len(keys)-1 {
+			sb.WriteString(",")
+		}
+		sb.WriteString("\n")
+	}
+	sb.WriteString("  }\n")
+	sb.WriteString("}\n")
+	return []byte(sb.String()), nil
 }

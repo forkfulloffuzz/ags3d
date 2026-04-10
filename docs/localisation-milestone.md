@@ -125,7 +125,7 @@ GDScript LocalisationRuntime.load_locale("fr")
 |---|---|---|
 | T-LOC05 | Standalone: `ag-loc` translation tool — interactive CLI for filling in `.agstrings` values; shows source text and context; marks complete on save | T-LOC02 |
 | T-LOC06 | Go: PO/CSV import bridge — read a translated PO or CSV and write translations back into the corresponding `.agstrings` file | T-LOC02 |
-| T-LOC07 | GDScript: runtime string loading from `.agstrings` + locale switching — `Game.SetLocale(code)` loads the compiled string table, propagates to all consumers, supports fallback chain | T-LOC02 |
+| T-LOC07 | Go + GDScript: `ag build` compiles `.agstrings` files → `.engine/generated/locale/<code>.json`; `AGSLocalisation.set_locale()` + `get_string()` with fallback chain and RTL support | T-LOC02 |
 | T-LOC08 | AG Editor: localisation panel integrated into AG Studio (M12 deferred) | T-LOC07 |
 | T-LOC09 | Go: voice script export grouped by `voice_session` + character — extends `ag export --voicescript` to pull from both `.agdlg` and `.agcut` sources | T-DLG09 (done) |
 

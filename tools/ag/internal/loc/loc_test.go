@@ -838,3 +838,225 @@ func TestParse_InvalidFixtures(t *testing.T) {
 		})
 	}
 }
+
+// --------------------------------------------------------------------------
+// CompileAllLocales / WriteCompiledLocale (T-LOC07)
+// --------------------------------------------------------------------------
+
+func TestCompileAllLocales_EmptyDir(t *testing.T) {
+	tmp := t.TempDir()
+	compiled, err := loc.CompileAllLocales(tmp)
+	if err != nil {
+		t.Fatalf("CompileAllLocales: %v", err)
+	}
+	if compiled != nil {
+		t.Errorf("expected nil for empty dir, got %v", compiled)
+	}
+}
+
+func TestCompileAllLocales_NoLocaleDir(t *testing.T) {
+	tmp := t.TempDir()
+	compiled, err := loc.CompileAllLocales(tmp)
+	if err != nil {
+		t.Fatalf("CompileAllLocales: %v", err)
+	}
+	if compiled != nil {
+		t.Errorf("expected nil when no locale dir, got %v", compiled)
+	}
+}
+
+func TestCompileAllLocales_OneFile(t *testing.T) {
+	tmp := t.TempDir()
+	localeDir := tmp + "/locale"
+	if err := os.MkdirAll(localeDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	agstrings := `[meta]
+base_locale = en
+locale = fr
+
+[strings]
+guard_greeting:line0:a1b2c3d4 = "Bonjour."
+`
+	if err := os.WriteFile(localeDir+"/fr.agstrings", []byte(agstrings), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	compiled, err := loc.CompileAllLocales(tmp)
+	if err != nil {
+		t.Fatalf("CompileAllLocales: %v", err)
+	}
+	if len(compiled) != 1 {
+		t.Fatalf("len = %d, want 1", len(compiled))
+	}
+	cl, ok := compiled["fr"]
+	if !ok {
+		t.Fatal("missing fr in compiled")
+	}
+	if cl.Locale != "fr" {
+		t.Errorf("Locale = %q, want fr", cl.Locale)
+	}
+	if cl.Strings["guard_greeting:line0:a1b2c3d4"] != "Bonjour." {
+		t.Errorf("string value = %q", cl.Strings["guard_greeting:line0:a1b2c3d4"])
+	}
+}
+
+func TestCompileAllLocales_SkipsOrphans(t *testing.T) {
+	tmp := t.TempDir()
+	localeDir := tmp + "/locale"
+	if err := os.MkdirAll(localeDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	agstrings := `[meta]
+base_locale = en
+locale = fr
+
+[strings]
+good_key:line0:11111111 = "Bonjour."
+// [orphan] old_key:line0:22222222 = "Ancien."
+`
+	if err := os.WriteFile(localeDir+"/fr.agstrings", []byte(agstrings), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	compiled, err := loc.CompileAllLocales(tmp)
+	if err != nil {
+		t.Fatalf("CompileAllLocales: %v", err)
+	}
+	cl := compiled["fr"]
+	if _, ok := cl.Strings["old_key:line0:22222222"]; ok {
+		t.Errorf("orphan key should not be in compiled strings")
+	}
+	if cl.Strings["good_key:line0:11111111"] != "Bonjour." {
+		t.Errorf("good key missing")
+	}
+}
+
+func TestCompileAllLocales_RTLFlag(t *testing.T) {
+	tmp := t.TempDir()
+	localeDir := tmp + "/locale"
+	if err := os.MkdirAll(localeDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	agstrings := `[meta]
+base_locale = en
+locale = ar
+rtl = true
+
+[strings]
+key:a = "مرحبا"
+`
+	if err := os.WriteFile(localeDir+"/ar.agstrings", []byte(agstrings), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	compiled, err := loc.CompileAllLocales(tmp)
+	if err != nil {
+		t.Fatalf("CompileAllLocales: %v", err)
+	}
+	cl := compiled["ar"]
+	if !cl.RTL {
+		t.Errorf("RTL should be true for Arabic locale")
+	}
+}
+
+func TestCompileAllLocales_MultipleFiles(t *testing.T) {
+	tmp := t.TempDir()
+	localeDir := tmp + "/locale"
+	if err := os.MkdirAll(localeDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	files := map[string]string{
+		"fr": "[meta]\nbase_locale=en\nlocale=fr\n\n[strings]\nk:f = \"Bonjour\"\n",
+		"de": "[meta]\nbase_locale=en\nlocale=de\n\n[strings]\nk:d = \"Guten Tag\"\n",
+	}
+	for code, content := range files {
+		if err := os.WriteFile(localeDir+"/"+code+".agstrings", []byte(content), 0644); err != nil {
+			t.Fatalf("write: %v", err)
+		}
+	}
+
+	compiled, err := loc.CompileAllLocales(tmp)
+	if err != nil {
+		t.Fatalf("CompileAllLocales: %v", err)
+	}
+	if len(compiled) != 2 {
+		t.Fatalf("len = %d, want 2", len(compiled))
+	}
+	if compiled["fr"].Strings["k:f"] != "Bonjour" {
+		t.Errorf("fr key mismatch")
+	}
+	if compiled["de"].Strings["k:d"] != "Guten Tag" {
+		t.Errorf("de key mismatch")
+	}
+}
+
+func TestWriteCompiledLocale_Format(t *testing.T) {
+	cl := loc.CompiledLocale{
+		Locale:  "fr",
+		RTL:     false,
+		Strings: map[string]string{"k1": "v1", "k2": "v2"},
+	}
+	jsonBytes, err := loc.WriteCompiledLocale(cl)
+	if err != nil {
+		t.Fatalf("WriteCompiledLocale: %v", err)
+	}
+	out := string(jsonBytes)
+	if !strings.Contains(out, `"locale": "fr"`) {
+		t.Errorf("missing locale field: %s", out)
+	}
+	if !strings.Contains(out, `"rtl": false`) {
+		t.Errorf("missing rtl field: %s", out)
+	}
+	if !strings.Contains(out, `"k1"`) || !strings.Contains(out, `"v1"`) {
+		t.Errorf("missing string entry: %s", out)
+	}
+}
+
+func TestWriteCompiledLocale_RTLTrue(t *testing.T) {
+	cl := loc.CompiledLocale{
+		Locale:  "ar",
+		RTL:     true,
+		Strings: map[string]string{"k": "v"},
+	}
+	jsonBytes, err := loc.WriteCompiledLocale(cl)
+	if err != nil {
+		t.Fatalf("WriteCompiledLocale: %v", err)
+	}
+	out := string(jsonBytes)
+	if !strings.Contains(out, `"rtl": true`) {
+		t.Errorf("missing rtl=true: %s", out)
+	}
+}
+
+func TestWriteCompiledLocale_EmptyStrings(t *testing.T) {
+	cl := loc.CompiledLocale{
+		Locale:  "fr",
+		RTL:     false,
+		Strings: map[string]string{},
+	}
+	jsonBytes, err := loc.WriteCompiledLocale(cl)
+	if err != nil {
+		t.Fatalf("WriteCompiledLocale: %v", err)
+	}
+	out := string(jsonBytes)
+	if !strings.Contains(out, `"strings": {`) {
+		t.Errorf("missing strings object: %s", out)
+	}
+}
+
+func TestWriteCompiledLocale_SpecialChars(t *testing.T) {
+	cl := loc.CompiledLocale{
+		Locale:  "fr",
+		RTL:     false,
+		Strings: map[string]string{"k": `quote"back\nslash`},
+	}
+	jsonBytes, err := loc.WriteCompiledLocale(cl)
+	if err != nil {
+		t.Fatalf("WriteCompiledLocale: %v", err)
+	}
+	out := string(jsonBytes)
+	if !strings.Contains(out, `\"`) {
+		t.Errorf("missing escaped quote: %s", out)
+	}
+}
