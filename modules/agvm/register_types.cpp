@@ -1,5 +1,7 @@
 #include "register_types.h"
 
+#include "ags_embed_loader.h"
+#include "embedded_scripts.h"
 #include "ags_event_bus.h"
 #include "ags_blocker_volume.h"
 #include "ags_camera.h"
@@ -30,6 +32,7 @@ static AGSRuntime *ags_runtime = nullptr;
 static AGSEventBus *ags_event_bus = nullptr;
 static Ref<ResourceFormatLoaderAGSScript> ags_loader;
 static Ref<ResourceFormatSaverAGSScript> ags_saver;
+static Ref<ResourceFormatLoaderAGSEmbed> ags_embed_loader;
 
 void initialize_agvm_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -69,6 +72,12 @@ void initialize_agvm_module(ModuleInitializationLevel p_level) {
 
 	ags_language = memnew(AGSScriptLanguage);
 	ScriptServer::register_language(ags_language);
+
+	// T-FINAL: register embedded GDScripts so they load from C++ strings instead of disk.
+	ags_embed_loader.instantiate();
+	ResourceLoader::add_resource_format_loader(ags_embed_loader);
+	// NOLINTNEXTLINE — generated file is safe; we control the content
+	register_embedded_scripts(*ags_embed_loader);
 }
 
 void uninitialize_agvm_module(ModuleInitializationLevel p_level) {
@@ -84,6 +93,8 @@ void uninitialize_agvm_module(ModuleInitializationLevel p_level) {
 	ags_loader.unref();
 	ResourceSaver::remove_resource_format_saver(ags_saver);
 	ags_saver.unref();
+	ResourceLoader::remove_resource_format_loader(ags_embed_loader);
+	ags_embed_loader.unref();
 
 	if (ags_runtime) {
 		// Remove from Engine's singleton list before freeing — otherwise Engine's
