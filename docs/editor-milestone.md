@@ -474,7 +474,7 @@ Legend: ✅ done · 🔜 remaining · ➡️ moved to M12 Custom Editor
 | T-E16 | ➡️ M12 T-CE17 | GDScript: Play button | T-E04, T-E15 |
 | T-E17 | ➡️ M12 T-CE18 | GDScript: Project wizard | T-E08 |
 | T-E18 | ✅ | Integration: prototype migration | T-E04 |
-| T-E19 | ✅ (`ag validate`); ➡️ M12 T-CE09 (gizmo UI) | `ag validate` billboard warnings (W1 elevation >30°, W3 arc >45° for 4-angle) in Go; gizmo overlays deferred to M12 | T-E10, T-GS24 |
+| T-E19 | ✅ | `ag validate` billboard warnings (W1 elevation >30°, W3 arc >45° for 4-angle) in Go; AGSCamera gizmo draws yellow warning spheres for billboard character placement violations | T-E10, T-GS24 |
 | T-E20 | ➡️ M12 T-CE11 | GDScript: Character editor type selector | T-E13, T-GS27 |
 | T-E21 | ➡️ M12 T-CE12 | GDScript: 3D Animation viewer | T-E20, T-GS28 |
 | T-E22 | ➡️ M12 T-CE13 | GDScript: 2D Animation viewer | T-E20, T-GS29 |

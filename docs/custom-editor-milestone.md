@@ -60,7 +60,7 @@ Tasks are ordered by dependency. Foundation first, feature editors after.
 | T-CE06 | GDScript: `.agroom` ↔ `.tscn` sync — gizmo drag/resize → write back to `.agroom`; external `.agroom` edit → re-run `ag build` + reload scene | T-CE05 |
 | T-CE07 | GDScript: Room editor — `RoomItem` placement gizmo + toolbar "Add Item" button; shows item sprite icon at position | T-CE05 |
 | T-CE08 | GDScript: Room editor — "Re-import from Blender" button; detects `.glb` newer than `.tscn`, re-runs `ag build`, shows conflict banner when `.agroom` was edited in AG Studio after last Blender export | T-CE06 |
-| T-CE09 | GDScript: Room editor — billboard camera warnings as gizmo overlays; elevation angle warning (>30°), arc width warning for 4-angle sprites, sprite_locked indicator | T-CE05 |
+| T-CE09 | ✅ | GDScript: Room editor — billboard camera warnings as gizmo overlays; elevation angle warning (>30°), arc width warning for 4-angle sprites, sprite_locked indicator | T-CE05 |
 
 ### Inspector
 
