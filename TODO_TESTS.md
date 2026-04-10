@@ -388,6 +388,47 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-CE20 — GUI layout editor
+
+**Setup:** Launch AG Studio. Create or open a `.agui` file.
+
+#### Creating a new GUI layout
+- [ ] With no `.agui` files, the Project panel shows a "GUI" section (empty)
+- [ ] Create `gui/main_hud.agui` manually in the filesystem
+- [ ] Refresh the Project panel — `main_hud.agui` appears under GUI
+- [ ] Double-click `main_hud.agui` — the GUI Layout bottom panel opens
+
+#### Adding widgets
+- [ ] Click "+ InventoryBar" — a widget appears in the widget list and on the canvas as a blue box
+- [ ] Click "+ VerbBar" — a yellow widget appears in the list
+- [ ] Click "+ StatusLine" — a green widget appears in the list
+- [ ] Widgets appear on the canvas at their anchor position with colored boxes and their names
+
+#### Editing widgets
+- [ ] Click a widget in the list — the Properties form shows Anchor, Offset X/Y, and type-specific fields
+- [ ] Change Anchor to "bottom_right" — the widget box moves to the bottom-right of the canvas
+- [ ] Change Offset X to 100 — the widget box shifts right by 100px on the canvas
+- [ ] For InventoryBar: change Columns to 6 — the form shows a columns field
+- [ ] For VerbBar: change Verbs to "Look,Use,Talk" — the form shows the verbs field
+- [ ] For StatusLine: enter a font path — the form shows the font field
+- [ ] Rename a widget by editing its name field — the widget list updates to show the new name
+
+#### Canvas anchor markers
+- [ ] The canvas shows anchor position markers: top-left (green dot), top-right (yellow), bottom-left (blue), bottom-right (red), top (purple), bottom (teal), center (gray)
+- [ ] Click near an anchor marker with a widget selected — the widget's anchor changes to that position
+- [ ] Anchor markers are labeled with their names
+
+#### Saving and building
+- [ ] Click Save — the `.agui` file is written with correct syntax
+- [ ] `ag build` runs automatically after save (check Build Log)
+- [ ] Re-open the saved `.agui` — all widgets, positions, and properties are restored correctly
+
+#### Loading existing .agui
+- [ ] With a `.agui` containing all three widget types, double-click to open — all widgets appear in the list and on the canvas
+- [ ] The Layer spinbox reflects the `layer = N` value from the file
+
+---
+
 ### T-CE14 — Character editor animations section (GLTF clip names)
 
 **Setup:** Launch AG Studio. Double-click a `.agchar` file that has a `mesh` pointing to a `.glb` file with animation clips.

@@ -20,6 +20,7 @@ var _room_editor: Control
 var _char_editor: Control
 var _script_editor: Control
 var _item_editor: Control
+var _gui_editor: Control
 var _anim_viewer_3d: Control
 var _anim_viewer_2d: Control
 var _menu_btn: MenuButton
@@ -94,6 +95,11 @@ func _enter_tree() -> void:
 	_char_editor = ce
 	add_control_to_bottom_panel(_char_editor, "Character")
 
+	var ge: Control = preload("res://addons/ag_studio/gui_editor.gd").new()
+	ge.set_plugin(self)
+	_gui_editor = ge
+	add_control_to_bottom_panel(_gui_editor, "GUI Layout")
+
 	_menu_btn = MenuButton.new()
 	_menu_btn.text = "AG Studio"
 	var menu := _menu_btn.get_popup()
@@ -153,6 +159,11 @@ func _exit_tree() -> void:
 		remove_control_from_bottom_panel(_char_editor)
 		_char_editor.queue_free()
 		_char_editor = null
+
+	if _gui_editor:
+		remove_control_from_bottom_panel(_gui_editor)
+		_gui_editor.queue_free()
+		_gui_editor = null
 
 	if _menu_btn:
 		remove_control_from_container(CONTAINER_TOOLBAR, _menu_btn)
@@ -345,6 +356,10 @@ func _on_file_activated(abs_path: String) -> void:
 	elif abs_path.ends_with(".agitem"):
 		if _item_editor:
 			(_item_editor as Node).call("load_item", abs_path)
+	elif abs_path.ends_with(".agui"):
+		if _gui_editor:
+			make_bottom_panel_item_visible(_gui_editor)
+			(_gui_editor as Node).call("load_gui", abs_path)
 
 
 func _on_scene_changed(scene_root: Node) -> void:

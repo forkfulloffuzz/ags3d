@@ -20,6 +20,7 @@ var _refresh_btn: Button
 var _icon_room:   Texture2D
 var _icon_char:   Texture2D
 var _icon_script: Texture2D
+var _icon_gui:    Texture2D
 var _icon_folder: Texture2D
 
 
@@ -74,6 +75,7 @@ func _fetch_icons_and_refresh() -> void:
 	_icon_room   = base.get_theme_icon("Node3D",          "EditorIcons")
 	_icon_char   = base.get_theme_icon("CharacterBody3D", "EditorIcons")
 	_icon_script = base.get_theme_icon("Script",          "EditorIcons")
+	_icon_gui    = base.get_theme_icon("Control",         "EditorIcons")
 	_icon_folder = base.get_theme_icon("Folder",          "EditorIcons")
 	refresh()
 
@@ -90,6 +92,7 @@ func refresh() -> void:
 	var rooms:           Array[String] = _find_files(abs_base, ".agroom")
 	var chars:           Array[String] = _find_files(abs_base, ".agchar")
 	var all_scripts:     Array[String] = _find_files(abs_base, ".agscript")
+	var guis:            Array[String] = _find_files(abs_base, ".agui")
 
 	# Scripts that share a stem with a .agroom are room scripts — exclude them.
 	var room_stems: Dictionary = {}
@@ -104,6 +107,7 @@ func refresh() -> void:
 	_populate_rooms_section(root, rooms, abs_base)
 	_populate_section(root, "Characters", chars,              _icon_char,   abs_base)
 	_populate_section(root, "Scripts",    standalone_scripts, _icon_script, abs_base)
+	_populate_section(root, "GUI",       guis,               _icon_gui,    abs_base)
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +176,8 @@ func _on_item_activated() -> void:
 		pass  # routed to Room editor by ag_studio._on_file_activated
 	elif path.ends_with(".agchar"):
 		pass  # routed to Character editor by ag_studio._on_file_activated
+	elif path.ends_with(".agui"):
+		pass  # routed to GUI editor by ag_studio._on_file_activated
 	else:
 		OS.shell_open(path)
 
