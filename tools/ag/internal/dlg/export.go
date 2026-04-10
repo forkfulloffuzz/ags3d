@@ -15,6 +15,7 @@ type LocEntry struct {
 	LineType  string // "spoken" | "choice" | "narration"
 	Source    string // original source text
 	Language  string // locale code this entry originates from (e.g. "en", "fr"); empty = inherit from project
+	Ctx       string // #ctx: annotation / translator note
 }
 
 // CollectLocEntries walks a LinkedProject and returns all localizable strings
@@ -50,6 +51,7 @@ func collectStmtEntries(nodeTitle, language, character string, stmts []Statement
 				LineType:  "spoken",
 				Source:    st.Text,
 				Language:  language,
+				Ctx:       st.Ctx,
 			})
 
 		case *NarrationLine:
@@ -65,6 +67,7 @@ func collectStmtEntries(nodeTitle, language, character string, stmts []Statement
 				LineType:  "narration",
 				Source:    st.Text,
 				Language:  language,
+				Ctx:       st.Ctx,
 			})
 
 		case *OptionBranch:
@@ -80,6 +83,7 @@ func collectStmtEntries(nodeTitle, language, character string, stmts []Statement
 				LineType:  "choice",
 				Source:    st.Text,
 				Language:  language,
+				Ctx:       st.Ctx,
 			})
 			collectStmtEntries(nodeTitle, language, character, st.Body, lineIdx, entries)
 		}
@@ -113,8 +117,12 @@ msgstr ""
 		if e.Character != "" {
 			charComment = fmt.Sprintf("\n#. Character: %s", e.Character)
 		}
-		fmt.Fprintf(&sb, "#. Type: %s\n#. Node: %s%s\nmsgctxt %q\nmsgid %q\nmsgstr %q\n\n",
-			e.LineType, e.NodeTitle, charComment, e.LocKey, e.Source, msgstr)
+		ctxComment := ""
+		if e.Ctx != "" {
+			ctxComment = fmt.Sprintf("\n#. Context: %s", e.Ctx)
+		}
+		fmt.Fprintf(&sb, "#. Type: %s\n#. Node: %s%s%s\nmsgctxt %q\nmsgid %q\nmsgstr %q\n\n",
+			e.LineType, e.NodeTitle, charComment, ctxComment, e.LocKey, e.Source, msgstr)
 	}
 
 	return sb.String()
@@ -125,20 +133,21 @@ msgstr ""
 // diffOnly omits entries that already have a non-empty translation.
 func ExportCSV(entries []LocEntry, existingTranslations map[string]string, diffOnly bool) string {
 	var sb strings.Builder
-	sb.WriteString("loc_key,node,character,type,source_text,translation\n")
+	sb.WriteString("loc_key,node,character,type,source_text,translation,context\n")
 
 	for _, e := range entries {
 		existing := existingTranslations[e.LocKey]
 		if diffOnly && existing != "" {
 			continue
 		}
-		fmt.Fprintf(&sb, "%s,%s,%s,%s,%s,%s\n",
+		fmt.Fprintf(&sb, "%s,%s,%s,%s,%s,%s,%s\n",
 			csvField(e.LocKey),
 			csvField(e.NodeTitle),
 			csvField(e.Character),
 			csvField(e.LineType),
 			csvField(e.Source),
 			csvField(existing),
+			csvField(e.Ctx),
 		)
 	}
 

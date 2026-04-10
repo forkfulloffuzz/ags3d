@@ -27,18 +27,19 @@ import (
 type TokenKind int
 
 const (
-	TokEOF        TokenKind = iota
-	TokComment              // content after "// " on a comment line
-	TokHeaderKey            // key in "key: value" header pair (e.g. "title")
-	TokHeaderValue          // value in "key: value" header pair (e.g. "guard_greeting")
-	TokSeparator            // "---" — separates header from body
-	TokNodeEnd              // "===" — ends a dialogue node
-	TokSpeaker              // speaker name in "Speaker: dialogue text" body line
-	TokLine                 // dialogue text: body text after a speaker colon, narration, or option text
-	TokOption               // "->" option marker; Value holds option display text; Depth = indent level
-	TokCommand              // content inside "<<...>>" (angle brackets stripped)
-	TokTag                  // content inside "[...]" on a header value line (e.g. "chapter:1")
-	TokLocKey               // loc key after "#loc:" annotation (e.g. "guard_hi_001")
+	TokEOF         TokenKind = iota
+	TokComment               // content after "// " on a comment line
+	TokHeaderKey             // key in "key: value" header pair (e.g. "title")
+	TokHeaderValue           // value in "key: value" header pair (e.g. "guard_greeting")
+	TokSeparator             // "---" — separates header from body
+	TokNodeEnd               // "===" — ends a dialogue node
+	TokSpeaker               // speaker name in "Speaker: dialogue text" body line
+	TokLine                  // dialogue text: body text after a speaker colon, narration, or option text
+	TokOption                // "->" option marker; Value holds option display text; Depth = indent level
+	TokCommand               // content inside "<<...>>" (angle brackets stripped)
+	TokTag                   // content inside "[...]" on a header value line (e.g. "chapter:1")
+	TokLocKey                // loc key after "#loc:" annotation (e.g. "guard_hi_001")
+	TokCtx                   // context note after "#ctx:" annotation (e.g. "guard is suspicious")
 )
 
 func (k TokenKind) String() string {
@@ -67,6 +68,8 @@ func (k TokenKind) String() string {
 		return "TAG"
 	case TokLocKey:
 		return "LOC_KEY"
+	case TokCtx:
+		return "CTX"
 	default:
 		return fmt.Sprintf("TokenKind(%d)", int(k))
 	}
@@ -289,13 +292,22 @@ func parseSpeakerPrefix(line string) (speaker, rest string, ok bool) {
 	return candidate, strings.TrimSpace(line[idx+1:]), true
 }
 
-// extractInlines extracts all inline <<command>> tokens and a trailing #loc: key
-// from text, returning the cleaned text and the additional tokens.
+// extractInlines extracts #loc:, #ctx:, and <<commands>> from text.
+// Returns the cleaned text and inline tokens.
 func extractInlines(file string, lineNum int, text string) (string, []Token, error) {
 	pos := Pos{File: file, Line: lineNum}
 	var inlines []Token
 
-	// Extract #loc: annotation first (always at the end, after all commands).
+	// Extract #ctx: annotation last (extends to end of line).
+	if idx := strings.LastIndex(text, "#ctx:"); idx >= 0 {
+		ctx := strings.TrimSpace(text[idx+5:])
+		if ctx != "" {
+			inlines = append(inlines, Token{Kind: TokCtx, Value: ctx, Pos: pos})
+		}
+		text = strings.TrimSpace(text[:idx])
+	}
+
+	// Extract #loc: annotation (before #ctx: if both present).
 	if idx := strings.LastIndex(text, "#loc:"); idx >= 0 {
 		locKey := strings.TrimSpace(text[idx+5:])
 		// Strip any trailing <<...>> from the loc key (shouldn't happen, but be safe).

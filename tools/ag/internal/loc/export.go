@@ -212,6 +212,7 @@ type LocaleEntryFull struct {
 	LineType       string
 	File           string
 	SourceLanguage string // locale code this entry originates from (e.g. "en", "fr")
+	Ctx            string // #ctx: author context / translator note
 }
 
 func CollectAllLocaleEntriesWithTranslations(root, locale string) ([]LocaleEntryFull, error) {
@@ -294,6 +295,7 @@ func CollectAllLocaleEntries(root string) ([]LocaleEntryFull, error) {
 					Character:      e.Character,
 					LineType:       e.LineType,
 					SourceLanguage: e.Language,
+					Ctx:            e.Ctx,
 				})
 			}
 		}
@@ -311,6 +313,7 @@ func CollectAllLocaleEntries(root string) ([]LocaleEntryFull, error) {
 				Character:      "",
 				LineType:       e.CmdName,
 				SourceLanguage: e.Language,
+				Ctx:            e.Ctx,
 			})
 		}
 	}

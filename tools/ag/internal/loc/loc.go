@@ -42,6 +42,11 @@ type Entry struct {
 	Value  string // empty string = untranslated
 	Stale  bool   // source text changed since last export
 	Orphan bool   // key no longer present in source
+	// T-LOC11: metadata fields parsed from comment lines above the entry.
+	Type  string // e.g. "spoken", "choice", "narration"
+	Char  string // character name who speaks this string
+	Scene string // dialogue node or cutscene title
+	Ctx   string // author context / translator note
 }
 
 // StringsFile is the fully parsed representation of one .agstrings file.
@@ -101,6 +106,7 @@ func Parse(filename, src string) (*StringsFile, error) {
 	lines := strings.Split(src, "\n")
 	section := ""
 	lineNum := 0
+	var pendingMeta map[string]string
 
 	for _, raw := range lines {
 		lineNum++
@@ -120,8 +126,24 @@ func Parse(filename, src string) (*StringsFile, error) {
 					stale := strings.HasPrefix(body, "[stale]")
 					orphan := strings.HasPrefix(body, "[orphan]")
 					entry := Entry{Key: e.key, Value: e.value, Stale: stale, Orphan: orphan}
+					applyMeta(&entry, pendingMeta)
 					sf.index[entry.Key] = len(sf.Entries)
 					sf.Entries = append(sf.Entries, entry)
+					pendingMeta = nil
+				}
+			} else if section == "strings" {
+				// T-LOC11: metadata comment lines (// type:, // char:, // scene:, // ctx:).
+				if pendingMeta == nil {
+					pendingMeta = make(map[string]string)
+				}
+				if strings.HasPrefix(body, "type:") {
+					pendingMeta["type"] = strings.TrimSpace(body[len("type:"):])
+				} else if strings.HasPrefix(body, "char:") {
+					pendingMeta["char"] = strings.TrimSpace(body[len("char:"):])
+				} else if strings.HasPrefix(body, "scene:") {
+					pendingMeta["scene"] = strings.TrimSpace(body[len("scene:"):])
+				} else if strings.HasPrefix(body, "ctx:") {
+					pendingMeta["ctx"] = strings.TrimSpace(body[len("ctx:"):])
 				}
 			}
 			continue
@@ -162,8 +184,10 @@ func Parse(filename, src string) (*StringsFile, error) {
 				return nil, fmt.Errorf("%s:%d: duplicate key %q", filename, lineNum, kv.key)
 			}
 			entry := Entry{Key: kv.key, Value: kv.value}
+			applyMeta(&entry, pendingMeta)
 			sf.index[entry.Key] = len(sf.Entries)
 			sf.Entries = append(sf.Entries, entry)
+			pendingMeta = nil
 		default:
 			if section != "" {
 				return nil, fmt.Errorf("%s:%d: unknown section [%s]", filename, lineNum, section)
@@ -179,6 +203,25 @@ func Parse(filename, src string) (*StringsFile, error) {
 		return nil, fmt.Errorf("%s: [meta] block missing required field 'base_locale'", filename)
 	}
 	return sf, nil
+}
+
+// applyMeta copies metadata from the pending map into an entry.
+func applyMeta(entry *Entry, meta map[string]string) {
+	if meta == nil {
+		return
+	}
+	if v, ok := meta["type"]; ok {
+		entry.Type = v
+	}
+	if v, ok := meta["char"]; ok {
+		entry.Char = v
+	}
+	if v, ok := meta["scene"]; ok {
+		entry.Scene = v
+	}
+	if v, ok := meta["ctx"]; ok {
+		entry.Ctx = v
+	}
 }
 
 // --------------------------------------------------------------------------
@@ -204,16 +247,35 @@ func Write(sf *StringsFile) string {
 
 	sb.WriteString("\n[strings]\n")
 	for _, e := range sf.Entries {
-		if e.Stale {
-			fmt.Fprintf(&sb, "// [stale] %s = %s\n", e.Key, quoteString(e.Value))
-		} else if e.Orphan {
-			fmt.Fprintf(&sb, "// [orphan] %s = %s\n", e.Key, quoteString(e.Value))
-		} else {
-			fmt.Fprintf(&sb, "%s = %s\n", e.Key, quoteString(e.Value))
-		}
+		writeEntry(&sb, e)
 	}
 
 	return sb.String()
+}
+
+// writeEntry writes one entry with optional metadata comments.
+func writeEntry(sb *strings.Builder, e Entry) {
+	if e.Type != "" || e.Char != "" || e.Scene != "" || e.Ctx != "" {
+		if e.Type != "" {
+			fmt.Fprintf(sb, "// type: %s\n", e.Type)
+		}
+		if e.Char != "" {
+			fmt.Fprintf(sb, "// char: %s\n", e.Char)
+		}
+		if e.Scene != "" {
+			fmt.Fprintf(sb, "// scene: %s\n", e.Scene)
+		}
+		if e.Ctx != "" {
+			fmt.Fprintf(sb, "// ctx: %s\n", e.Ctx)
+		}
+	}
+	if e.Stale {
+		fmt.Fprintf(sb, "// [stale] %s = %s\n", e.Key, quoteString(e.Value))
+	} else if e.Orphan {
+		fmt.Fprintf(sb, "// [orphan] %s = %s\n", e.Key, quoteString(e.Value))
+	} else {
+		fmt.Fprintf(sb, "%s = %s\n", e.Key, quoteString(e.Value))
+	}
 }
 
 // --------------------------------------------------------------------------

@@ -231,8 +231,8 @@ func (p *parser) parseSpeakerLine() (*SpeakerLine, error) {
 		sl.Text = p.consume().Value
 	}
 
-	// Collect any inline TokCommand and TokLocKey at the same position (same source line).
-	sl.Commands, sl.LocKey = p.collectInlines(speakerTok.Pos.Line)
+	// Collect any inline TokCommand, TokLocKey, and TokCtx at the same position.
+	sl.Commands, sl.LocKey, sl.Ctx = p.collectInlines(speakerTok.Pos.Line)
 	return sl, nil
 }
 
@@ -240,7 +240,7 @@ func (p *parser) parseSpeakerLine() (*SpeakerLine, error) {
 func (p *parser) parseNarrationLine() (*NarrationLine, error) {
 	lineTok := p.consume() // TokLine
 	nl := &NarrationLine{Text: lineTok.Value, SrcPos: lineTok.Pos}
-	nl.Commands, nl.LocKey = p.collectInlines(lineTok.Pos.Line)
+	nl.Commands, nl.LocKey, nl.Ctx = p.collectInlines(lineTok.Pos.Line)
 	return nl, nil
 }
 
@@ -252,7 +252,7 @@ func (p *parser) parseOption() (*OptionBranch, error) {
 		Depth:  optTok.Depth,
 		SrcPos: optTok.Pos,
 	}
-	ob.Commands, ob.LocKey = p.collectInlines(optTok.Pos.Line)
+	ob.Commands, ob.LocKey, ob.Ctx = p.collectInlines(optTok.Pos.Line)
 
 	// Parse the indented body belonging to this option.
 	// Body statements must be at depth > ob.Depth.
@@ -264,9 +264,9 @@ func (p *parser) parseOption() (*OptionBranch, error) {
 	return ob, nil
 }
 
-// collectInlines drains any TokCommand and TokLocKey tokens that originated
-// from the same source line number as lineNum.
-func (p *parser) collectInlines(lineNum int) (cmds []CommandExpr, locKey string) {
+// collectInlines drains any TokCommand, TokLocKey, and TokCtx tokens that
+// originated from the same source line number as lineNum.
+func (p *parser) collectInlines(lineNum int) (cmds []CommandExpr, locKey string, ctx string) {
 	for {
 		t := p.peek()
 		if t.Pos.Line != lineNum {
@@ -279,6 +279,9 @@ func (p *parser) collectInlines(lineNum int) (cmds []CommandExpr, locKey string)
 		case TokLocKey:
 			p.consume()
 			locKey = t.Value
+		case TokCtx:
+			p.consume()
+			ctx = t.Value
 		default:
 			return
 		}

@@ -38,6 +38,7 @@ type SpeakerLine struct {
 	Text     string
 	Commands []CommandExpr // inline <<commands>> on this line
 	LocKey   string        // #loc: annotation if present
+	Ctx      string        // #ctx: annotation / translator note
 	SrcPos   Pos
 }
 
@@ -48,6 +49,7 @@ type NarrationLine struct {
 	Text     string
 	Commands []CommandExpr
 	LocKey   string
+	Ctx      string // #ctx: annotation / translator note
 	SrcPos   Pos
 }
 
@@ -58,6 +60,7 @@ type OptionBranch struct {
 	Text     string        // display text of the option
 	Commands []CommandExpr // inline <<conditions>> on the option line (e.g. <<visible_if …>>)
 	LocKey   string
+	Ctx      string      // #ctx: annotation / translator note
 	Body     []Statement // nested statements under this option (indented block)
 	Depth    int         // indent depth of the "-> " marker
 	SrcPos   Pos

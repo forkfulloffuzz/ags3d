@@ -140,6 +140,75 @@ func TestParse_ErrUnknownMetaField(t *testing.T) {
 	}
 }
 
+func TestParse_MetadataComments(t *testing.T) {
+	src := `[meta]
+base_locale = en
+locale = ar
+
+[strings]
+// type: spoken
+// char: Guard
+// scene: guard_greeting
+// ctx: guard is suspicious, not yet hostile
+guard_greeting:0:a1b2c3d4 = "Arrêtez !"
+`
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(sf.Entries) != 1 {
+		t.Fatalf("entries len = %d, want 1", len(sf.Entries))
+	}
+	e := sf.Entries[0]
+	if e.Type != "spoken" {
+		t.Errorf("Type = %q, want spoken", e.Type)
+	}
+	if e.Char != "Guard" {
+		t.Errorf("Char = %q, want Guard", e.Char)
+	}
+	if e.Scene != "guard_greeting" {
+		t.Errorf("Scene = %q, want guard_greeting", e.Scene)
+	}
+	if e.Ctx != "guard is suspicious, not yet hostile" {
+		t.Errorf("Ctx = %q", e.Ctx)
+	}
+	if e.Value != "Arrêtez !" {
+		t.Errorf("Value = %q", e.Value)
+	}
+}
+
+func TestParse_MetadataPartial(t *testing.T) {
+	src := `[meta]
+base_locale = en
+locale = fr
+
+[strings]
+// type: spoken
+guard_greeting:0:a1b2c3d4 = "Bonjour."
+// scene: intro
+narrator:0:11111111 = "Il était une fois."
+`
+	sf, err := loc.Parse("test.agstrings", src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(sf.Entries) != 2 {
+		t.Fatalf("entries len = %d, want 2", len(sf.Entries))
+	}
+	if sf.Entries[0].Type != "spoken" {
+		t.Errorf("Entries[0].Type = %q, want spoken", sf.Entries[0].Type)
+	}
+	if sf.Entries[0].Scene != "" {
+		t.Errorf("Entries[0].Scene = %q, want empty", sf.Entries[0].Scene)
+	}
+	if sf.Entries[1].Scene != "intro" {
+		t.Errorf("Entries[1].Scene = %q, want intro", sf.Entries[1].Scene)
+	}
+	if sf.Entries[1].Type != "" {
+		t.Errorf("Entries[1].Type = %q, want empty", sf.Entries[1].Type)
+	}
+}
+
 // --------------------------------------------------------------------------
 // Write / round-trip
 // --------------------------------------------------------------------------
@@ -195,6 +264,62 @@ func TestWrite_OrphanEntryCommented(t *testing.T) {
 	out := loc.Write(sf)
 	if !strings.Contains(out, "// [orphan]") {
 		t.Errorf("Write missing orphan comment: %s", out)
+	}
+}
+
+func TestWrite_MetadataComments(t *testing.T) {
+	sf := &loc.StringsFile{
+		Meta: loc.Meta{BaseLocale: "en", Locale: "fr"},
+		Entries: []loc.Entry{
+			{Key: "k1", Value: "v1", Type: "spoken", Char: "Guard", Scene: "greet", Ctx: "suspicious"},
+			{Key: "k2", Value: "v2", Type: "narration"},
+		},
+	}
+	out := loc.Write(sf)
+	if !strings.Contains(out, "// type: spoken") {
+		t.Errorf("Write missing type comment: %s", out)
+	}
+	if !strings.Contains(out, "// char: Guard") {
+		t.Errorf("Write missing char comment: %s", out)
+	}
+	if !strings.Contains(out, "// scene: greet") {
+		t.Errorf("Write missing scene comment: %s", out)
+	}
+	if !strings.Contains(out, "// ctx: suspicious") {
+		t.Errorf("Write missing ctx comment: %s", out)
+	}
+	if !strings.Contains(out, "// type: narration") {
+		t.Errorf("Write missing narration type: %s", out)
+	}
+}
+
+func TestWrite_MetadataRoundTrip(t *testing.T) {
+	sf := &loc.StringsFile{
+		Meta: loc.Meta{BaseLocale: "en", Locale: "fr"},
+		Entries: []loc.Entry{
+			{Key: "k1", Value: "v1", Type: "spoken", Char: "Guard", Scene: "greet", Ctx: "suspicious"},
+		},
+	}
+	out := loc.Write(sf)
+	sf2, err := loc.Parse("test.agstrings", out)
+	if err != nil {
+		t.Fatalf("Parse after Write: %v\n%s", err, out)
+	}
+	if len(sf2.Entries) != 1 {
+		t.Fatalf("Entries len = %d, want 1", len(sf2.Entries))
+	}
+	e := sf2.Entries[0]
+	if e.Type != "spoken" {
+		t.Errorf("Type = %q, want spoken", e.Type)
+	}
+	if e.Char != "Guard" {
+		t.Errorf("Char = %q, want Guard", e.Char)
+	}
+	if e.Scene != "greet" {
+		t.Errorf("Scene = %q, want greet", e.Scene)
+	}
+	if e.Ctx != "suspicious" {
+		t.Errorf("Ctx = %q, want suspicious", e.Ctx)
 	}
 }
 

@@ -81,6 +81,32 @@ func TestCollect_LocKeyStable(t *testing.T) {
 	}
 }
 
+func TestCollect_CtxAnnotation(t *testing.T) {
+	entries := mustCollect(t, "title: a\n---\nGuard: Stop right there! #ctx: guard is threatening - firm tone\n<<end>>\n===")
+	if len(entries) != 1 {
+		t.Fatalf("entries len = %d, want 1", len(entries))
+	}
+	if entries[0].Ctx != "guard is threatening - firm tone" {
+		t.Errorf("Ctx = %q, want %q", entries[0].Ctx, "guard is threatening - firm tone")
+	}
+	if entries[0].Source != "Stop right there!" {
+		t.Errorf("Source = %q, should not include #ctx:", entries[0].Source)
+	}
+}
+
+func TestCollect_CtxWithLocKey(t *testing.T) {
+	entries := mustCollect(t, "title: a\n---\nGuard: Hi. #loc:guard_hi #ctx: friendly greeting\n<<end>>\n===")
+	if entries[0].LocKey != "guard_hi" {
+		t.Errorf("LocKey = %q, want guard_hi", entries[0].LocKey)
+	}
+	if entries[0].Ctx != "friendly greeting" {
+		t.Errorf("Ctx = %q, want %q", entries[0].Ctx, "friendly greeting")
+	}
+	if entries[0].Source != "Hi." {
+		t.Errorf("Source = %q", entries[0].Source)
+	}
+}
+
 // --- ExportPO ---
 
 func TestExportPO_ContainsMsgid(t *testing.T) {
@@ -104,6 +130,14 @@ func TestExportPO_ContainsTypeComment(t *testing.T) {
 	out := dlg.ExportPO(entries, nil, false)
 	if !strings.Contains(out, "#. Type: spoken") {
 		t.Errorf("PO output missing type comment: %s", out)
+	}
+}
+
+func TestExportPO_ContainsCtxComment(t *testing.T) {
+	entries := mustCollect(t, "title: a\n---\nGuard: Stop! #ctx: guard is suspicious\n<<end>>\n===")
+	out := dlg.ExportPO(entries, nil, false)
+	if !strings.Contains(out, "#. Context: guard is suspicious") {
+		t.Errorf("PO output missing context comment: %s", out)
 	}
 }
 
@@ -138,7 +172,7 @@ func TestExportPO_DiffIncludesUntranslated(t *testing.T) {
 func TestExportCSV_HeaderRow(t *testing.T) {
 	entries := mustCollect(t, "title: a\n---\nGuard: Hi.\n<<end>>\n===")
 	out := dlg.ExportCSV(entries, nil, false)
-	if !strings.HasPrefix(out, "loc_key,node,character,type,source_text,translation") {
+	if !strings.HasPrefix(out, "loc_key,node,character,type,source_text,translation,context") {
 		t.Errorf("CSV missing header: %s", out[:min(80, len(out))])
 	}
 }

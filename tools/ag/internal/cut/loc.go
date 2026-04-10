@@ -21,6 +21,7 @@ type LocEntry struct {
 	CmdName  string // "line" | "title_card" | "subtitle" | "choice"
 	Language string // locale code this entry originates from (e.g. "en", "fr"); empty = inherit from project
 	Pos      Pos
+	Ctx      string // #ctx: author context / translator note
 }
 
 // CollectLocEntries walks a CutsceneFile's Sequence and returns all
@@ -35,7 +36,7 @@ func CollectLocEntries(cf *CutsceneFile) []LocEntry {
 	for _, cmd := range cf.Sequence {
 		switch cmd.Name {
 		case "line", "title_card", "subtitle", "choice":
-			text, locKey := extractLocArgs(cmd.Args)
+			text, locKey, ctx := extractLocArgs(cmd.Args)
 			if text == "" {
 				continue
 			}
@@ -48,6 +49,7 @@ func CollectLocEntries(cf *CutsceneFile) []LocEntry {
 				CmdName:  cmd.Name,
 				Language: cf.Language,
 				Pos:      cmd.Pos,
+				Ctx:      ctx,
 			})
 			seqIdx++
 		}
@@ -84,7 +86,7 @@ func ValidateLocKeys(cf *CutsceneFile, localeMap map[string]string) []string {
 	for _, cmd := range cf.Sequence {
 		switch cmd.Name {
 		case "line", "title_card", "subtitle", "choice":
-			_, locKey := extractLocArgs(cmd.Args)
+			_, locKey, _ := extractLocArgs(cmd.Args)
 			if locKey == "" {
 				continue // auto-generated keys are not validated here
 			}
@@ -101,29 +103,38 @@ func ValidateLocKeys(cf *CutsceneFile, localeMap map[string]string) []string {
 // Helpers
 // ---------------------------------------------------------------------------
 
-// extractLocArgs returns the (text, loc_key) pair from a command Args string.
+// extractLocArgs returns the (text, loc_key, ctx) tuple from a command Args string.
 // text is the content of the first double-quoted string literal found.
 // loc_key is the value of the "#loc:" named parameter, or "" if absent.
-func extractLocArgs(args string) (text, locKey string) {
+// ctx is the value of the "#ctx:" named parameter, or "" if absent.
+func extractLocArgs(args string) (text, locKey, ctx string) {
 	// Extract quoted string — first "..." in args.
 	text = extractFirstQuotedString(args)
+
+	// Extract #ctx: annotation last (extends to end of line).
+	if idx := strings.Index(args, "#ctx:"); idx >= 0 {
+		ctx = strings.TrimSpace(args[idx+5:])
+	}
 
 	// Extract #loc: value.
 	const needle = "#loc:"
 	if idx := strings.Index(args, needle); idx >= 0 {
-		rest := strings.TrimSpace(args[idx+len(needle):])
-		// Value is either a quoted string or an unquoted identifier.
-		if len(rest) > 0 && rest[0] == '"' {
-			locKey, _, _ = extractQuotedArgWithRest(rest)
-		} else {
-			end := strings.IndexAny(rest, " \t\r\n")
-			if end < 0 {
-				end = len(rest)
+		// Only extract #loc: if it appears before any #ctx:
+		if idx < strings.Index(args, "#ctx:") || ctx == "" {
+			rest := strings.TrimSpace(args[idx+len(needle):])
+			// Value is either a quoted string or an unquoted identifier.
+			if len(rest) > 0 && rest[0] == '"' {
+				locKey, _, _ = extractQuotedArgWithRest(rest)
+			} else {
+				end := strings.IndexAny(rest, " \t\r\n")
+				if end < 0 {
+					end = len(rest)
+				}
+				locKey = rest[:end]
 			}
-			locKey = rest[:end]
 		}
 	}
-	return text, locKey
+	return text, locKey, ctx
 }
 
 // extractFirstQuotedString returns the content of the first "..." in s.
