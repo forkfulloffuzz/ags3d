@@ -3,70 +3,50 @@
 This file tracks the active batch of tasks. Update status as work progresses.
 When all tasks are done, ask Claude to pick the next 10.
 
-## Phase 11 — Blender Addon Polish + 2D Character Scene Gen (complete)
+## Phase 13 — M10 Game Systems Complete (done)
 
-- [x] **T-BL06** — Blender: camera look_at eyedropper operator. Added `AGS3D_OT_EyedropLookAt`
-  modal operator (`panels.py:91-132`); button with `EYEDROPPER` icon now appears next to
-  the `prop_search` widget in the Camera panel (`panels.py:203`). Left-click to pick,
-  right-click or Esc to cancel. *(done)*
-- [x] **T-GS25** — Go: billboard `.agchar` properties in generated 2D scene.
-  `generate2DCharScene` now emits `AGSBillboardController` and `AGSAnimationPlayer2D`
-  child nodes. *(done)*
-- [x] **T-GS26** — GDScript: billboard direction runtime. `ags_billboard_controller.gd`
-  implemented; Go scene gen wiring done via T-GS25. *(done)*
-- [x] **T-GS29** — GDScript: `AGSAnimationPlayer2D`. `ags_animation_player_2d.gd`
-  implemented; Go scene gen wiring done via T-GS25. *(done)*
-- [x] **T-BL07** — Blender: export merge mode. Implemented in `operators.py:405-440`
-  (`_append_existing_blocks`, `merge_mode` property). *(done — was already in code)*
-- [x] **T-BL08** — Blender: import operator. Implemented in `operators.py:269-369`
-  (`AGS3D_OT_ImportRoom` with full `.agroom` parser and object creation). *(done)*
-- [x] **T-BL09** — Blender: NavMesh baking. Implemented in `operators.py:657-739`
-  (`_bake_navmesh`, `AGS3D_OT_BakeNavMesh`). *(done)*
+All M10 Game Systems tasks are implemented:
+- **T-GS01** — C++: `AGSCharacterBase` with `say_completed` signal; GDScript `say()`/`think()`
+- **T-GS02** — C++: `AGSItem` node + `AGSRuntime.get_item()`
+- **T-GS03** — C++: `AGSRoomItem` with `item_clicked` signal
+- **T-GS04** — Go: `.agitem` parser + `ag validate` item checks
+- **T-GS05** — Go: `Say`/`Think`/`AddInventory`/`LoseInventory`/`HasInventory` emitter
+- **T-GS06** — Go: `HideRoomItem`/`ShowRoomItem`/`item_interact` emitter
+- **T-GS07** — Go: `global.NAME` read/write grammar + emitter + `game.agp` globals section
+- **T-GS08** — C++: `AGSRuntime` `get_global`/`set_global`/`init_globals`
+- **T-GS09** — Go: `GoToRoom` grammar + emitter
+- **T-GS10** — GDScript: `AGSRuntime` AutoLoad + `load_room()`
+- **T-GS11** — Go: `PlayMusic`/`StopMusic`/`PlaySound` emitter
+- **T-GS12** — GDScript: `AGSAudio` AutoLoad (music player + sfx pool)
+- **T-GS13** — Go: `.agui` parser + `ag build` GUI scene generator
+- **T-GS14** — GDScript: `ags_gui.gd` (InventoryBar, VerbBar, StatusLine)
+- **T-GS15** — Go: `SetStatusText`/`SetActiveVerb`/`GetActiveVerb` emitter
+- **T-GS16** — C++: `AGSRuntime` save/load with global variables
+- **T-GS17** — Go: `SaveGame`/`LoadGame`/`GameSaved` emitter
+- **T-GS18** — GDScript: cutscene runtime (`fade_in`/`fade_out`/`wait`)
+- **T-GS19** — Go: `SetPlayerControl`/`FadeIn`/`FadeOut`/`Wait` emitter
+- **T-GS24** — C++: `AGSCharacter.visual_mode` property
+- **T-GS25** — Go: billboard `.agchar` properties + `Sprite3D` scene generation
+- **T-GS26** — GDScript: billboard direction runtime
+- **T-GS27** — C++: `AGSCharacterBase` / `AGSCharacter3D` / `AGSCharacter2D` split
+- **T-GS28** — GDScript: `AGSAnimationPlayer3D`
+- **T-GS29** — GDScript: `AGSAnimationPlayer2D`
+- **T-GS30** — Go: generate `AGSCharacter3D` vs `AGSCharacter2D` `.tscn`
 
-## Phase 12 — Go CLI Validation + Runtime Completions (complete)
+## Phase 14 — M12 AG Studio Complete (done)
 
-- [x] **T-E19 (Go part)** — `ag validate` billboard camera warnings. Added `validateBillboardCameraWarnings`
-  in `validate.go:879-960`: W1 (camera elevation >30° with billboard chars), W3 (camera
-  arc >45° with 4-angle sprites). 6 new tests in `validate_test.go`. *(done)*
-- [x] **T-VAL01** — `ag validate`: `HideRoomItem`/`ShowRoomItem` → hotspot name cross-check.
-  Added `checkScriptRoomItemRefs` in `validate.go:772-815`. 4 new tests. *(done)*
-- [x] **T-VAL02** — `ag validate`: `GoToRoom` room-name cross-check. Added
-  `checkScriptGoToRoomRefs` in `validate.go:818-855`. Resolves `GoToRoom("name")` against
-  `rooms/<name>/<name.agroom>`. 4 new tests. *(done)*
-- [x] **T-GS28** — GDScript: `AGSAnimationPlayer3D`. Already fully implemented in
-  `ags_animation_player_3d.gd` (77 lines: `play_clip`, `stop`, `set_state`, `on_anim_event`).
-  *(done — was already in code)*
-- [x] **T-GS18 (GDScript part)** — `fade_in`/`fade_out` runtime. Already implemented in
-  `ags_cutscene.gd` (Tween-based ColorRect fade in CanvasLayer). *(done)*
-
-## Phase 13 — AGSRuntime AutoLoad + Room Transitions (complete)
-
-- [x] **T-GS10** — GDScript: `AGSRuntime` AutoLoad with `load_room()` + `room_change_requested`
-  signal. Created `ags_runtime.gd` with the full AGSRuntime API surface (room transitions,
-  player control, audio signals, HUD, inventory, save/load). Wired `AGSRuntime`, `AGSSaveLoad`,
-  `AGSAudio`, `AGSRoomManager` as AutoLoads in `project.godot`. `ags_room_manager.gd` updated
-  to use `get_node("/root/AGSRuntime")` instead of `Engine.get_singleton`. *(done)*
-
-## Phase 9 — Infrastructure, Localisation & Runtime (complete)
-
-- [x] **TEST-INFRA-02** — CI: GitHub Actions workflow (done — commit 67ac49d150)
-- [x] **T-CUT30** — Go: cutscene localisation pipeline (done — commit 9aefb928f7)
-- [x] **T-LOC16** — Pipeline + Editor: voice file connection and recording coverage (done — commit d63c73185d)
-- [x] **T-LOC05** — Go: interactive standalone `ag-loc` translation tool (done — commit 021a30455e)
-- [x] **T-LOC18** — Go: multi-source-language authoring + `ag export` stub generation (done — commit dabf8ce3a3)
-- [x] **T-LOC-NORM** — Normalise all `.agcut` command arguments with `#` prefix (done — commit 2ab3eb6aef)
+All M12 AG Studio tasks are implemented (see `docs/custom-editor-milestone.md`):
+- Foundation panels, Room editor, Character editor, Script editor, Build Log,
+  Play button, Project Wizard, Item editor, GUI Layout editor, Global variables editor
+- All AG Studio gizmos (WalkableSurface, BlockerVolume, Hotspot, TriggerRegion,
+  Point, SpawnPoint, Camera, Item)
 
 ## Deferred / Blocked
 
-### C++ Godot fork required
-- **T-GS27** — C++: split `AGSCharacter` → `AGSCharacterBase` / `AGSCharacter3D` / `AGSCharacter2D`
-- **T-GS24** — C++: `AGSCharacter.visual_mode` property
-- **T-GS30** — Go: generate `AGSCharacter3D` vs `AGSCharacter2D` `.tscn` (mostly done; C++ split pending)
 - **T40** — C++/GDScript: disable AGSRuntime trace in production builds
 - **T-FINAL** — C++: embed `.engine/runtime/` GDScripts into the C++ module at build time
-- M10 C++ node tasks: T-GS01, T-GS02, T-GS08, T-GS12, T-GS14, T-GS16, T-GS18
 
-### M12 AG Studio required
-- **T-E19 (editor part)** — GDScript: billboard camera gizmo overlays in Room editor
-- **T-BL14** — GDScript: AG Studio "Re-import from Blender" button
-- **T-GS21** — GDScript: Room editor `RoomItem` gizmo + placement
+### Requires Godot C++ fork compilation
+The C++ module at `modules/agvm/` is fully written but needs compilation into
+the Godot binary. All C++ node types (AGSCharacterBase, AGSCharacter3D, AGSCharacter2D,
+AGSItem, AGSRoomItem, AGSRuntime, etc.) are implemented and registered.
