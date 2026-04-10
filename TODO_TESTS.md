@@ -388,6 +388,37 @@ One test section per TODO task. Update this file immediately after marking a tas
 
 ---
 
+### T-CE14 — Character editor animations section (GLTF clip names)
+
+**Setup:** Launch AG Studio. Double-click a `.agchar` file that has a `mesh` pointing to a `.glb` file with animation clips.
+
+- [ ] The Character editor bottom panel opens showing the character form
+- [ ] Expand the "Animations" section — it shows clip names from the `.glb` file (one row per clip with a "Preview" button)
+- [ ] The clip names are sorted alphabetically
+- [ ] Click "Preview" on a clip → the 3D Animation Viewer bottom panel opens and plays that animation clip
+- [ ] With a mesh path that points to a non-existent `.glb` → no crash, animations section appears empty
+- [ ] With a mesh path that points to a `.glb` with no animations → animations section appears empty (no rows)
+- [ ] Switch character type to "2D Billboard" → the animations section is still visible but empty (2D uses sprite sheet, not GLTF)
+
+---
+
+### T-CE21 — Global variables editor in Project Settings
+
+**Setup:** Launch AG Studio. Open AG Studio menu → Project Settings.
+
+- [ ] Project Settings dialog appears with "Start room" dropdown populated from discovered `.agroom` files
+- [ ] Click "Global Variables  (click to expand)" → the globals section expands
+- [ ] With `game.agp` containing `[globals]` section, rows appear pre-filled with existing key/value pairs
+- [ ] Click "+ Add Variable" → a new row appears with empty key and value fields
+- [ ] Type a variable name and value in a new row
+- [ ] Click the "X" button on a row → row is removed
+- [ ] Click OK → dialog closes; `game.agp` is written with the updated `[globals]` section including new/modified entries
+- [ ] Re-open Project Settings → added variables persist
+- [ ] Empty key rows (no name entered) are not written to `game.agp`
+- [ ] With no `game.agp` present, the dialog shows "game.agp not found in project root" and does not crash
+
+---
+
 ## M9 — AG Studio Editor (Batch 2)
 
 ### #94 T-E11 — AGS Inspector plugin

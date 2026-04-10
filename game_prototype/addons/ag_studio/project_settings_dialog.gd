@@ -4,11 +4,16 @@ extends ConfirmationDialog
 ## AG Studio Project Settings dialog.
 ##
 ## Reads/writes game.agp (INI-style) in the project root.
-## Currently exposes: start_room (dropdown of discovered .agroom files).
+## Exposes: start_room (dropdown of discovered .agroom files),
+## and global variables editor.
 
 var _plugin: EditorPlugin
 var _start_room_option: OptionButton
 var _status_label: Label
+
+var _globals_scroll: ScrollContainer
+var _globals_container: VBoxContainer
+var _globals_rows: Array[Dictionary] = []
 
 # Parsed .agp content: section → key → value (all strings, unquoted)
 var _agp_data: Dictionary = {}
@@ -52,6 +57,36 @@ func _build_ui() -> void:
 	_start_room_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(_start_room_option)
 
+	vbox.add_child(HSeparator.new())
+
+	# ---- Globals section ----
+	var globals_header := Button.new()
+	globals_header.text = "Global Variables  (click to expand)"
+	globals_header.alignment = Alignment.ALIGN_LEFT
+	vbox.add_child(globals_header)
+
+	_globals_scroll = ScrollContainer.new()
+	_globals_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_globals_scroll.custom_minimum_size.y = 160
+	_globals_scroll.visible = false
+
+	_globals_container = VBoxContainer.new()
+	_globals_container.add_theme_constant_override("separation", 4)
+	_globals_scroll.add_child(_globals_container)
+	vbox.add_child(_globals_scroll)
+
+	globals_header.pressed.connect(func() -> void:
+		_globals_scroll.visible = not _globals_scroll.visible
+		globals_header.text = "Global Variables  " + ("(click to collapse)" if _globals_scroll.visible else "(click to expand)")
+	)
+
+	var globals_btn_row := HBoxContainer.new()
+	vbox.add_child(globals_btn_row)
+	var add_var_btn := Button.new()
+	add_var_btn.text = "+ Add Variable"
+	add_var_btn.pressed.connect(_add_global_row)
+	globals_btn_row.add_child(add_var_btn)
+
 	_status_label = Label.new()
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_status_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
@@ -70,6 +105,7 @@ func load_settings() -> void:
 
 	_agp_data = _parse_agp(_agp_path)
 	_populate_rooms()
+	_populate_globals()
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +164,50 @@ func _scan_dir(dir: String, result: Array[String]) -> void:
 	da.list_dir_end()
 
 
+func _clear_global_rows() -> void:
+	for row_data: Dictionary in _globals_rows:
+		row_data["hbox"].queue_free()
+	_globals_rows.clear()
+
+
+func _add_global_row(key := "", value := "") -> void:
+	var hbox := HBoxContainer.new()
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var key_edit := LineEdit.new()
+	key_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	key_edit.placeholder_text = "variable_name"
+	key_edit.text = key
+	hbox.add_child(key_edit)
+
+	var val_edit := LineEdit.new()
+	val_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	val_edit.placeholder_text = "value"
+	val_edit.text = value
+	hbox.add_child(val_edit)
+
+	var del_btn := Button.new()
+	del_btn.text = "X"
+	del_btn.custom_minimum_size.x = 28
+	del_btn.pressed.connect(func() -> void:
+		var idx := _globals_rows.find({"hbox": hbox, "key_edit": key_edit, "val_edit": val_edit})
+		if idx >= 0:
+			_globals_rows.remove_at(idx)
+		hbox.queue_free()
+	)
+	hbox.add_child(del_btn)
+
+	_globals_container.add_child(hbox)
+	_globals_rows.append({"hbox": hbox, "key_edit": key_edit, "val_edit": val_edit})
+
+
+func _populate_globals() -> void:
+	_clear_global_rows()
+	var globals: Dictionary = _agp_data.get("globals", {})
+	for key: String in globals:
+		_add_global_row(key, globals[key])
+
+
 func _on_confirmed() -> void:
 	if _agp_path.is_empty():
 		return
@@ -140,6 +220,15 @@ func _on_confirmed() -> void:
 	if not _agp_data.has("project"):
 		_agp_data["project"] = {}
 	_agp_data["project"]["start_room"] = chosen
+
+	# Collect globals from rows
+	var globals_out: Dictionary = {}
+	for row_data: Dictionary in _globals_rows:
+		var k: String = row_data["key_edit"].text.strip_edges()
+		var v: String = row_data["val_edit"].text.strip_edges()
+		if k != "":
+			globals_out[k] = v
+	_agp_data["globals"] = globals_out
 
 	var err := _write_agp(_agp_path, _agp_data)
 	if err != OK:
